@@ -10,6 +10,7 @@ interface Assignment {
   status: string;
   notes?: string | null;
   booking: {
+    id: string;
     guestCount: number;
     checkOut: Date;
     checkIn: Date;
@@ -60,7 +61,7 @@ export function MyJobsList({ assignments }: { assignments: Assignment[] }) {
               <JobCard
                 key={a.id}
                 assignment={a}
-                onMarkDone={() => markDone(a.booking.checkIn.toString(), a.id)}
+                onMarkDone={() => markDone(a.booking.id, a.id)}
                 loading={loading === a.id}
               />
             ))}

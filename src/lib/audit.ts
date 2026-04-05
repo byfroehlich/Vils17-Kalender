@@ -19,7 +19,7 @@ export async function logAudit(params: AuditParams) {
         action: params.action,
         entityType: params.entityType,
         entityId: params.entityId,
-        details: params.details,
+        details: params.details as object ?? undefined,
         ipAddress: params.ipAddress,
       },
     });
