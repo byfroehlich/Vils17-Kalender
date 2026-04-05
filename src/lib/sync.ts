@@ -72,9 +72,13 @@ export async function syncBookings(organizationId: string): Promise<{
   }
 
   // ─── 4. Buchungen upserten ───────────────────────────────────────────────
+  const syncedSmoobuIds = new Set<number>();
+
   for (const res of reservations) {
     const apartmentId = externalIdToApartmentId.get(res.apartmentExternalId);
     if (!apartmentId) continue;
+
+    syncedSmoobuIds.add(res.externalId);
 
     const existing = await prisma.booking.findUnique({
       where: { smoobuId: res.externalId },
@@ -120,11 +124,53 @@ export async function syncBookings(organizationId: string): Promise<{
           arrivalTime: res.arrivalTime,
           departureTime: res.departureTime,
           channelName: res.channelName,
+          status: "confirmed", // reaktivieren falls zuvor storniert
           syncedAt: new Date(),
         },
       });
       stats.updated++;
     }
+  }
+
+  // ─── 5. Stornierte Buchungen erkennen ────────────────────────────────────
+  // Buchungen im Sync-Zeitraum die von Smoobu nicht mehr zurückgegeben wurden
+  // → wurden storniert (Webhook verpasst) → als cancelled markieren
+  const staleBookings = await prisma.booking.findMany({
+    where: {
+      organizationId,
+      status: "confirmed",
+      smoobuId: { not: null },
+      checkIn: { gte: new Date(from), lte: new Date(to) },
+      NOT: {
+        smoobuId: { in: Array.from(syncedSmoobuIds) },
+      },
+    },
+    include: { cleaningAssignment: true },
+  });
+
+  for (const booking of staleBookings) {
+    await prisma.booking.update({
+      where: { id: booking.id },
+      data: { status: "cancelled", syncedAt: new Date() },
+    });
+
+    // CleaningAssignment: UNASSIGNED → stornieren (löschen), sonst Status-Note setzen
+    if (booking.cleaningAssignment) {
+      if (booking.cleaningAssignment.status === "UNASSIGNED") {
+        await prisma.cleaningAssignment.delete({
+          where: { id: booking.cleaningAssignment.id },
+        });
+      } else {
+        // Bereits zugewiesen/erledigt: nur Notiz setzen, nicht löschen (für Statistik)
+        await prisma.cleaningAssignment.update({
+          where: { id: booking.cleaningAssignment.id },
+          data: { laundryStatus: "OPEN", notes: "[Buchung storniert]" },
+        });
+      }
+    }
+
+    console.log(`[sync] Storniert: "${booking.guestName}" (SmoobuID ${booking.smoobuId})`);
+    stats.cancelled++;
   }
 
   return stats;

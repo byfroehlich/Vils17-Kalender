@@ -33,9 +33,13 @@ export function SyncButton() {
 
       if (data.success) {
         const apart = (data.apartmentsImported as number) ?? 0;
-        const msg = apart > 0
-          ? `✓ ${apart} Unterkunft(en) importiert, +${data.created ?? 0} Buchungen`
-          : `✓ Aktualisiert (+${data.created ?? 0} neu)`;
+        const cancelled = (data.cancelled as number) ?? 0;
+        const created = (data.created as number) ?? 0;
+        const parts: string[] = [];
+        if (apart > 0) parts.push(`${apart} Unterkunft(en) importiert`);
+        if (created > 0) parts.push(`+${created} neu`);
+        if (cancelled > 0) parts.push(`−${cancelled} storniert`);
+        const msg = parts.length > 0 ? `✓ ${parts.join(", ")}` : "✓ Alles aktuell";
         setMessage(msg);
         router.refresh();
       } else {
