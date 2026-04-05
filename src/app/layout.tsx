@@ -8,8 +8,18 @@ import { Providers } from "./providers";
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
-  title: "Vils17 Kalender",
-  description: "Ferienwohnungs-Management für Vils17",
+  title: "V17",
+  description: "Ferienwohnungs-Management",
+  icons: {
+    apple: "/apple-touch-icon.png",
+    icon: "/apple-touch-icon.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "V17",
+    statusBarStyle: "black-translucent",
+  },
+  manifest: "/manifest.json",
 };
 
 export default async function RootLayout({

@@ -1,0 +1,16 @@
+{
+  "name": "V17",
+  "short_name": "V17",
+  "description": "Ferienwohnungs-Management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0e7490",
+  "theme_color": "#0e7490",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png"
+    }
+  ]
+}
