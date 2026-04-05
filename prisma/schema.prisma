@@ -1,0 +1,190 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─── Enums ───────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  CLEANER
+}
+
+enum CleaningStatus {
+  UNASSIGNED
+  SELF_CLEAN
+  ASSIGNED
+  COMPLETED
+}
+
+enum LaundryStatus {
+  OPEN
+  ORDERED
+  AVAILABLE
+}
+
+enum SubscriptionPlan {
+  FREE
+  BASIC
+  PRO
+}
+
+// ─── Multi-Tenant ─────────────────────────────────────────────────────────────
+
+model Organization {
+  id               String           @id @default(cuid())
+  name             String
+  slug             String           @unique
+  plan             SubscriptionPlan @default(FREE)
+  stripeCustomerId String?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+
+  users      User[]
+  apartments Apartment[]
+
+  @@map("organizations")
+}
+
+// ─── Users ───────────────────────────────────────────────────────────────────
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name         String
+  email        String
+  passwordHash String
+  role         Role    @default(CLEANER)
+  phone        String?
+  notes        String?
+  language     String  @default("de")
+  active       Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  assignments CleaningAssignment[]
+
+  @@unique([email, organizationId])
+  @@index([organizationId])
+  @@map("users")
+}
+
+// ─── Apartments ───────────────────────────────────────────────────────────────
+
+model Apartment {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  smoobuId    Int?
+  name        String
+  description String?
+  color       String? // Hex-Farbe für Kalender, z.B. "#3b82f6"
+  active      Boolean @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings Booking[]
+
+  @@unique([smoobuId, organizationId])
+  @@index([organizationId])
+  @@map("apartments")
+}
+
+// ─── Bookings ─────────────────────────────────────────────────────────────────
+
+model Booking {
+  id             String @id @default(cuid())
+  organizationId String // denormalisiert für einfache Abfragen ohne JOIN
+
+  smoobuId    Int?    @unique
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id])
+
+  guestName  String
+  guestEmail String?
+  guestPhone String?
+  guestCount Int     @default(1)
+
+  checkIn       DateTime
+  checkOut      DateTime
+  arrivalTime   String? // "15:00"
+  departureTime String? // "10:00"
+
+  channelName String? // "Airbnb", "Booking.com", "Direkt"
+  status      String  @default("confirmed") // confirmed, cancelled, pending
+
+  syncedAt  DateTime @default(now())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  cleaningAssignment CleaningAssignment?
+
+  @@index([organizationId, checkIn])
+  @@index([organizationId, checkOut])
+  @@index([apartmentId])
+  @@map("bookings")
+}
+
+// ─── Cleaning Assignments ─────────────────────────────────────────────────────
+
+model CleaningAssignment {
+  id             String @id @default(cuid())
+  organizationId String
+
+  bookingId String  @unique
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  cleanerId   String?
+  cleaner     User?          @relation(fields: [cleanerId], references: [id], onDelete: SetNull)
+  status      CleaningStatus @default(UNASSIGNED)
+  isSelfClean Boolean        @default(false)
+  notes       String?
+
+  assignedAt DateTime?
+  notifiedAt DateTime?
+
+  // Wäsche
+  laundryStatus      LaundryStatus @default(OPEN)
+  laundryNotes       String?
+  laundryOrderId     String? // ID beim Lieferanten
+  laundryOrderedAt   DateTime?
+  laundryOrderStatus String? // "pending", "confirmed", "error"
+  // Menge: { beds: 3, towels: 6, kitchen: 1 }
+  laundryQuantity    Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([organizationId])
+  @@index([cleanerId])
+  @@map("cleaning_assignments")
+}
+
+// ─── Audit Log ────────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id             String  @id @default(cuid())
+  organizationId String
+  userId         String?
+
+  action     String // "booking.synced", "assignment.created", "laundry.ordered"
+  entityType String? // "Booking", "CleaningAssignment", "User"
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("audit_logs")
+}

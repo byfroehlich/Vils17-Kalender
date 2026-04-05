@@ -1,0 +1,139 @@
+{
+  "nav": {
+    "dashboard": "Overview",
+    "calendar": "Calendar",
+    "bookings": "Bookings",
+    "cleaners": "Cleaning Staff",
+    "myJobs": "My Jobs",
+    "settings": "Settings",
+    "logout": "Sign Out"
+  },
+  "login": {
+    "title": "Sign In",
+    "subtitle": "Vils17 Holiday Apartments",
+    "email": "Email Address",
+    "password": "Password",
+    "submit": "Sign In",
+    "error": "Incorrect email or password.",
+    "loading": "Signing in..."
+  },
+  "dashboard": {
+    "title": "Overview",
+    "welcome": "Welcome",
+    "stats": {
+      "upcomingCheckouts": "Check-outs this week",
+      "upcomingCheckins": "Check-ins this week",
+      "openCleaning": "Cleaning to assign",
+      "openLaundry": "Laundry not ordered"
+    },
+    "nextBookings": "Upcoming Bookings",
+    "noBookings": "No bookings in the next 7 days.",
+    "syncNow": "Sync Now",
+    "syncing": "Syncing...",
+    "syncSuccess": "Bookings updated",
+    "syncError": "Sync failed"
+  },
+  "booking": {
+    "guest": "Guest",
+    "guests": "Guests",
+    "checkin": "Check-in",
+    "checkout": "Check-out",
+    "apartment": "Apartment",
+    "channel": "Booking Channel",
+    "status": {
+      "confirmed": "Confirmed",
+      "cancelled": "Cancelled",
+      "pending": "Pending"
+    },
+    "cleaning": {
+      "title": "Cleaning",
+      "unassigned": "Not Assigned",
+      "selfClean": "Self Cleaning",
+      "assigned": "Assigned",
+      "completed": "Completed",
+      "assignButton": "Assign Cleaner",
+      "changeButton": "Change Cleaner",
+      "selfCleanButton": "Clean Myself",
+      "markDone": "Mark as Done",
+      "notes": "Notes for Cleaner",
+      "notesPlaceholder": "What should be paid special attention to?",
+      "assignSuccess": "Cleaner assigned",
+      "assignError": "Assignment failed",
+      "notifyInfo": "The cleaner will be notified by email and WhatsApp."
+    },
+    "laundry": {
+      "title": "Laundry",
+      "open": "Open",
+      "ordered": "Ordered",
+      "available": "Available",
+      "orderButton": "Order Laundry",
+      "orderConfirmTitle": "Order Laundry?",
+      "orderConfirmDesc": "{beds} bed sets, {towels} towels and {kitchen} kitchen towel will be ordered.",
+      "orderConfirm": "Order Now",
+      "orderCancel": "Cancel",
+      "orderSuccess": "Laundry ordered",
+      "orderError": "Order failed – please order manually",
+      "notes": "Laundry Notes",
+      "notesPlaceholder": "e.g. ordered at supplier, order number...",
+      "statusUpdate": "Status updated"
+    }
+  },
+  "cleaners": {
+    "title": "Cleaning Staff",
+    "subtitle": "Manage all cleaners and companies here.",
+    "add": "Add Cleaner",
+    "edit": "Edit",
+    "deactivate": "Deactivate",
+    "activate": "Activate",
+    "delete": "Delete",
+    "name": "Name",
+    "email": "Email",
+    "phone": "Phone / WhatsApp",
+    "notes": "Notes",
+    "notesPlaceholder": "e.g. company name, preferred contact method",
+    "language": "Language",
+    "active": "Active",
+    "inactive": "Inactive",
+    "save": "Save",
+    "cancel": "Cancel",
+    "saveSuccess": "Saved",
+    "saveError": "Save failed",
+    "deleteConfirm": "Really delete? All assignments will be kept.",
+    "noCleaners": "No cleaners added yet."
+  },
+  "myJobs": {
+    "title": "My Jobs",
+    "subtitle": "Your assigned cleaning jobs",
+    "noJobs": "No jobs pending.",
+    "apartment": "Apartment",
+    "date": "Date",
+    "time": "Time",
+    "guests": "Guests",
+    "notes": "Notes",
+    "markDone": "Mark as Done",
+    "done": "Done"
+  },
+  "calendar": {
+    "title": "Calendar",
+    "prev": "Previous Month",
+    "next": "Next Month",
+    "today": "Today",
+    "occupied": "Occupied",
+    "free": "Free"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "An error occurred.",
+    "retry": "Try Again",
+    "back": "Back",
+    "close": "Close",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "yes": "Yes",
+    "no": "No",
+    "person": "Person",
+    "persons": "Persons"
+  }
+}

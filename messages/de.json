@@ -1,0 +1,139 @@
+{
+  "nav": {
+    "dashboard": "Übersicht",
+    "calendar": "Kalender",
+    "bookings": "Buchungen",
+    "cleaners": "Reinigungskräfte",
+    "myJobs": "Meine Aufträge",
+    "settings": "Einstellungen",
+    "logout": "Abmelden"
+  },
+  "login": {
+    "title": "Anmelden",
+    "subtitle": "Vils17 Ferienwohnungen",
+    "email": "E-Mail-Adresse",
+    "password": "Passwort",
+    "submit": "Anmelden",
+    "error": "E-Mail oder Passwort falsch.",
+    "loading": "Wird angemeldet..."
+  },
+  "dashboard": {
+    "title": "Übersicht",
+    "welcome": "Willkommen",
+    "stats": {
+      "upcomingCheckouts": "Abreisen diese Woche",
+      "upcomingCheckins": "Ankünfte diese Woche",
+      "openCleaning": "Offene Reinigungen",
+      "openLaundry": "Wäsche nicht bestellt"
+    },
+    "nextBookings": "Nächste Buchungen",
+    "noBookings": "Keine Buchungen in den nächsten 7 Tagen.",
+    "syncNow": "Jetzt synchronisieren",
+    "syncing": "Wird synchronisiert...",
+    "syncSuccess": "Buchungen aktualisiert",
+    "syncError": "Synchronisierung fehlgeschlagen"
+  },
+  "booking": {
+    "guest": "Gast",
+    "guests": "Gäste",
+    "checkin": "Anreise",
+    "checkout": "Abreise",
+    "apartment": "Wohnung",
+    "channel": "Buchungskanal",
+    "status": {
+      "confirmed": "Bestätigt",
+      "cancelled": "Storniert",
+      "pending": "Ausstehend"
+    },
+    "cleaning": {
+      "title": "Reinigung",
+      "unassigned": "Nicht zugewiesen",
+      "selfClean": "Selbstreinigung",
+      "assigned": "Zugewiesen",
+      "completed": "Erledigt",
+      "assignButton": "Reiniger zuweisen",
+      "changeButton": "Reiniger ändern",
+      "selfCleanButton": "Selbst reinigen",
+      "markDone": "Als erledigt markieren",
+      "notes": "Hinweise für Reiniger",
+      "notesPlaceholder": "Was soll besonders beachtet werden?",
+      "assignSuccess": "Reiniger zugewiesen",
+      "assignError": "Zuweisung fehlgeschlagen",
+      "notifyInfo": "Der Reiniger wird per E-Mail und WhatsApp benachrichtigt."
+    },
+    "laundry": {
+      "title": "Wäsche",
+      "open": "Offen",
+      "ordered": "Bestellt",
+      "available": "Vorhanden",
+      "orderButton": "Wäsche bestellen",
+      "orderConfirmTitle": "Wäsche bestellen?",
+      "orderConfirmDesc": "Es werden {beds} Bettsets, {towels} Handtücher und {kitchen} Küchenhandtuch bestellt.",
+      "orderConfirm": "Jetzt bestellen",
+      "orderCancel": "Abbrechen",
+      "orderSuccess": "Wäsche bestellt",
+      "orderError": "Bestellung fehlgeschlagen – bitte manuell bestellen",
+      "notes": "Bemerkungen zur Wäsche",
+      "notesPlaceholder": "z.B. bei Müller bestellt, Bestellnummer...",
+      "statusUpdate": "Status aktualisiert"
+    }
+  },
+  "cleaners": {
+    "title": "Reinigungskräfte",
+    "subtitle": "Verwalten Sie hier alle Reinigungskräfte und Firmen.",
+    "add": "Neue Reinigungskraft",
+    "edit": "Bearbeiten",
+    "deactivate": "Deaktivieren",
+    "activate": "Aktivieren",
+    "delete": "Löschen",
+    "name": "Name",
+    "email": "E-Mail",
+    "phone": "Telefon / WhatsApp",
+    "notes": "Bemerkungen",
+    "notesPlaceholder": "z.B. Firmenname, bevorzugte Kontaktmethode",
+    "language": "Sprache",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "saveSuccess": "Gespeichert",
+    "saveError": "Speichern fehlgeschlagen",
+    "deleteConfirm": "Wirklich löschen? Alle Zuweisungen bleiben erhalten.",
+    "noCleaners": "Noch keine Reinigungskräfte angelegt."
+  },
+  "myJobs": {
+    "title": "Meine Aufträge",
+    "subtitle": "Ihre zugewiesenen Reinigungsaufträge",
+    "noJobs": "Keine Aufträge ausstehend.",
+    "apartment": "Wohnung",
+    "date": "Datum",
+    "time": "Uhrzeit",
+    "guests": "Gäste",
+    "notes": "Hinweise",
+    "markDone": "Als erledigt markieren",
+    "done": "Erledigt"
+  },
+  "calendar": {
+    "title": "Kalender",
+    "prev": "Vorheriger Monat",
+    "next": "Nächster Monat",
+    "today": "Heute",
+    "occupied": "Belegt",
+    "free": "Frei"
+  },
+  "common": {
+    "loading": "Wird geladen...",
+    "error": "Ein Fehler ist aufgetreten.",
+    "retry": "Erneut versuchen",
+    "back": "Zurück",
+    "close": "Schließen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "edit": "Bearbeiten",
+    "yes": "Ja",
+    "no": "Nein",
+    "person": "Person",
+    "persons": "Personen"
+  }
+}

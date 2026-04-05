@@ -1,0 +1,69 @@
+services:
+  - type: web
+    name: vils17-kalender
+    env: node
+    region: frankfurt
+    plan: free
+    buildCommand: npm ci && npx prisma generate && npm run build
+    startCommand: npx prisma migrate deploy && npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NEXTAUTH_URL
+        sync: false
+      - key: NEXTAUTH_SECRET
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      - key: SMOOBU_API_KEY
+        sync: false
+      - key: SMOOBU_WEBHOOK_SECRET
+        sync: false
+      - key: SMTP_HOST
+        sync: false
+      - key: SMTP_PORT
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_PASS
+        sync: false
+      - key: SMTP_FROM
+        sync: false
+      - key: TWILIO_ENABLED
+        value: "false"
+      - key: TWILIO_ACCOUNT_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: TWILIO_WHATSAPP_FROM
+        sync: false
+      - key: LAUNDRY_API_ENABLED
+        value: "false"
+      - key: LAUNDRY_API_URL
+        sync: false
+      - key: LAUNDRY_API_KEY
+        sync: false
+      - key: CRON_SECRET
+        generateValue: true
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+
+  - type: cron
+    name: smoobu-sync
+    env: node
+    region: frankfurt
+    plan: free
+    schedule: "*/15 * * * *"
+    buildCommand: npm ci
+    startCommand: |
+      curl -s -X POST "${NEXT_PUBLIC_APP_URL}/api/bookings/sync" \
+        -H "x-cron-secret: ${CRON_SECRET}" \
+        -H "Content-Type: application/json"
+    envVars:
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
