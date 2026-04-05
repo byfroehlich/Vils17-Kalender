@@ -81,7 +81,7 @@ export async function POST(
         laundryOrderId: result.orderId ?? null,
         laundryOrderedAt: result.success ? new Date() : null,
         laundryOrderStatus: result.success ? "confirmed" : "error",
-        laundryQuantity: quantity,
+        laundryQuantity: quantity as object,
         laundryNotes: parsed.data.notes ?? assignment.laundryNotes,
       },
     });
