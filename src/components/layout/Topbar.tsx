@@ -1,29 +1,28 @@
 "use client";
 
-import { User } from "lucide-react";
-
 export function Topbar({ userName, role }: { userName: string; role: string }) {
   return (
-    <header className="bg-white border-b border-gray-200 px-4 lg:px-8 py-4 flex items-center justify-between">
-      <div className="lg:hidden flex items-center gap-2">
-        <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-          🏔️
+    <header className="bg-white border-b border-zinc-100 px-6 h-16 flex items-center justify-between">
+      {/* Mobile: Logo */}
+      <div className="lg:hidden flex items-center gap-2.5">
+        <div className="w-7 h-7 rounded-lg bg-zinc-900 flex items-center justify-center">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M3 18L9 6l4 8 3-5 5 9H3z"/>
+          </svg>
         </div>
-        <span className="font-bold text-gray-900">Vils17</span>
+        <span className="font-semibold text-zinc-900 text-sm">Vils17</span>
       </div>
 
       <div className="hidden lg:block" />
 
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2 bg-gray-100 rounded-xl px-4 py-2">
-          <User className="w-5 h-5 text-gray-500" />
-          <span className="font-medium text-gray-700">{userName}</span>
-          {role === "ADMIN" && (
-            <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full font-medium">
-              Admin
-            </span>
-          )}
-        </div>
+      {/* User */}
+      <div className="flex items-center gap-2">
+        <span className="text-sm text-zinc-500">{userName}</span>
+        {role === "ADMIN" && (
+          <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">
+            Admin
+          </span>
+        )}
       </div>
     </header>
   );

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { formatDate, getCleaningStatusColor, getLaundryStatusColor } from "@/lib/utils";
-import { Users, Calendar, Brush, WashingMachine, ChevronRight } from "lucide-react";
+import { formatDate } from "@/lib/utils";
+import { Users, ChevronRight } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -18,93 +18,98 @@ interface Booking {
   } | null;
 }
 
+const cleaningDot: Record<string, string> = {
+  UNASSIGNED: "bg-orange-400",
+  SELF_CLEAN: "bg-blue-400",
+  ASSIGNED: "bg-blue-500",
+  COMPLETED: "bg-green-500",
+};
+
+const cleaningLabel: Record<string, string> = {
+  UNASSIGNED: "Reinigung offen",
+  SELF_CLEAN: "Selbstreinigung",
+  ASSIGNED: "Reiniger zugewiesen",
+  COMPLETED: "Erledigt",
+};
+
+const laundryDot: Record<string, string> = {
+  OPEN: "bg-red-400",
+  ORDERED: "bg-amber-400",
+  AVAILABLE: "bg-green-500",
+};
+
+const laundryLabel: Record<string, string> = {
+  OPEN: "Wäsche offen",
+  ORDERED: "Wäsche bestellt",
+  AVAILABLE: "Wäsche vorhanden",
+};
+
 export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
   if (bookings.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center">
-        <p className="text-gray-400 text-xl">Keine Buchungen in den nächsten Tagen</p>
+      <div className="bg-white rounded-2xl border border-zinc-100 p-10 text-center">
+        <p className="text-zinc-400 text-sm">Keine Buchungen in den nächsten Tagen</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {bookings.map((booking) => {
         const assignment = booking.cleaningAssignment;
         const cleaningStatus = assignment?.status ?? "UNASSIGNED";
         const laundryStatus = assignment?.laundryStatus ?? "OPEN";
 
-        const cleaningLabel: Record<string, string> = {
-          UNASSIGNED: "Reinigung: Offen",
-          SELF_CLEAN: "Selbstreinigung",
-          ASSIGNED: `Reiniger: ${assignment?.cleaner?.name ?? "–"}`,
-          COMPLETED: "Reinigung: Erledigt",
-        };
-
-        const laundryLabel: Record<string, string> = {
-          OPEN: "Wäsche: Offen",
-          ORDERED: "Wäsche: Bestellt",
-          AVAILABLE: "Wäsche: Vorhanden",
-        };
-
         return (
           <Link
             key={booking.id}
             href={`/bookings/${booking.id}`}
-            className="block bg-white rounded-2xl border border-gray-200 p-5 hover:border-blue-300 hover:shadow-sm transition-all"
+            className="flex items-center gap-4 bg-white rounded-2xl border border-zinc-100 px-5 py-4 hover:border-zinc-200 hover:shadow-sm transition-all group"
           >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 min-w-0">
-                {/* Apartment + Gast */}
-                <div className="flex items-center gap-2 mb-2">
-                  <span
-                    className="inline-block w-3 h-3 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: booking.apartment.color ?? "#3b82f6" }}
-                  />
-                  <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-                    {booking.apartment.name}
-                  </span>
-                </div>
+            {/* Apartment Farbe */}
+            <div
+              className="w-1 self-stretch rounded-full flex-shrink-0"
+              style={{ backgroundColor: booking.apartment.color ?? "#18181b" }}
+            />
 
-                <h3 className="text-2xl font-bold text-gray-900 mb-1 truncate">
+            {/* Content */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="font-semibold text-zinc-900 text-base truncate">
                   {booking.guestName}
-                </h3>
-
-                {/* Details */}
-                <div className="flex flex-wrap gap-4 text-base text-gray-600 mt-2">
-                  <span className="flex items-center gap-1.5">
-                    <Users className="w-5 h-5 text-gray-400" />
-                    {booking.guestCount}{" "}
-                    {booking.guestCount === 1 ? "Person" : "Personen"}
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <Calendar className="w-5 h-5 text-gray-400" />
-                    {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
-                    {booking.departureTime && (
-                      <span className="text-gray-400">bis {booking.departureTime}</span>
-                    )}
-                  </span>
-                </div>
-
-                {/* Status-Badges */}
-                <div className="flex flex-wrap gap-2 mt-3">
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${getCleaningStatusColor(cleaningStatus)}`}
-                  >
-                    <Brush className="w-4 h-4" />
-                    {cleaningLabel[cleaningStatus] ?? cleaningStatus}
-                  </span>
-                  <span
-                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-semibold border ${getLaundryStatusColor(laundryStatus)}`}
-                  >
-                    <WashingMachine className="w-4 h-4" />
-                    {laundryLabel[laundryStatus] ?? laundryStatus}
-                  </span>
-                </div>
+                </span>
+                <span className="text-zinc-400 text-xs flex-shrink-0">{booking.apartment.name}</span>
               </div>
 
-              <ChevronRight className="w-6 h-6 text-gray-300 flex-shrink-0 mt-1" />
+              <div className="flex items-center gap-4 text-sm text-zinc-500 mb-2.5">
+                <span className="flex items-center gap-1">
+                  <Users className="w-3.5 h-3.5" />
+                  {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
+                </span>
+                <span>
+                  {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
+                  {booking.departureTime && <span className="text-zinc-400"> bis {booking.departureTime}</span>}
+                </span>
+              </div>
+
+              {/* Status Dots */}
+              <div className="flex items-center gap-3">
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+                  <span className={`w-1.5 h-1.5 rounded-full ${cleaningDot[cleaningStatus] ?? "bg-zinc-300"}`} />
+                  {cleaningLabel[cleaningStatus] ?? cleaningStatus}
+                  {cleaningStatus === "ASSIGNED" && assignment?.cleaner?.name && (
+                    <span className="text-zinc-400">· {assignment.cleaner.name}</span>
+                  )}
+                </span>
+                <span className="text-zinc-200">·</span>
+                <span className="flex items-center gap-1.5 text-xs text-zinc-500">
+                  <span className={`w-1.5 h-1.5 rounded-full ${laundryDot[laundryStatus] ?? "bg-zinc-300"}`} />
+                  {laundryLabel[laundryStatus] ?? laundryStatus}
+                </span>
+              </div>
             </div>
+
+            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-400 flex-shrink-0 transition-colors" />
           </Link>
         );
       })}

@@ -1,5 +1,3 @@
-import { LogOut, LogIn, Brush, WashingMachine } from "lucide-react";
-
 interface Props {
   upcomingCheckouts: number;
   upcomingCheckins: number;
@@ -7,55 +5,47 @@ interface Props {
   openLaundry: number;
 }
 
-export function StatsCards({
-  upcomingCheckouts,
-  upcomingCheckins,
-  openCleanings,
-  openLaundry,
-}: Props) {
+export function StatsCards({ upcomingCheckouts, upcomingCheckins, openCleanings, openLaundry }: Props) {
   const cards = [
     {
       label: "Abreisen diese Woche",
       value: upcomingCheckouts,
-      icon: LogOut,
-      color: "bg-blue-50 text-blue-700",
-      iconColor: "text-blue-500",
+      urgent: false,
     },
     {
       label: "Ankünfte diese Woche",
       value: upcomingCheckins,
-      icon: LogIn,
-      color: "bg-green-50 text-green-700",
-      iconColor: "text-green-500",
+      urgent: false,
     },
     {
       label: "Offene Reinigungen",
       value: openCleanings,
-      icon: Brush,
-      color: openCleanings > 0 ? "bg-orange-50 text-orange-700" : "bg-gray-50 text-gray-600",
-      iconColor: openCleanings > 0 ? "text-orange-500" : "text-gray-400",
+      urgent: openCleanings > 0,
     },
     {
-      label: "Wäsche nicht bestellt",
+      label: "Wäsche offen",
       value: openLaundry,
-      icon: WashingMachine,
-      color: openLaundry > 0 ? "bg-red-50 text-red-700" : "bg-gray-50 text-gray-600",
-      iconColor: openLaundry > 0 ? "text-red-500" : "text-gray-400",
+      urgent: openLaundry > 0,
     },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
       {cards.map((card) => (
         <div
           key={card.label}
-          className={`rounded-2xl p-5 ${card.color} border border-current border-opacity-20`}
+          className={`bg-white rounded-2xl border p-5 ${
+            card.urgent
+              ? "border-red-100 bg-red-50"
+              : "border-zinc-100"
+          }`}
         >
-          <div className="flex items-start justify-between mb-3">
-            <card.icon className={`w-8 h-8 ${card.iconColor}`} />
-          </div>
-          <p className="text-4xl font-bold mb-1">{card.value}</p>
-          <p className="text-sm font-medium opacity-80">{card.label}</p>
+          <p className={`text-4xl font-bold tracking-tight mb-1 ${card.urgent ? "text-red-600" : "text-zinc-900"}`}>
+            {card.value}
+          </p>
+          <p className={`text-sm ${card.urgent ? "text-red-500" : "text-zinc-400"}`}>
+            {card.label}
+          </p>
         </div>
       ))}
     </div>
