@@ -259,6 +259,11 @@ Sobald der Lieferant eine API bereitstellt:
 - Buchungsdetail-Seite: Reinigung zuweisen, Wäsche bestellen (noch nicht gebaut)
 - "First Accept Wins" Reinigungsanfrage noch nicht implementiert
 - E-Mail / WhatsApp Benachrichtigungen noch nicht konfiguriert
+- **Passwort ändern**: Einstellungen → eigenes Passwort ändern
+- **Neue Rolle MANAGER (Verwalterin)**:
+  - Kann: Dashboard, Kalender, Buchungen, Reinigung anfragen, Wäsche bestellen
+  - Kann NICHT: Einstellungen, Reinigungskräfte verwalten, Apartments verwalten, Sync
+  - Benutzerverwaltung in Einstellungen: Admin legt User an (ADMIN / MANAGER / CLEANER)
 
 ## Geplante Features (später)
 
