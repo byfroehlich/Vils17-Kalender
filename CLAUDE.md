@@ -143,6 +143,27 @@ Organization
 Die `organizationId` ist in **jedem** DB-Modell vorhanden – so kann später
 Multi-Tenancy ohne Datenmigration aktiviert werden.
 
+### Channel Manager Adapter (`src/lib/channel-manager/`)
+Jede Buchungsplattform bekommt einen eigenen Adapter. `sync.ts` arbeitet
+nur mit dem normalisierten Format – nie mit rohen API-Antworten.
+
+```
+src/lib/channel-manager/
+  types.ts     ← NormalizedApartment, NormalizedReservation, ChannelManagerAdapter
+  smoobu.ts    ← SmoobuAdapter (Zod-validiert, alle Feldnamen-Varianten)
+  index.ts     ← getChannelManagerAdapter() – später per Organization wählbar
+```
+
+**Neue Integration hinzufügen:**
+1. `src/lib/channel-manager/bookingcom.ts` anlegen
+2. `ChannelManagerAdapter` Interface implementieren
+3. In `index.ts` per `org.channelManager` auswählen
+4. `sync.ts` bleibt unverändert
+
+**Zod-Validierung:** Jeder Adapter validiert die rohe API-Antwort mit Zod.
+Unbekannte Felder werden durchgelassen (`.passthrough()`), fehlende
+Pflichtfelder erzeugen einen Warning-Log statt einen Crash.
+
 ### Smoobu Sync
 - **Cron**: alle 15 Min ruft Render Cron `POST /api/bookings/sync` auf
 - **Webhook**: `POST /api/smoobu/webhook` empfängt Echtzeit-Events
@@ -213,10 +234,26 @@ Sobald der Lieferant eine API bereitstellt:
 - [ ] Onboarding-Flow: neue Organization anlegen
 - [ ] Stripe Billing: FREE / BASIC / PRO Pläne
 - [ ] Supabase RLS als zweite Sicherheitsebene
-- [ ] Channel Manager: weitere Adapter (Booking.com, Airbnb)
+- [ ] Channel Manager: weitere Adapter (Booking.com, Airbnb) → siehe `src/lib/channel-manager/`
 - [ ] Public REST API für externe Integrationen
 - [ ] Whitelabel-Option
 - [ ] Mobile App (React Native / Expo)
+
+## Geplante Features (später)
+
+### Reinigungsstatistik
+- Welche Reinigungskraft wie oft im Einsatz
+- Kosten pro Einsatz (Stundensatz oder Pauschale am Reiniger hinterlegen)
+- Export für Buchhaltung (CSV/PDF)
+
+### Wäschestatistik
+- Bestellte Mengen pro Monat/Jahr
+- Kosten (Preis pro Einheit am Lieferanten hinterlegen)
+
+### Steuer-Export
+- Buchungsliste mit Gast, Datum, Nächte, Kanal, Umsatz
+- PDF + CSV Export für Steuerbüro
+- Jahresübersicht pro Wohnung (Neon/Supabase hat alle Daten – nie löschen!)
 
 ---
 
