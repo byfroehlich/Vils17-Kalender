@@ -239,6 +239,27 @@ Sobald der Lieferant eine API bereitstellt:
 - [ ] Whitelabel-Option
 - [ ] Mobile App (React Native / Expo)
 
+## Aktueller Stand (Stand: 06.04.2026)
+
+### Erledigt ✅
+- Smoobu Sync funktioniert (63 Buchungen importiert, Apartments automatisch importiert)
+- Smoobu Webhook eingerichtet (Echtzeit-Updates bei neuer Buchung)
+- Cron-Job alle 15 Min (render.yaml)
+- Channel Manager Adapter Pattern (`src/lib/channel-manager/`)
+- Dashboard: Stats-Karten, Buchungsliste, 14-Tage-Warnbanner
+- Status-Badges prominent (orange/rot für offen, grün für erledigt)
+- Kalender: durchgehende Buchungsbalken mit Farbwechsel
+- Kalender: getrennte oder gemeinsame Ansicht (Einstellungen)
+- Einstellungen-Seite: Apartment-Name, Farbe, löschen
+- CleaningAssignment wird automatisch bei jedem neuen Import erstellt
+
+### Bekannte offene Punkte
+- Zweite Wohnung kommt im Mai → wird beim nächsten Sync automatisch importiert
+- "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen löschen
+- Buchungsdetail-Seite: Reinigung zuweisen, Wäsche bestellen (noch nicht gebaut)
+- "First Accept Wins" Reinigungsanfrage noch nicht implementiert
+- E-Mail / WhatsApp Benachrichtigungen noch nicht konfiguriert
+
 ## Geplante Features (später)
 
 ### Reinigungsstatistik
