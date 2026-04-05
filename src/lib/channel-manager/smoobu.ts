@@ -86,13 +86,25 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
     }
 
     const raw = await res.json();
-    const items: unknown[] = raw.apartments ?? raw ?? [];
+    console.log("[SmoobuAdapter] Apartments raw response keys:", Object.keys(raw ?? {}));
+    console.log("[SmoobuAdapter] Apartments raw response:", JSON.stringify(raw).slice(0, 500));
+
+    // Smoobu gibt { apartments: [...] } zurück – explizit prüfen
+    const items: unknown[] = Array.isArray(raw.apartments)
+      ? raw.apartments
+      : Array.isArray(raw)
+        ? raw
+        : [];
+
+    if (items.length === 0) {
+      console.warn("[SmoobuAdapter] Keine Apartments in der API-Antwort. Rohdaten:", JSON.stringify(raw).slice(0, 300));
+    }
 
     return items
       .map((item) => {
         const parsed = SmoobuApartmentSchema.safeParse(item);
         if (!parsed.success) {
-          console.warn("[SmoobuAdapter] Ungültige Apartment-Daten:", parsed.error.flatten());
+          console.warn("[SmoobuAdapter] Ungültige Apartment-Daten:", parsed.error.flatten(), "Item:", JSON.stringify(item));
           return null;
         }
         return { externalId: parsed.data.id, name: parsed.data.name };
@@ -114,12 +126,23 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
     }
 
     const raw = await res.json();
+    console.log("[SmoobuAdapter] Reservations raw response keys:", Object.keys(raw ?? {}));
 
-    // Debug: beim ersten Sync Felder loggen damit wir das Format kennen
-    const bookings: unknown[] = raw.bookings ?? raw ?? [];
-    if (bookings.length > 0) {
-      console.log("[SmoobuAdapter] Beispiel-Buchung (Felder):", Object.keys(bookings[0] as object).join(", "));
-      console.log("[SmoobuAdapter] Beispiel-Buchung (Daten):", JSON.stringify(bookings[0]));
+    // Explizit prüfen ob raw.bookings ein Array ist
+    const bookings: unknown[] = Array.isArray(raw.bookings)
+      ? raw.bookings
+      : Array.isArray(raw)
+        ? raw
+        : [];
+
+    console.log(`[SmoobuAdapter] Buchungen gefunden: ${bookings.length}`);
+
+    if (bookings.length === 0) {
+      console.warn("[SmoobuAdapter] Keine Buchungen. Rohdaten:", JSON.stringify(raw).slice(0, 500));
+    } else {
+      const first = bookings[0] as Record<string, unknown>;
+      console.log("[SmoobuAdapter] Erste Buchung - Felder:", Object.keys(first).join(", "));
+      console.log("[SmoobuAdapter] Erste Buchung - type:", first.type, "| arrival:", first.arrival, "| check-in:", first["check-in"], "| departure:", first.departure, "| check-out:", first["check-out"]);
     }
 
     const results: NormalizedReservation[] = [];
@@ -133,8 +156,8 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
 
       const r = parsed.data;
 
-      // Nur echte Buchungen, keine gesperrten Zeiträume
-      if (r.type && r.type !== "reservation") continue;
+      // Nur gesperrte Zeiträume überspringen – alles andere verarbeiten
+      if (r.type === "blocked") continue;
 
       // Datum aus allen bekannten Feldnamen versuchen
       const checkIn = extractDate(r, "arrival", "check-in", "checkIn", "check_in");
