@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { fetchSmoobuReservations, fetchSmoobuApartments } from "./smoobu";
+import { getChannelManagerAdapter } from "./channel-manager";
 import { addDays, format, subDays } from "date-fns";
 
 export async function syncBookings(organizationId: string): Promise<{
@@ -9,107 +9,74 @@ export async function syncBookings(organizationId: string): Promise<{
   apartmentsImported: number;
 }> {
   const stats = { created: 0, updated: 0, cancelled: 0, apartmentsImported: 0 };
+  const adapter = getChannelManagerAdapter();
 
-  // Apartments von Smoobu importieren / aktualisieren
-  const smoobuApartments = await fetchSmoobuApartments();
-  for (const sa of smoobuApartments) {
+  // ─── 1. Apartments importieren ───────────────────────────────────────────
+  const remoteApartments = await adapter.fetchApartments();
+
+  for (const apt of remoteApartments) {
     const existing = await prisma.apartment.findFirst({
-      where: { smoobuId: sa.id, organizationId },
+      where: { smoobuId: apt.externalId, organizationId },
     });
     if (!existing) {
       await prisma.apartment.create({
         data: {
           organizationId,
-          smoobuId: sa.id,
-          name: sa.name,
+          smoobuId: apt.externalId,
+          name: apt.name,
           active: true,
         },
       });
       stats.apartmentsImported++;
+      console.log(`[sync] Neue Unterkunft importiert: "${apt.name}" (ID ${apt.externalId})`);
     }
   }
 
-  // Apartments dieser Organization die eine Smoobu-ID haben
+  // ─── 2. Apartments dieser Organization laden ─────────────────────────────
   const apartments = await prisma.apartment.findMany({
     where: { organizationId, active: true, smoobuId: { not: null } },
   });
 
-  if (apartments.length === 0) return stats;
+  if (apartments.length === 0) {
+    console.warn("[sync] Keine Apartments mit externer ID gefunden.");
+    return stats;
+  }
 
-  const smoobuIdToApartmentId = new Map(
+  const externalIdToApartmentId = new Map(
     apartments.map((a) => [a.smoobuId!, a.id])
   );
 
-  // Zeitraum: 30 Tage zurück bis 365 Tage voraus
+  // ─── 3. Buchungen abrufen (30 Tage zurück bis 365 voraus) ───────────────
   const from = format(subDays(new Date(), 30), "yyyy-MM-dd");
   const to = format(addDays(new Date(), 365), "yyyy-MM-dd");
 
-  const reservations = await fetchSmoobuReservations({ from, to });
+  const reservations = await adapter.fetchReservations({ from, to });
+  console.log(`[sync] ${reservations.length} Buchungen von ${adapter.name} erhalten`);
 
-  // Debug: erste Buchung loggen um Feldnamen zu sehen
-  if (reservations.length > 0) {
-    console.log("[sync] Beispiel-Buchung von Smoobu:", JSON.stringify(reservations[0], null, 2));
-  }
-
+  // ─── 4. Buchungen upserten ───────────────────────────────────────────────
   for (const res of reservations) {
-    // Nur echte Buchungen, keine Blockierungen
-    if (res.type !== "reservation") continue;
-
-    const apartmentId = smoobuIdToApartmentId.get(res.apartment.id);
+    const apartmentId = externalIdToApartmentId.get(res.apartmentExternalId);
     if (!apartmentId) continue;
 
-    // Smoobu uses different field names depending on API version
-    // Try all known variants for check-in/check-out
-    const raw = res as unknown as Record<string, unknown>;
-    const checkInStr =
-      (raw["check-in"] as string) ??
-      (raw["arrival"] as string) ??
-      (raw["checkIn"] as string) ??
-      (raw["check_in"] as string);
-    const checkOutStr =
-      (raw["check-out"] as string) ??
-      (raw["departure"] as string) ??
-      (raw["checkOut"] as string) ??
-      (raw["check_out"] as string);
-
-    if (!checkInStr || !checkOutStr) {
-      console.warn(`[sync] Buchung ${res.id}: kein Datum gefunden, überspringe. Felder:`, Object.keys(raw).join(", "));
-      continue;
-    }
-
-    const checkIn = new Date(checkInStr);
-    const checkOut = new Date(checkOutStr);
-
-    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-      console.warn(`[sync] Buchung ${res.id}: ungültiges Datum "${checkInStr}" / "${checkOutStr}", überspringe.`);
-      continue;
-    }
-
-    const guestCount = (res.adults ?? 1) + (res.children ?? 0);
-    const guestName = (raw["guest-name"] as string) ?? (raw["guestName"] as string) ?? "Unbekannt";
-    const channelName = (raw["channel-name"] as string) ?? (raw["channelName"] as string) ?? null;
-    const arrivalTime = (raw["arrival-time"] as string) ?? (raw["arrivalTime"] as string) ?? null;
-    const departureTime = (raw["departure-time"] as string) ?? (raw["departureTime"] as string) ?? null;
-
-    const existingBooking = await prisma.booking.findUnique({
-      where: { smoobuId: res.id },
+    const existing = await prisma.booking.findUnique({
+      where: { smoobuId: res.externalId },
     });
 
-    if (!existingBooking) {
+    if (!existing) {
       await prisma.booking.create({
         data: {
           organizationId,
-          smoobuId: res.id,
+          smoobuId: res.externalId,
           apartmentId,
-          guestName,
-          guestEmail: res.email ?? null,
-          guestPhone: res.phone ?? null,
-          guestCount,
-          checkIn,
-          checkOut,
-          arrivalTime,
-          departureTime,
-          channelName,
+          guestName: res.guestName,
+          guestEmail: res.guestEmail,
+          guestPhone: res.guestPhone,
+          guestCount: res.guestCount,
+          checkIn: res.checkIn,
+          checkOut: res.checkOut,
+          arrivalTime: res.arrivalTime,
+          departureTime: res.departureTime,
+          channelName: res.channelName,
           status: "confirmed",
           syncedAt: new Date(),
         },
@@ -117,15 +84,15 @@ export async function syncBookings(organizationId: string): Promise<{
       stats.created++;
     } else {
       await prisma.booking.update({
-        where: { smoobuId: res.id },
+        where: { smoobuId: res.externalId },
         data: {
-          guestName,
-          guestCount,
-          checkIn,
-          checkOut,
-          arrivalTime,
-          departureTime,
-          channelName,
+          guestName: res.guestName,
+          guestCount: res.guestCount,
+          checkIn: res.checkIn,
+          checkOut: res.checkOut,
+          arrivalTime: res.arrivalTime,
+          departureTime: res.departureTime,
+          channelName: res.channelName,
           syncedAt: new Date(),
         },
       });
