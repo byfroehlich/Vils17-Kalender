@@ -176,7 +176,7 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         continue;
       }
 
-      const apartmentId = r.apartment?.id ?? r["apartment-id"];
+      const apartmentId = (r.apartment?.id ?? r["apartment-id"]) as number | undefined;
       if (!apartmentId) {
         console.warn(`[SmoobuAdapter] Buchung ${r.id}: keine Apartment-ID`);
         continue;
