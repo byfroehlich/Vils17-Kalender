@@ -46,6 +46,11 @@ export async function syncBookings(organizationId: string): Promise<{
 
   const reservations = await fetchSmoobuReservations({ from, to });
 
+  // Debug: erste Buchung loggen um Feldnamen zu sehen
+  if (reservations.length > 0) {
+    console.log("[sync] Beispiel-Buchung von Smoobu:", JSON.stringify(reservations[0], null, 2));
+  }
+
   for (const res of reservations) {
     // Nur echte Buchungen, keine Blockierungen
     if (res.type !== "reservation") continue;
@@ -53,7 +58,38 @@ export async function syncBookings(organizationId: string): Promise<{
     const apartmentId = smoobuIdToApartmentId.get(res.apartment.id);
     if (!apartmentId) continue;
 
+    // Smoobu uses different field names depending on API version
+    // Try all known variants for check-in/check-out
+    const raw = res as unknown as Record<string, unknown>;
+    const checkInStr =
+      (raw["check-in"] as string) ??
+      (raw["arrival"] as string) ??
+      (raw["checkIn"] as string) ??
+      (raw["check_in"] as string);
+    const checkOutStr =
+      (raw["check-out"] as string) ??
+      (raw["departure"] as string) ??
+      (raw["checkOut"] as string) ??
+      (raw["check_out"] as string);
+
+    if (!checkInStr || !checkOutStr) {
+      console.warn(`[sync] Buchung ${res.id}: kein Datum gefunden, überspringe. Felder:`, Object.keys(raw).join(", "));
+      continue;
+    }
+
+    const checkIn = new Date(checkInStr);
+    const checkOut = new Date(checkOutStr);
+
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      console.warn(`[sync] Buchung ${res.id}: ungültiges Datum "${checkInStr}" / "${checkOutStr}", überspringe.`);
+      continue;
+    }
+
     const guestCount = (res.adults ?? 1) + (res.children ?? 0);
+    const guestName = (raw["guest-name"] as string) ?? (raw["guestName"] as string) ?? "Unbekannt";
+    const channelName = (raw["channel-name"] as string) ?? (raw["channelName"] as string) ?? null;
+    const arrivalTime = (raw["arrival-time"] as string) ?? (raw["arrivalTime"] as string) ?? null;
+    const departureTime = (raw["departure-time"] as string) ?? (raw["departureTime"] as string) ?? null;
 
     const existingBooking = await prisma.booking.findUnique({
       where: { smoobuId: res.id },
@@ -65,15 +101,15 @@ export async function syncBookings(organizationId: string): Promise<{
           organizationId,
           smoobuId: res.id,
           apartmentId,
-          guestName: res["guest-name"] ?? "Unbekannt",
+          guestName,
           guestEmail: res.email ?? null,
           guestPhone: res.phone ?? null,
           guestCount,
-          checkIn: new Date(res["check-in"]),
-          checkOut: new Date(res["check-out"]),
-          arrivalTime: res["arrival-time"] ?? null,
-          departureTime: res["departure-time"] ?? null,
-          channelName: res["channel-name"] ?? null,
+          checkIn,
+          checkOut,
+          arrivalTime,
+          departureTime,
+          channelName,
           status: "confirmed",
           syncedAt: new Date(),
         },
@@ -83,13 +119,13 @@ export async function syncBookings(organizationId: string): Promise<{
       await prisma.booking.update({
         where: { smoobuId: res.id },
         data: {
-          guestName: res["guest-name"] ?? existingBooking.guestName,
+          guestName,
           guestCount,
-          checkIn: new Date(res["check-in"]),
-          checkOut: new Date(res["check-out"]),
-          arrivalTime: res["arrival-time"] ?? null,
-          departureTime: res["departure-time"] ?? null,
-          channelName: res["channel-name"] ?? null,
+          checkIn,
+          checkOut,
+          arrivalTime,
+          departureTime,
+          channelName,
           syncedAt: new Date(),
         },
       });
