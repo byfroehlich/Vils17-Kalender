@@ -29,15 +29,21 @@ export async function POST(req: NextRequest) {
   organizationId = session.user.organizationId;
   userId = session.user.id;
 
-  const stats = await syncBookings(organizationId);
+  try {
+    const stats = await syncBookings(organizationId);
 
-  await logAudit({
-    organizationId,
-    userId,
-    action: "booking.sync",
-    details: stats,
-    ipAddress: req.headers.get("x-forwarded-for") ?? undefined,
-  });
+    await logAudit({
+      organizationId,
+      userId,
+      action: "booking.sync",
+      details: stats as unknown as Record<string, unknown>,
+      ipAddress: req.headers.get("x-forwarded-for") ?? undefined,
+    });
 
-  return NextResponse.json({ success: true, ...stats });
+    return NextResponse.json({ success: true, ...stats });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : "Unbekannter Fehler";
+    console.error("[sync] Fehler:", message);
+    return NextResponse.json({ success: false, error: message }, { status: 500 });
+  }
 }

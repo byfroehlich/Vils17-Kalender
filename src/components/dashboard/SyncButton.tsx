@@ -23,22 +23,29 @@ export function SyncButton() {
       });
       clearTimeout(timeout);
 
-      const data = await res.json();
+      let data: Record<string, unknown> = {};
+      try {
+        data = await res.json();
+      } catch {
+        setMessage(`Serverfehler ${res.status}`);
+        return;
+      }
 
       if (data.success) {
-        const msg = data.apartmentsImported > 0
-          ? `✓ ${data.apartmentsImported} Unterkunft(en) importiert, +${data.created ?? 0} Buchungen`
+        const apart = (data.apartmentsImported as number) ?? 0;
+        const msg = apart > 0
+          ? `✓ ${apart} Unterkunft(en) importiert, +${data.created ?? 0} Buchungen`
           : `✓ Aktualisiert (+${data.created ?? 0} neu)`;
         setMessage(msg);
         router.refresh();
       } else {
-        setMessage("Fehler beim Synchronisieren");
+        setMessage(`Fehler: ${(data.error as string) ?? "unbekannt"}`);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {
         setMessage("Timeout – bitte nochmal versuchen");
       } else {
-        setMessage("Verbindungsfehler – nochmal versuchen");
+        setMessage(`Netzwerkfehler: ${err instanceof Error ? err.message : "unbekannt"}`);
       }
     } finally {
       setLoading(false);
