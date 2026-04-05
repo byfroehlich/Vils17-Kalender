@@ -1,13 +1,33 @@
 import { prisma } from "./prisma";
-import { fetchSmoobuReservations } from "./smoobu";
+import { fetchSmoobuReservations, fetchSmoobuApartments } from "./smoobu";
 import { addDays, format, subDays } from "date-fns";
 
 export async function syncBookings(organizationId: string): Promise<{
   created: number;
   updated: number;
   cancelled: number;
+  apartmentsImported: number;
 }> {
-  const stats = { created: 0, updated: 0, cancelled: 0 };
+  const stats = { created: 0, updated: 0, cancelled: 0, apartmentsImported: 0 };
+
+  // Apartments von Smoobu importieren / aktualisieren
+  const smoobuApartments = await fetchSmoobuApartments();
+  for (const sa of smoobuApartments) {
+    const existing = await prisma.apartment.findFirst({
+      where: { smoobuId: sa.id, organizationId },
+    });
+    if (!existing) {
+      await prisma.apartment.create({
+        data: {
+          organizationId,
+          smoobuId: sa.id,
+          name: sa.name,
+          active: true,
+        },
+      });
+      stats.apartmentsImported++;
+    }
+  }
 
   // Apartments dieser Organization die eine Smoobu-ID haben
   const apartments = await prisma.apartment.findMany({
