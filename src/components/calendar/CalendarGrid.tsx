@@ -70,12 +70,16 @@ export function CalendarGrid({
 
   // Kombinierter Kalender: alle Apartments in einem Grid
   if (viewMode === "combined") {
-    // Pro Tag: Buchungen aller Apartments anzeigen (farblich nach Apartment)
     const allBookingsSorted = [...bookings].sort(
       (a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
     );
 
-    // Farbe je Apartment (apartment.color oder Fallback aus Palette)
+    // Jede Buchung bekommt eine eigene Farbe aus der Palette (wie getrennte Ansicht)
+    const bookingColorMap = new Map(
+      allBookingsSorted.map((b, i) => [b.id, BOOKING_PALETTE[i % BOOKING_PALETTE.length]])
+    );
+
+    // Apartment-Farbe nur für die Legende
     const aptColorMap = new Map(apartments.map((a, i) => [a.id, a.color ?? BOOKING_PALETTE[i % BOOKING_PALETTE.length].bg]));
 
     return (
@@ -125,17 +129,20 @@ export function CalendarGrid({
                   </span>
                   <div className="flex flex-col gap-0.5">
                     {dayBookings.map((b) => {
-                      const color = aptColorMap.get(b.apartmentId) ?? "#3b82f6";
+                      const color = bookingColorMap.get(b.id) ?? BOOKING_PALETTE[0];
                       const checkIn = startOfDay(new Date(b.checkIn));
                       const checkOut = startOfDay(new Date(b.checkOut));
                       const dayIndex = (getDay(day) + 6) % 7;
                       const isFirst = isSameDay(day, checkIn) || dayIndex === 0;
-                      const isLast = isSameDay(addDays(day, 1), checkOut) || dayIndex === 6;
+                      const isLast = isSameDay(day, checkOut) || dayIndex === 6;
                       return (
                         <div
                           key={b.id}
-                          className={cn("h-5 flex items-center text-white text-xs font-semibold overflow-hidden", isFirst ? "ml-0.5 rounded-l-full pl-1.5" : "ml-0", isLast ? "mr-0.5 rounded-r-full" : "mr-0")}
-                          style={{ backgroundColor: color }}
+                          className={cn("h-5 flex items-center text-xs font-semibold overflow-hidden",
+                            isFirst ? "ml-0.5 rounded-l-full pl-1.5" : "ml-0",
+                            isLast ? "mr-0.5 rounded-r-full" : "mr-0"
+                          )}
+                          style={{ backgroundColor: color.bg, color: color.text }}
                         >
                           {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
                         </div>
