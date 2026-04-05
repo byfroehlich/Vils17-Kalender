@@ -18,30 +18,18 @@ interface Booking {
   } | null;
 }
 
-const cleaningDot: Record<string, string> = {
-  UNASSIGNED: "bg-orange-400",
-  SELF_CLEAN: "bg-blue-400",
-  ASSIGNED: "bg-blue-500",
-  COMPLETED: "bg-green-500",
+// Badge-Stil: bg + Text + ob es "Handlungsbedarf" hat (= auffälliger)
+const cleaningBadge: Record<string, { bg: string; text: string; urgent: boolean; label: string }> = {
+  UNASSIGNED: { bg: "bg-orange-100 border border-orange-300", text: "text-orange-800", urgent: true,  label: "⚠ Reinigung offen" },
+  SELF_CLEAN:  { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Selbstreinigung" },
+  ASSIGNED:    { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Reiniger zugewiesen" },
+  COMPLETED:   { bg: "bg-green-100 border border-green-200",  text: "text-green-800",  urgent: false, label: "✓ Erledigt" },
 };
 
-const cleaningLabel: Record<string, string> = {
-  UNASSIGNED: "Reinigung offen",
-  SELF_CLEAN: "Selbstreinigung",
-  ASSIGNED: "Reiniger zugewiesen",
-  COMPLETED: "Erledigt",
-};
-
-const laundryDot: Record<string, string> = {
-  OPEN: "bg-red-400",
-  ORDERED: "bg-amber-400",
-  AVAILABLE: "bg-green-500",
-};
-
-const laundryLabel: Record<string, string> = {
-  OPEN: "Wäsche offen",
-  ORDERED: "Wäsche bestellt",
-  AVAILABLE: "Wäsche vorhanden",
+const laundryBadge: Record<string, { bg: string; text: string; urgent: boolean; label: string }> = {
+  OPEN:      { bg: "bg-red-100    border border-red-300",    text: "text-red-800",    urgent: true,  label: "⚠ Wäsche offen" },
+  ORDERED:   { bg: "bg-amber-100  border border-amber-200",  text: "text-amber-800",  urgent: false, label: "◷ Wäsche bestellt" },
+  AVAILABLE: { bg: "bg-green-100  border border-green-200",  text: "text-green-800",  urgent: false, label: "✓ Wäsche vorhanden" },
 };
 
 export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
@@ -92,20 +80,25 @@ export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
                 </span>
               </div>
 
-              {/* Status Dots */}
-              <div className="flex items-center gap-3">
-                <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                  <span className={`w-1.5 h-1.5 rounded-full ${cleaningDot[cleaningStatus] ?? "bg-zinc-300"}`} />
-                  {cleaningLabel[cleaningStatus] ?? cleaningStatus}
-                  {cleaningStatus === "ASSIGNED" && assignment?.cleaner?.name && (
-                    <span className="text-zinc-400">· {assignment.cleaner.name}</span>
-                  )}
-                </span>
-                <span className="text-zinc-200">·</span>
-                <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                  <span className={`w-1.5 h-1.5 rounded-full ${laundryDot[laundryStatus] ?? "bg-zinc-300"}`} />
-                  {laundryLabel[laundryStatus] ?? laundryStatus}
-                </span>
+              {/* Status Badges */}
+              <div className="flex items-center gap-2 flex-wrap">
+                {(() => {
+                  const cb = cleaningBadge[cleaningStatus];
+                  const lb = laundryBadge[laundryStatus];
+                  return (
+                    <>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${cb?.bg ?? ""} ${cb?.text ?? "text-zinc-500"}`}>
+                        {cb?.label ?? cleaningStatus}
+                        {cleaningStatus === "ASSIGNED" && assignment?.cleaner?.name && (
+                          <span className="ml-1 opacity-70">· {assignment.cleaner.name}</span>
+                        )}
+                      </span>
+                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${lb?.bg ?? ""} ${lb?.text ?? "text-zinc-500"}`}>
+                        {lb?.label ?? laundryStatus}
+                      </span>
+                    </>
+                  );
+                })()}
               </div>
             </div>
 

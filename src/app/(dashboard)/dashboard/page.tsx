@@ -37,26 +37,28 @@ export default async function DashboardPage() {
           checkIn: { gte: now, lte: in7Days },
         },
       }),
-      // Offene Reinigungen (upcoming checkouts ohne Zuweisung)
-      prisma.cleaningAssignment.count({
+      // Offene Reinigungen: UNASSIGNED oder kein Assignment
+      prisma.booking.count({
         where: {
           organizationId: orgId,
-          status: "UNASSIGNED",
-          booking: {
-            status: "confirmed",
-            checkOut: { gte: now, lte: in7Days },
-          },
+          status: "confirmed",
+          checkOut: { gte: now, lte: in7Days },
+          OR: [
+            { cleaningAssignment: { status: "UNASSIGNED" } },
+            { cleaningAssignment: null },
+          ],
         },
       }),
-      // Offene Wäsche bei upcoming bookings
-      prisma.cleaningAssignment.count({
+      // Offene Wäsche: OPEN oder kein Assignment
+      prisma.booking.count({
         where: {
           organizationId: orgId,
-          laundryStatus: "OPEN",
-          booking: {
-            status: "confirmed",
-            checkOut: { gte: now, lte: in14Days },
-          },
+          status: "confirmed",
+          checkOut: { gte: now, lte: in14Days },
+          OR: [
+            { cleaningAssignment: { laundryStatus: "OPEN" } },
+            { cleaningAssignment: null },
+          ],
         },
       }),
       // Nächste 10 Buchungen
@@ -75,15 +77,17 @@ export default async function DashboardPage() {
           },
         },
       }),
-      // Problematische Buchungen in 14 Tagen (keine Reinigung oder Wäsche offen)
+      // Problematische Buchungen in 14 Tagen (kein Assignment, UNASSIGNED, oder Wäsche OPEN)
       prisma.booking.findMany({
         where: {
           organizationId: orgId,
           status: "confirmed",
           checkIn: { gte: now, lte: in14Days },
-          cleaningAssignment: {
-            OR: [{ status: "UNASSIGNED" }, { laundryStatus: "OPEN" }],
-          },
+          OR: [
+            { cleaningAssignment: null },
+            { cleaningAssignment: { status: "UNASSIGNED" } },
+            { cleaningAssignment: { laundryStatus: "OPEN" } },
+          ],
         },
         orderBy: { checkIn: "asc" },
         include: {
