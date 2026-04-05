@@ -39,7 +39,13 @@ function isOccupied(day: Date, booking: Booking): boolean {
   const checkIn = startOfDay(new Date(booking.checkIn));
   const checkOut = startOfDay(new Date(booking.checkOut));
   const d = startOfDay(day);
-  return d >= checkIn && d < checkOut; // checkOut-Tag ist frei (nächster Gast)
+  // Abreisetag einschließen: Gast reist ab, neuer kann ankommen → beide sichtbar
+  return d >= checkIn && d <= checkOut;
+}
+
+// Prüft ob der Tag ausschließlich ein Abreisetag ist (kein Übernachtungstag)
+function isCheckoutOnly(day: Date, booking: Booking): boolean {
+  return isSameDay(day, new Date(booking.checkOut));
 }
 
 export function CalendarGrid({
@@ -109,7 +115,9 @@ export function CalendarGrid({
             ))}
             {days.map((day) => {
               const today = isToday(day);
-              const dayBookings = allBookingsSorted.filter((b) => isOccupied(day, b));
+              const dayBookings = allBookingsSorted
+                .filter((b) => isOccupied(day, b))
+                .sort((a, b) => isCheckoutOnly(day, a) ? 1 : isCheckoutOnly(day, b) ? -1 : 0);
               return (
                 <div key={day.toISOString()} className={cn("border-b border-r border-zinc-100 flex flex-col p-1", today && "bg-blue-50")} style={{ minHeight: 64 }}>
                   <span className={cn("text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full mb-0.5", today ? "bg-blue-600 text-white" : "text-zinc-600")}>
@@ -212,27 +220,24 @@ export function CalendarGrid({
                 ))}
 
                 {days.map((day) => {
-                  const booking = aptBookings.find((b) => isOccupied(day, b));
+                  // Alle Buchungen die diesen Tag berühren (An- oder Abreise)
+                  const dayBookings = aptBookings.filter((b) => isOccupied(day, b));
                   const today = isToday(day);
-                  const dayIndex = (getDay(day) + 6) % 7; // 0=Mo, 6=So
+                  const dayIndex = (getDay(day) + 6) % 7;
                   const isMonday = dayIndex === 0;
                   const isSunday = dayIndex === 6;
 
-                  let barLeft = false;
-                  let barRight = false;
-                  let showName = false;
-                  let color = { bg: "", text: "" };
-
-                  if (booking) {
-                    const checkIn = startOfDay(new Date(booking.checkIn));
-                    const checkOut = startOfDay(new Date(booking.checkOut));
+                  function barProps(b: Booking) {
+                    const checkIn = startOfDay(new Date(b.checkIn));
+                    const checkOut = startOfDay(new Date(b.checkOut));
                     const isFirstDay = isSameDay(day, checkIn);
-                    const isLastOccupied = isSameDay(addDays(day, 1), checkOut);
-
-                    barLeft = isFirstDay || isMonday;
-                    barRight = isLastOccupied || isSunday;
-                    showName = isFirstDay || isMonday;
-                    color = bookingColor(booking);
+                    const isLastDay = isSameDay(day, checkOut);
+                    return {
+                      barLeft: isFirstDay || isMonday,
+                      barRight: isLastDay || isSunday,
+                      showName: isFirstDay || isMonday,
+                      color: bookingColor(b),
+                    };
                   }
 
                   return (
@@ -245,36 +250,39 @@ export function CalendarGrid({
                     >
                       {/* Tageszahl */}
                       <div className="px-1.5 pt-1">
-                        <span
-                          className={cn(
-                            "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full",
-                            today ? "bg-blue-600 text-white" : "text-zinc-600"
-                          )}
-                        >
+                        <span className={cn(
+                          "text-xs font-semibold w-6 h-6 flex items-center justify-center rounded-full",
+                          today ? "bg-blue-600 text-white" : "text-zinc-600"
+                        )}>
                           {format(day, "d")}
                         </span>
                       </div>
 
-                      {/* Buchungsbalken */}
-                      {booking && (
-                        <div className="flex-1 flex items-center px-0 pb-1.5">
-                          <div
-                            className={cn(
-                              "h-6 w-full flex items-center overflow-hidden",
-                              barLeft ? "ml-1 rounded-l-full pl-2" : "ml-0 pl-1",
-                              barRight ? "mr-1 rounded-r-full pr-2" : "mr-0 pr-0"
-                            )}
-                            style={{ backgroundColor: color.bg }}
-                          >
-                            {showName && (
-                              <span
-                                className="text-xs font-semibold truncate leading-none"
-                                style={{ color: color.text }}
-                              >
-                                {booking.guestName.split(" ")[0]}
-                              </span>
-                            )}
-                          </div>
+                      {/* Buchungsbalken – bei Gleichtags-Wechsel zwei schmale Balken */}
+                      {dayBookings.length > 0 && (
+                        <div className={cn("flex-1 flex flex-col justify-center gap-0.5 pb-1", dayBookings.length > 1 ? "pb-0.5" : "pb-1.5")}>
+                          {dayBookings.map((b) => {
+                            const { barLeft, barRight, showName, color } = barProps(b);
+                            const height = dayBookings.length > 1 ? "h-[10px]" : "h-6";
+                            return (
+                              <div key={b.id} className="w-full flex items-center">
+                                <div
+                                  className={cn(
+                                    `${height} w-full flex items-center overflow-hidden`,
+                                    barLeft ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
+                                    barRight ? "mr-1 rounded-r-full" : "mr-0"
+                                  )}
+                                  style={{ backgroundColor: color.bg }}
+                                >
+                                  {showName && dayBookings.length === 1 && (
+                                    <span className="text-xs font-semibold truncate leading-none" style={{ color: color.text }}>
+                                      {b.guestName.split(" ")[0]}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
