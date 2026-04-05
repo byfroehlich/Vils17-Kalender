@@ -14,20 +14,35 @@ export function SyncButton() {
     setMessage("");
 
     try {
-      const res = await fetch("/api/bookings/sync", { method: "POST" });
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 90_000);
+
+      const res = await fetch("/api/bookings/sync", {
+        method: "POST",
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
       const data = await res.json();
 
       if (data.success) {
-        setMessage(`✓ Aktualisiert (+${data.created ?? 0} neu)`);
+        const msg = data.apartmentsImported > 0
+          ? `✓ ${data.apartmentsImported} Unterkunft(en) importiert, +${data.created ?? 0} Buchungen`
+          : `✓ Aktualisiert (+${data.created ?? 0} neu)`;
+        setMessage(msg);
         router.refresh();
       } else {
         setMessage("Fehler beim Synchronisieren");
       }
-    } catch {
-      setMessage("Verbindungsfehler");
+    } catch (err: unknown) {
+      if (err instanceof Error && err.name === "AbortError") {
+        setMessage("Timeout – bitte nochmal versuchen");
+      } else {
+        setMessage("Verbindungsfehler – nochmal versuchen");
+      }
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(""), 4000);
+      setTimeout(() => setMessage(""), 6000);
     }
   }
 
