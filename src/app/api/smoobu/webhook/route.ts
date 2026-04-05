@@ -47,7 +47,8 @@ export async function POST(req: NextRequest) {
   const isCancelled =
     action === "reservation.cancelled" ||
     action === "cancelReservation" ||
-    (res.type as string) === "cancellation";
+    (res.type as string) === "cancellation" ||
+    (res["is-blocked-booking"] as boolean) === true;
 
   if (isCancelled && smoobuId) {
     await prisma.booking.updateMany({
@@ -64,16 +65,30 @@ export async function POST(req: NextRequest) {
     action === "reservation.modified" ||
     action === "newReservation" ||
     action === "modifyReservation" ||
-    action === "" || // Smoobu sendet manchmal kein action-Feld
+    action === "" ||
     (res.type as string) === "reservation";
 
   if (isReservation && smoobuId) {
-    const checkIn = res["check-in"] as string;
-    const checkOut = res["check-out"] as string;
+    // Smoobu nutzt "arrival"/"departure" für Datum
+    // "check-in"/"check-out" sind Uhrzeiten (oft leer)
+    const checkInStr = (res.arrival as string) ?? (res["check-in"] as string);
+    const checkOutStr = (res.departure as string) ?? (res["check-out"] as string);
 
-    if (!checkIn || !checkOut) {
+    if (!checkInStr || !checkOutStr) {
+      console.warn("[webhook] Kein Datum gefunden für Buchung", smoobuId, "Felder:", Object.keys(res).join(", "));
       return NextResponse.json({ received: true });
     }
+
+    const checkIn = new Date(checkInStr);
+    const checkOut = new Date(checkOutStr);
+
+    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
+      console.warn("[webhook] Ungültiges Datum für Buchung", smoobuId, checkInStr, checkOutStr);
+      return NextResponse.json({ received: true });
+    }
+
+    const channelName = (res.channel as any)?.name ?? (res["channel-name"] as string) ?? null;
+    const guestName = (res["guest-name"] as string) ?? (res.firstname as string) ?? "Unbekannt";
 
     await prisma.booking.upsert({
       where: { smoobuId },
@@ -81,25 +96,26 @@ export async function POST(req: NextRequest) {
         organizationId: orgId,
         smoobuId,
         apartmentId: apartment.id,
-        guestName: (res["guest-name"] as string) ?? "Unbekannt",
+        guestName,
         guestEmail: (res.email as string) ?? null,
         guestPhone: (res.phone as string) ?? null,
         guestCount: ((res.adults as number) ?? 1) + ((res.children as number) ?? 0),
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        arrivalTime: (res["arrival-time"] as string) ?? null,
-        departureTime: (res["departure-time"] as string) ?? null,
-        channelName: (res["channel-name"] as string) ?? null,
+        checkIn,
+        checkOut,
+        arrivalTime: (res["check-in"] as string) || null,
+        departureTime: (res["check-out"] as string) || null,
+        channelName,
         status: "confirmed",
         syncedAt: new Date(),
       },
       update: {
-        guestName: (res["guest-name"] as string) ?? undefined,
+        guestName,
         guestCount: ((res.adults as number) ?? 1) + ((res.children as number) ?? 0),
-        checkIn: new Date(checkIn),
-        checkOut: new Date(checkOut),
-        arrivalTime: (res["arrival-time"] as string) ?? null,
-        departureTime: (res["departure-time"] as string) ?? null,
+        checkIn,
+        checkOut,
+        arrivalTime: (res["check-in"] as string) || null,
+        departureTime: (res["check-out"] as string) || null,
+        channelName,
         status: "confirmed",
         syncedAt: new Date(),
       },

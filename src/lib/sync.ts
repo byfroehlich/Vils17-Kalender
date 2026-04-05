@@ -53,6 +53,24 @@ export async function syncBookings(organizationId: string): Promise<{
   const reservations = await adapter.fetchReservations({ from, to });
   console.log(`[sync] ${reservations.length} Buchungen von ${adapter.name} erhalten`);
 
+  // ─── 3b. Fehlende CleaningAssignments für bestehende Buchungen nachholen ──
+  const bookingsWithoutAssignment = await prisma.booking.findMany({
+    where: {
+      organizationId,
+      status: "confirmed",
+      cleaningAssignment: null,
+    },
+    select: { id: true },
+  });
+  for (const b of bookingsWithoutAssignment) {
+    await prisma.cleaningAssignment.create({
+      data: { organizationId, bookingId: b.id, status: "UNASSIGNED", laundryStatus: "OPEN" },
+    });
+  }
+  if (bookingsWithoutAssignment.length > 0) {
+    console.log(`[sync] ${bookingsWithoutAssignment.length} fehlende CleaningAssignments nachgeholt`);
+  }
+
   // ─── 4. Buchungen upserten ───────────────────────────────────────────────
   for (const res of reservations) {
     const apartmentId = externalIdToApartmentId.get(res.apartmentExternalId);
@@ -63,7 +81,7 @@ export async function syncBookings(organizationId: string): Promise<{
     });
 
     if (!existing) {
-      await prisma.booking.create({
+      const booking = await prisma.booking.create({
         data: {
           organizationId,
           smoobuId: res.externalId,
@@ -79,6 +97,15 @@ export async function syncBookings(organizationId: string): Promise<{
           channelName: res.channelName,
           status: "confirmed",
           syncedAt: new Date(),
+        },
+      });
+      // CleaningAssignment automatisch anlegen
+      await prisma.cleaningAssignment.create({
+        data: {
+          organizationId,
+          bookingId: booking.id,
+          status: "UNASSIGNED",
+          laundryStatus: "OPEN",
         },
       });
       stats.created++;

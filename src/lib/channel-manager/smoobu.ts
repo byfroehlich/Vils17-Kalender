@@ -21,32 +21,35 @@ const SmoobuApartmentSchema = z.object({
 
 const SmoobuReservationSchema = z.object({
   id: z.number(),
-  type: z.string().optional(), // "reservation" | "blocked"
-  // Datums-Felder: Smoobu nutzt "arrival"/"departure" (nicht "check-in"/"check-out")
+  // type: "reservation" | "cancellation" | "blocked"
+  type: z.string().optional(),
+  "is-blocked-booking": z.boolean().optional(),
+  // Datum: Smoobu nutzt "arrival" und "departure"
   arrival: z.string().optional(),
   departure: z.string().optional(),
-  // Fallback-Varianten (ältere API-Versionen)
-  "check-in": z.string().optional(),
-  "check-out": z.string().optional(),
-  checkIn: z.string().optional(),
-  checkOut: z.string().optional(),
+  // check-in/check-out sind bei Smoobu UHRZEITEN (meist leer), keine Daten
+  "check-in": z.string().optional().nullable(),
+  "check-out": z.string().optional().nullable(),
   // Gast
-  "guest-name": z.string().optional(),
-  guestName: z.string().optional(),
+  "guest-name": z.string().optional().nullable(),
+  firstname: z.string().optional().nullable(),
+  lastname: z.string().optional().nullable(),
   email: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   adults: z.number().optional().nullable(),
   children: z.number().optional().nullable(),
-  // Zeiten
-  "arrival-time": z.string().optional().nullable(),
-  "departure-time": z.string().optional().nullable(),
-  // Kanal
-  "channel-name": z.string().optional().nullable(),
-  channelName: z.string().optional().nullable(),
+  // Kanal (verschachteltes Objekt)
+  channel: z.object({
+    id: z.number().optional(),
+    name: z.string().optional(),
+  }).optional().nullable(),
+  // Preis
+  price: z.number().optional().nullable(),
+  // Notizen
+  notice: z.string().optional().nullable(),
   // Wohnung
   apartment: z.object({ id: z.number(), name: z.string().optional() }).optional(),
-  "apartment-id": z.number().optional(),
-}).passthrough(); // unbekannte Felder durchlassen statt fehler
+}).passthrough();
 
 type SmoobuReservation = z.infer<typeof SmoobuReservationSchema>;
 
@@ -156,12 +159,14 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
 
       const r = parsed.data;
 
-      // Nur gesperrte Zeiträume überspringen – alles andere verarbeiten
-      if (r.type === "blocked") continue;
+      // Stornierungen und gesperrte Zeiträume überspringen
+      if (r.type === "blocked" || r.type === "cancellation") continue;
+      if (r["is-blocked-booking"] === true) continue;
 
-      // Datum aus allen bekannten Feldnamen versuchen
-      const checkIn = extractDate(r, "arrival", "check-in", "checkIn", "check_in");
-      const checkOut = extractDate(r, "departure", "check-out", "checkOut", "check_out");
+      // Datum: Smoobu nutzt "arrival" und "departure"
+      // check-in/check-out sind Uhrzeiten (meist leer) – NICHT für Datum verwenden
+      const checkIn = extractDate(r, "arrival");
+      const checkOut = extractDate(r, "departure");
 
       if (!checkIn || !checkOut) {
         console.warn(
@@ -177,18 +182,22 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         continue;
       }
 
+      // Kanalname aus dem verschachtelten channel-Objekt
+      const channelName = r.channel?.name ?? null;
+
       results.push({
         externalId: r.id,
         apartmentExternalId: apartmentId,
-        guestName: extractString(r, "guest-name", "guestName") ?? "Unbekannt",
+        guestName: extractString(r, "guest-name", "firstname") ?? "Unbekannt",
         guestEmail: (r.email as string | null) ?? null,
         guestPhone: (r.phone as string | null) ?? null,
-        guestCount: (r.adults ?? 1) + (r.children ?? 0),
+        guestCount: ((r.adults as number) ?? 1) + ((r.children as number) ?? 0),
         checkIn,
         checkOut,
-        arrivalTime: extractString(r, "arrival-time", "arrivalTime"),
-        departureTime: extractString(r, "departure-time", "departureTime"),
-        channelName: extractString(r, "channel-name", "channelName"),
+        // check-in/check-out sind bei Smoobu die Uhrzeiten
+        arrivalTime: extractString(r, "check-in") || null,
+        departureTime: extractString(r, "check-out") || null,
+        channelName,
         status: "confirmed",
       });
     }
