@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDateLong, formatDate, getCleaningStatusColor, getLaundryStatusColor, calculateLaundryQuantity } from "@/lib/utils";
+import { formatDateLong, formatDate, getCleaningStatusColor, getLaundryStatusColor } from "@/lib/utils";
 import { Users, Calendar, Home, Globe, ArrowLeft, Brush, WashingMachine, CheckCircle } from "lucide-react";
 import Link from "next/link";
 
