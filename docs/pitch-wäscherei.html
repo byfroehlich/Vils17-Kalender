@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Turnio — Partnerschaft</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Inter', -apple-system, sans-serif;
+      background: #fff;
+      color: #18181b;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ── */
+    .page {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 56px 64px;
+    }
+
+    /* ── Header ── */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 48px;
+      padding-bottom: 28px;
+      border-bottom: 2px solid #0e7490;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-mark {
+      width: 44px;
+      height: 44px;
+      background: #0e7490;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -1px;
+    }
+
+    .logo-text {
+      font-size: 22px;
+      font-weight: 700;
+      color: #0e7490;
+      letter-spacing: -0.5px;
+    }
+
+    .logo-sub {
+      font-size: 11px;
+      color: #71717a;
+      font-weight: 400;
+      margin-top: 1px;
+    }
+
+    .header-tag {
+      background: #f0f9ff;
+      color: #0e7490;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 6px 14px;
+      border-radius: 20px;
+      border: 1px solid #bae6fd;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* ── Hero ── */
+    .hero {
+      margin-bottom: 44px;
+    }
+
+    .hero h1 {
+      font-size: 30px;
+      font-weight: 700;
+      color: #0f172a;
+      letter-spacing: -0.8px;
+      line-height: 1.2;
+      margin-bottom: 12px;
+    }
+
+    .hero h1 span {
+      color: #0e7490;
+    }
+
+    .hero p {
+      font-size: 15px;
+      color: #52525b;
+      max-width: 560px;
+      line-height: 1.65;
+    }
+
+    /* ── Problem Box ── */
+    .problem {
+      background: #fafafa;
+      border: 1px solid #e4e4e7;
+      border-left: 4px solid #0e7490;
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin-bottom: 40px;
+    }
+
+    .problem p {
+      color: #3f3f46;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .problem strong {
+      color: #0f172a;
+      font-weight: 600;
+    }
+
+    /* ── Section ── */
+    .section {
+      margin-bottom: 40px;
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #0e7490;
+      margin-bottom: 16px;
+    }
+
+    /* ── Three Columns ── */
+    .columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 40px;
+    }
+
+    .col {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .col-icon {
+      font-size: 22px;
+      margin-bottom: 10px;
+    }
+
+    .col h3 {
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 8px;
+    }
+
+    .col p {
+      font-size: 12.5px;
+      color: #52525b;
+      line-height: 1.6;
+    }
+
+    /* ── Highlight Box ── */
+    .highlight {
+      background: #0e7490;
+      border-radius: 12px;
+      padding: 28px 32px;
+      margin-bottom: 40px;
+      color: white;
+    }
+
+    .highlight h2 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      letter-spacing: -0.3px;
+    }
+
+    .highlight p {
+      font-size: 14px;
+      opacity: 0.85;
+      line-height: 1.65;
+      max-width: 560px;
+    }
+
+    .highlight .tagline {
+      margin-top: 16px;
+      font-size: 15px;
+      font-weight: 600;
+      opacity: 1;
+    }
+
+    /* ── Items List ── */
+    .items {
+      list-style: none;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .items li {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      font-size: 13.5px;
+      color: #3f3f46;
+    }
+
+    .items li::before {
+      content: '';
+      width: 6px;
+      height: 6px;
+      background: #0e7490;
+      border-radius: 50%;
+      margin-top: 7px;
+      flex-shrink: 0;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      margin-top: 48px;
+      padding-top: 24px;
+      border-top: 1px solid #e4e4e7;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-left {
+      font-size: 12px;
+      color: #71717a;
+    }
+
+    .footer-left strong {
+      display: block;
+      font-size: 14px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 2px;
+    }
+
+    .footer-right {
+      font-size: 11px;
+      color: #a1a1aa;
+      text-align: right;
+    }
+
+    /* ── Print ── */
+    @media print {
+      body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .page { padding: 40px 48px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <div class="logo-mark">T</div>
+        <div>
+          <div class="logo-text">Turnio</div>
+          <div class="logo-sub">Ferienwohnungen. Einfach organisiert.</div>
+        </div>
+      </div>
+      <div class="header-tag">Partnerschaft</div>
+    </div>
+
+    <!-- Hero -->
+    <div class="hero">
+      <h1>Die App für Vermieter<br>im <span>Allgäu</span> — und ihre Wäscherei.</h1>
+      <p>Turnio automatisiert Reinigungsplanung und Wäschebestellung für Ferienwohnungsvermieter. Wir suchen eine Wäscherei als Partner — eine die modern aufgestellt ist und mit uns wächst.</p>
+    </div>
+
+    <!-- Problem -->
+    <div class="problem">
+      <p>Ein Gast checkt aus. Der Vermieter schreibt den Reiniger per WhatsApp. Die Wäsche muss bestellt werden — per Anruf oder Fahrt zur Wäscherei. Das nächste Check-in ist in zwei Tagen.<br><br>
+      <strong>Das ist der Alltag der meisten Vermieter im Allgäu. Wir automatisieren ihn.</strong></p>
+    </div>
+
+    <!-- Three columns -->
+    <div class="section-title">Was Turnio verbindet</div>
+    <div class="columns">
+      <div class="col">
+        <div class="col-icon">🏠</div>
+        <h3>Vermieter</h3>
+        <p>Buchungen automatisch importiert. Reinigung und Wäsche per Klick. Kalender, Statistiken, alles mobil.</p>
+      </div>
+      <div class="col">
+        <div class="col-icon">🧹</div>
+        <h3>Reiniger</h3>
+        <p>Aufträge aufs Handy, Zusagen per Klick. Planbare Stammkunden statt spontaner WhatsApp-Nachrichten.</p>
+      </div>
+      <div class="col">
+        <div class="col-icon">👕</div>
+        <h3>Wäscherei</h3>
+        <p>Bestellungen kommen strukturiert und automatisch. Mehr Volumen, weniger Koordinationsaufwand.</p>
+      </div>
+    </div>
+
+    <!-- Highlight -->
+    <div class="highlight">
+      <h2>Warum diese Partnerschaft Sinn ergibt</h2>
+      <p>Ihr eröffnet mit moderner Infrastruktur, RFID-Tracking und einer eigenen App. Wir bauen eine Plattform die genau das braucht: eine professionelle Wäscherei die verlässlich liefert.</p>
+      <p class="tagline">Wir schicken euch die Bestellungen. Ihr liefert die Wäsche. Beide wachsen.</p>
+    </div>
+
+    <!-- Was wir uns vorstellen -->
+    <div class="section">
+      <div class="section-title">Was wir uns vorstellen</div>
+      <ul class="items">
+        <li>Technische Anbindung eures Bestellsystems — API, Webhook, oder ein gemeinsam gefundener Weg</li>
+        <li>Eure Wäscherei als Standard-Partner für alle Vermieter auf der Plattform im Allgäu</li>
+        <li>Bestellungen kommen strukturiert, automatisch und mit allen nötigen Infos (Menge, Termin, Wohnung)</li>
+        <li>Eure bestehenden Vermieter-Kunden können die Plattform nutzen — ihr bringt sie mit, wir bringen den Mehrwert</li>
+        <li>Kein Exklusivvertrag, keine Verpflichtungen — wir reden über die Details wenn der Zeitpunkt passt</li>
+      </ul>
+    </div>
+
+    <!-- Wer dahinter steckt -->
+    <div class="section">
+      <div class="section-title">Wer dahinter steckt</div>
+      <ul class="items">
+        <li>Die App läuft bereits — live, mit echten Buchungen, für eigene Ferienwohnungen in Vils/Tirol</li>
+        <li>Kein anonymes Startup — jemand aus der Region, der das Problem selbst kennt und löst</li>
+        <li>Start im Allgäu + Außerfern/Reutte, dann schrittweise Ausweitung</li>
+      </ul>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <div class="footer-left">
+        <strong><!-- DEIN NAME --></strong>
+        <!-- TELEFON / E-MAIL -->
+      </div>
+      <div class="footer-right">
+        turnio.app<br>
+        Allgäu · Außerfern · Tirol
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
