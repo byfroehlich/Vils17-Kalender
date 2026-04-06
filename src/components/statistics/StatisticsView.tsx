@@ -166,20 +166,22 @@ export function StatisticsView({
         />
       </div>
 
-      {/* Monatsübersicht */}
+      {/* Monatsübersicht — Desktop: Tabelle, Mobile: Karten */}
       <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-        <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
+        <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
           <Calendar className="w-4 h-4 text-zinc-400" />
           <span className="text-sm font-semibold text-zinc-800">Monatliche Übersicht {selectedYear}</span>
         </div>
-        <div className="overflow-x-auto">
+
+        {/* Desktop-Tabelle */}
+        <div className="hidden sm:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-zinc-100">
                 <th className="text-left px-5 py-2.5 font-medium text-zinc-400 w-16">Monat</th>
                 <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Buchungen</th>
                 <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Nächte</th>
-                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Umsatz brutto</th>
+                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Umsatz</th>
                 <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Provision</th>
                 <th className="text-right px-5 py-2.5 font-medium text-zinc-800">Auszahlung</th>
               </tr>
@@ -189,20 +191,14 @@ export function StatisticsView({
                 const hasData = m.bookings.length > 0;
                 return (
                   <tr key={m.monthIdx} className={`border-b border-zinc-50 ${hasData ? "hover:bg-zinc-50/60" : ""}`}>
-                    <td className={`px-5 py-3 font-semibold ${hasData ? "text-zinc-800" : "text-zinc-300"}`}>
-                      {m.label}
-                    </td>
-                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>
-                      {hasData ? m.bookings.length : "–"}
-                    </td>
-                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>
-                      {hasData ? m.nightsTotal : "–"}
-                    </td>
+                    <td className={`px-5 py-3 font-semibold ${hasData ? "text-zinc-800" : "text-zinc-300"}`}>{m.label}</td>
+                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>{hasData ? m.bookings.length : "–"}</td>
+                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>{hasData ? m.nightsTotal : "–"}</td>
                     <td className={`px-4 py-3 text-right ${hasData && m.grossTotal > 0 ? "text-zinc-700" : "text-zinc-300"}`}>
-                      {hasData && m.grossTotal > 0 ? `€ ${fmt(m.grossTotal)}` : hasData ? "–" : "–"}
+                      {hasData && m.grossTotal > 0 ? `€ ${fmt(m.grossTotal)}` : "–"}
                     </td>
                     <td className={`px-4 py-3 text-right ${hasData && m.commissionTotal > 0 ? "text-red-400" : "text-zinc-300"}`}>
-                      {hasData && m.commissionTotal > 0 ? `– € ${fmt(m.commissionTotal)}` : "–"}
+                      {hasData && m.commissionTotal > 0 ? `–€ ${fmt(m.commissionTotal)}` : "–"}
                     </td>
                     <td className={`px-5 py-3 text-right font-semibold ${hasData && m.payoutTotal > 0 ? "text-green-700" : "text-zinc-300"}`}>
                       {hasData && m.payoutTotal > 0 ? `€ ${fmt(m.payoutTotal)}` : "–"}
@@ -218,48 +214,87 @@ export function StatisticsView({
                   <td className="px-4 py-3 text-right font-semibold text-zinc-700">{yearTotals.bookings}</td>
                   <td className="px-4 py-3 text-right font-semibold text-zinc-700">{yearTotals.nights}</td>
                   <td className="px-4 py-3 text-right font-semibold text-zinc-700">€ {fmt(yearTotals.gross)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-red-400">– € {fmt(yearTotals.gross - yearTotals.payout)}</td>
+                  <td className="px-4 py-3 text-right font-semibold text-red-400">–€ {fmt(yearTotals.gross - yearTotals.payout)}</td>
                   <td className="px-5 py-3 text-right font-bold text-green-700">€ {fmt(yearTotals.payout)}</td>
                 </tr>
               </tfoot>
             )}
           </table>
         </div>
+
+        {/* Mobile-Karten */}
+        <div className="sm:hidden divide-y divide-zinc-50">
+          {monthlyData.filter((m) => m.bookings.length > 0).map((m) => (
+            <div key={m.monthIdx} className="px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <span className="font-semibold text-zinc-800">{m.label}</span>
+                <span className="text-xs text-zinc-400">{m.bookings.length} Buchung{m.bookings.length !== 1 ? "en" : ""} · {m.nightsTotal} Nächte</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-zinc-400">Umsatz</p>
+                  <p className="text-sm font-medium text-zinc-700">€ {fmt(m.grossTotal)}</p>
+                </div>
+                {m.commissionTotal > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-zinc-400">Provision</p>
+                    <p className="text-sm text-red-400">–€ {fmt(m.commissionTotal)}</p>
+                  </div>
+                )}
+                <div className="text-right">
+                  <p className="text-xs text-zinc-400">Auszahlung</p>
+                  <p className="text-base font-bold text-green-700">€ {fmt(m.payoutTotal)}</p>
+                </div>
+              </div>
+            </div>
+          ))}
+          {hasAnyPrice && (
+            <div className="px-4 py-3 bg-zinc-50/60">
+              <div className="flex items-center justify-between">
+                <span className="font-bold text-zinc-800">Gesamt {selectedYear}</span>
+                <div className="text-right">
+                  <p className="text-xs text-zinc-400">Auszahlung gesamt</p>
+                  <p className="text-lg font-bold text-green-700">€ {fmt(yearTotals.payout)}</p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Kanal-Aufschlüsselung */}
       {channelBreakdown.length > 0 && (
         <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-          <div className="px-5 py-3 border-b border-zinc-100 flex items-center gap-2">
+          <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
             <Home className="w-4 h-4 text-zinc-400" />
             <span className="text-sm font-semibold text-zinc-800">Buchungskanäle {selectedYear}</span>
           </div>
           <div className="divide-y divide-zinc-50">
             {channelBreakdown.map((ch) => (
-              <div key={ch.channel} className="px-5 py-3 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="text-sm font-medium text-zinc-800 truncate">{ch.channel}</span>
-                  {ch.commission > 0 && (
-                    <span className="text-xs px-2 py-0.5 bg-zinc-100 text-zinc-500 rounded-full font-medium">
-                      {ch.commission}% Provision
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-6 flex-shrink-0 text-sm">
-                  <span className="text-zinc-500">{ch.count} Buchung{ch.count !== 1 ? "en" : ""}</span>
+              <div key={ch.channel} className="px-4 py-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <span className="text-sm font-medium text-zinc-800">{ch.channel}</span>
+                    {ch.commission > 0 && (
+                      <span className="ml-2 text-xs px-1.5 py-0.5 bg-zinc-100 text-zinc-500 rounded-full font-medium">
+                        {ch.commission}%
+                      </span>
+                    )}
+                    <p className="text-xs text-zinc-400 mt-0.5">{ch.count} Buchung{ch.count !== 1 ? "en" : ""}</p>
+                  </div>
                   {ch.gross > 0 && (
-                    <>
-                      <span className="text-zinc-600">€ {fmt(ch.gross)}</span>
-                      <span className="font-semibold text-green-700 w-28 text-right">→ € {fmt(ch.payout)}</span>
-                    </>
+                    <div className="text-right flex-shrink-0">
+                      <p className="text-xs text-zinc-400">€ {fmt(ch.gross)}</p>
+                      <p className="text-sm font-semibold text-green-700">→ € {fmt(ch.payout)}</p>
+                    </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <div className="px-5 py-3 border-t border-zinc-100 bg-zinc-50/60">
+          <div className="px-4 py-2.5 border-t border-zinc-100 bg-zinc-50/60">
             <p className="text-xs text-zinc-400">
-              Provisionen basieren auf Standardwerten ({Object.entries(DEFAULT_COMMISSIONS).map(([k, v]) => `${k} ${v}%`).join(", ")}). Direktbuchungen = 0%.
+              Schätzwerte: Airbnb 18%, Booking.com 18%, FeWo-direkt 11%, Direkt 0%
             </p>
           </div>
         </div>

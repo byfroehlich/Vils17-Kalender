@@ -7,23 +7,26 @@ import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings
 import { signOut } from "next-auth/react";
 
 const navItems = [
-  { href: "/dashboard", label: "Übersicht", icon: LayoutDashboard, adminOnly: true },
-  { href: "/calendar", label: "Kalender", icon: Calendar, adminOnly: true },
-  { href: "/bookings", label: "Buchungen", icon: BookOpen, adminOnly: true },
-  { href: "/cleaners", label: "Reinigung", icon: Users, adminOnly: true },
-  { href: "/my-jobs", label: "Meine Aufträge", icon: Briefcase },
-  { href: "/statistics", label: "Statistiken", icon: TrendingUp, adminOnly: true },
-  { href: "/settings", label: "Einstellungen", icon: Settings, adminOnly: true },
+  { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, adminOnly: true,  mobileOrder: 1 },
+  { href: "/calendar",    label: "Kalender",       icon: Calendar,        adminOnly: true,  mobileOrder: 2 },
+  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        adminOnly: true,  mobileOrder: 3 },
+  { href: "/cleaners",    label: "Reinigung",      icon: Users,           adminOnly: true,  mobileOrder: null }, // nur Desktop
+  { href: "/my-jobs",     label: "Meine Aufträge", icon: Briefcase,                         mobileOrder: 1 },
+  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      adminOnly: true,  mobileOrder: 4 },
+  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true,  mobileOrder: 5 },
 ];
 
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin = role === "ADMIN";
   const visibleItems = navItems.filter((item) => !item.adminOnly || isAdmin);
+  const mobileItems = visibleItems
+    .filter((item) => item.mobileOrder !== null)
+    .sort((a, b) => (a.mobileOrder ?? 99) - (b.mobileOrder ?? 99));
 
   return (
     <>
-      {/* Desktop */}
+      {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 bg-white border-r border-zinc-100 z-30">
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 h-16 border-b border-zinc-100">
@@ -48,9 +51,7 @@ export function Sidebar({ role }: { role: string }) {
                 href={item.href}
                 className={cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                  active
-                    ? "bg-zinc-900 text-white"
-                    : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
+                  active ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
                 )}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
@@ -72,31 +73,35 @@ export function Sidebar({ role }: { role: string }) {
         </div>
       </aside>
 
-      {/* Mobile Bottom Nav */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex">
-        {visibleItems.map((item) => {
+      {/* ── Mobile Bottom Nav (max 5 Items) ─────────────────────────────── */}
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex safe-bottom">
+        {mobileItems.map((item) => {
           const active = pathname.startsWith(item.href);
+          // Kurzlabel für enge Plätze
+          const shortLabel: Record<string, string> = {
+            "Übersicht": "Übersicht",
+            "Kalender": "Kalender",
+            "Buchungen": "Buchungen",
+            "Statistiken": "Statistiken",
+            "Einstellungen": "Einstell.",
+            "Meine Aufträge": "Aufträge",
+          };
           return (
             <Link
               key={item.href}
               href={item.href}
               className={cn(
-                "flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium transition-colors",
+                "flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors",
                 active ? "text-zinc-900" : "text-zinc-400"
               )}
             >
-              <item.icon className="w-5 h-5" />
-              <span>{item.label.split(" ")[0]}</span>
+              <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
+              <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">
+                {shortLabel[item.label] ?? item.label}
+              </span>
             </Link>
           );
         })}
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex-1 flex flex-col items-center gap-1 py-3 text-xs font-medium text-zinc-400"
-        >
-          <LogOut className="w-5 h-5" />
-          <span>Abmelden</span>
-        </button>
       </nav>
     </>
   );
