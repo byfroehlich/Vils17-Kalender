@@ -38,13 +38,13 @@ export function StatsCards({ upcomingCheckouts, upcomingCheckins, openCleanings,
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
       {cards.map((card) => (
-        <div key={card.label} className={`${card.bg} rounded-2xl p-5`}>
-          <p className={`text-5xl font-bold tracking-tight mb-2 ${card.num}`}>
+        <div key={card.label} className={`${card.bg} rounded-2xl p-4`}>
+          <p className={`text-3xl font-bold tracking-tight mb-1 ${card.num}`}>
             {card.value}
           </p>
-          <p className={`text-sm font-medium ${card.text}`}>{card.label}</p>
+          <p className={`text-xs font-medium leading-tight ${card.text}`}>{card.label}</p>
         </div>
       ))}
     </div>

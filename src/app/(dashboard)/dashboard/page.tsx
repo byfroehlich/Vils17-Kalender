@@ -107,12 +107,12 @@ export default async function DashboardPage() {
   }));
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-3xl font-bold text-zinc-900">Übersicht</h1>
-          <p className="text-zinc-500 mt-1">Willkommen, {session.user.name}</p>
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Übersicht</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">Willkommen, {session.user.name}</p>
         </div>
         <SyncButton />
       </div>
@@ -130,7 +130,7 @@ export default async function DashboardPage() {
 
       {/* Nächste Buchungen */}
       <section>
-        <h2 className="text-2xl font-semibold text-zinc-900 mb-4">
+        <h2 className="text-base sm:text-lg font-semibold text-zinc-900 mb-2.5">
           Nächste Buchungen
         </h2>
         <UpcomingBookings bookings={nextBookings} />
