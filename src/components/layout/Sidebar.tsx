@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings, TrendingUp } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 const navItems = [
@@ -12,6 +12,7 @@ const navItems = [
   { href: "/bookings", label: "Buchungen", icon: BookOpen, adminOnly: true },
   { href: "/cleaners", label: "Reinigung", icon: Users, adminOnly: true },
   { href: "/my-jobs", label: "Meine Aufträge", icon: Briefcase },
+  { href: "/statistics", label: "Statistiken", icon: TrendingUp, adminOnly: true },
   { href: "/settings", label: "Einstellungen", icon: Settings, adminOnly: true },
 ];
 

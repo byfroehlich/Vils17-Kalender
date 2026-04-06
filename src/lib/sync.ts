@@ -99,6 +99,8 @@ export async function syncBookings(organizationId: string): Promise<{
           arrivalTime: res.arrivalTime,
           departureTime: res.departureTime,
           channelName: res.channelName,
+          price: res.price,
+          currency: res.currency ?? "EUR",
           status: "confirmed",
           syncedAt: new Date(),
         },
@@ -124,7 +126,9 @@ export async function syncBookings(organizationId: string): Promise<{
           arrivalTime: res.arrivalTime,
           departureTime: res.departureTime,
           channelName: res.channelName,
-          status: "confirmed", // reaktivieren falls zuvor storniert
+          price: res.price,
+          currency: res.currency ?? "EUR",
+          status: "confirmed",
           syncedAt: new Date(),
         },
       });

@@ -19,6 +19,8 @@ export interface NormalizedReservation {
   arrivalTime: string | null;
   departureTime: string | null;
   channelName: string | null;
+  price: number | null;
+  currency: string | null;
   status: "confirmed" | "cancelled";
 }
 

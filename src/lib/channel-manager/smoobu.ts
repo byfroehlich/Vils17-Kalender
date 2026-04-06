@@ -45,6 +45,8 @@ const SmoobuReservationSchema = z.object({
   }).optional().nullable(),
   // Preis
   price: z.number().optional().nullable(),
+  "price-paid-to-host": z.number().optional().nullable(),
+  currency: z.string().optional().nullable(),
   // Notizen
   notice: z.string().optional().nullable(),
   // Wohnung
@@ -185,6 +187,13 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
       // Kanalname aus dem verschachtelten channel-Objekt
       const channelName = r.channel?.name ?? null;
 
+      // Preis: bevorzuge "price-paid-to-host" (Netto), fallback auf "price" (Brutto)
+      const rawPrice = (r as Record<string, unknown>)["price-paid-to-host"];
+      const price = typeof rawPrice === "number" ? rawPrice
+        : typeof r.price === "number" ? r.price
+        : null;
+      const currency = (r.currency as string | null) ?? "EUR";
+
       results.push({
         externalId: r.id,
         apartmentExternalId: apartmentId,
@@ -194,10 +203,11 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         guestCount: ((r.adults as number) ?? 1) + ((r.children as number) ?? 0),
         checkIn,
         checkOut,
-        // check-in/check-out sind bei Smoobu die Uhrzeiten
         arrivalTime: extractString(r, "check-in") || null,
         departureTime: extractString(r, "check-out") || null,
         channelName,
+        price,
+        currency,
         status: "confirmed",
       });
     }

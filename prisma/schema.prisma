@@ -126,6 +126,8 @@ model Booking {
   departureTime String? // "10:00"
 
   channelName String? // "Airbnb", "Booking.com", "Direkt"
+  price       Float?  // Brutto-Buchungspreis aus Smoobu
+  currency    String? @default("EUR")
   status      String  @default("confirmed") // confirmed, cancelled, pending
 
   syncedAt  DateTime @default(now())
