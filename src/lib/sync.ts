@@ -46,8 +46,8 @@ export async function syncBookings(organizationId: string): Promise<{
     apartments.map((a) => [a.smoobuId!, a.id])
   );
 
-  // ─── 3. Buchungen abrufen (30 Tage zurück bis 365 voraus) ───────────────
-  const from = format(subDays(new Date(), 30), "yyyy-MM-dd");
+  // ─── 3. Buchungen abrufen (365 Tage zurück bis 365 voraus) ─────────────────
+  const from = format(subDays(new Date(), 365), "yyyy-MM-dd");
   const to = format(addDays(new Date(), 365), "yyyy-MM-dd");
 
   const reservations = await adapter.fetchReservations({ from, to });

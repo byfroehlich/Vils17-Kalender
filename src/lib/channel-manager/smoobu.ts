@@ -118,36 +118,42 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
   }
 
   async fetchReservations(params: { from: string; to: string }): Promise<NormalizedReservation[]> {
-    const url = new URL(`${SMOOBU_API_BASE}/reservations`);
-    url.searchParams.set("from", params.from);
-    url.searchParams.set("to", params.to);
-    url.searchParams.set("pageSize", "100");
-    url.searchParams.set("page", "1");
+    const allBookings: unknown[] = [];
+    let page = 1;
+    const pageSize = 100;
 
-    const res = await fetch(url.toString(), { headers: getHeaders() });
+    // Alle Seiten abrufen
+    while (true) {
+      const url = new URL(`${SMOOBU_API_BASE}/reservations`);
+      url.searchParams.set("from", params.from);
+      url.searchParams.set("to", params.to);
+      url.searchParams.set("pageSize", String(pageSize));
+      url.searchParams.set("page", String(page));
 
-    if (!res.ok) {
-      throw new Error(`Smoobu Reservations API ${res.status}: ${res.statusText}`);
+      const res = await fetch(url.toString(), { headers: getHeaders() });
+      if (!res.ok) {
+        throw new Error(`Smoobu Reservations API ${res.status}: ${res.statusText}`);
+      }
+
+      const raw = await res.json();
+      const pageBookings: unknown[] = Array.isArray(raw.bookings)
+        ? raw.bookings
+        : Array.isArray(raw) ? raw : [];
+
+      allBookings.push(...pageBookings);
+      console.log(`[SmoobuAdapter] Seite ${page}: ${pageBookings.length} Buchungen (gesamt: ${allBookings.length})`);
+
+      // Abbruch wenn letzte Seite
+      const totalPages: number = raw.page_count ?? raw.totalPages ?? 1;
+      if (page >= totalPages || pageBookings.length < pageSize) break;
+      page++;
     }
 
-    const raw = await res.json();
-    console.log("[SmoobuAdapter] Reservations raw response keys:", Object.keys(raw ?? {}));
-
-    // Explizit prüfen ob raw.bookings ein Array ist
-    const bookings: unknown[] = Array.isArray(raw.bookings)
-      ? raw.bookings
-      : Array.isArray(raw)
-        ? raw
-        : [];
-
-    console.log(`[SmoobuAdapter] Buchungen gefunden: ${bookings.length}`);
+    const bookings = allBookings;
+    console.log(`[SmoobuAdapter] Buchungen gesamt: ${bookings.length}`);
 
     if (bookings.length === 0) {
-      console.warn("[SmoobuAdapter] Keine Buchungen. Rohdaten:", JSON.stringify(raw).slice(0, 500));
-    } else {
-      const first = bookings[0] as Record<string, unknown>;
-      console.log("[SmoobuAdapter] Erste Buchung - Felder:", Object.keys(first).join(", "));
-      console.log("[SmoobuAdapter] Erste Buchung - type:", first.type, "| arrival:", first.arrival, "| check-in:", first["check-in"], "| departure:", first.departure, "| check-out:", first["check-out"]);
+      console.warn("[SmoobuAdapter] Keine Buchungen im angegebenen Zeitraum.");
     }
 
     const results: NormalizedReservation[] = [];
