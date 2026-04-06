@@ -239,6 +239,73 @@ Sobald der Lieferant eine API bereitstellt:
 - [ ] Whitelabel-Option
 - [ ] Mobile App (React Native / Expo)
 
+---
+
+## Marktplatz-Konzept (Turnio — Phase 2+)
+
+### Vision
+Regionale Plattform die drei Seiten verbindet:
+1. **Vermieter** — organisieren Reinigung + Wäsche automatisch
+2. **Reinigungsfirmen/-personen** — bekommen planbare Aufträge
+3. **Wäscherei** — bekommt automatisierte Bestellungen, mehr Volumen
+
+Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort verbindet beide Seiten der Grenze natürlich)
+
+### Erlösmodell
+- **2,5% Provision** pro vermittelter Reinigung (zahlt der Vermieter)
+- **2,5% Provision** pro Wäschebestellung über die Plattform (oder 5€/Monat Flatrate für Vermieter)
+- Reiniger zahlen nichts — sie sind die knappe Ressource, nicht die Vermieter
+
+### Wäscherei-Integration
+- Wäscherei in Füssen: modern, RFID-Tracking in Textilien, eigene App
+- **Phase 1**: API-Anbindung anstreben (direkt fragen)
+- **Phase 2 Fallback**: Browser Use (automatisierter Bot auf deren Web-Portal) als Übergangslösung bis API verfügbar
+- Wäscherei profitiert: mehr automatisierte Bestellungen, kein Telefonat
+- Wäscherei als Vertriebskanal: ihre bestehenden Kunden = potenzielle Vermieter-Leads
+
+### Reinigungslogik — Stammreiniger-Modell (nachhaltig)
+**Erstbuchung:**
+- Neue Buchung geht als Anfrage raus an alle verfügbaren Reiniger in der Region
+- First come first serve — wer zuerst zusagt bekommt den Auftrag
+
+**Ab 2. Buchung:**
+- System fragt Vermieter automatisch: "Möchtest du [Name] als Stammreiniger für diese Wohnung festlegen?"
+- Bei Ja: alle künftigen Buchungen gehen direkt nur an diesen Reiniger (mit z.B. 4h Bestätigungsfrist)
+- Bei Nicht-Bestätigung innerhalb der Frist: automatisch zurück in den Pool
+
+**Vorteile Stammmodell:**
+- Reiniger kennt die Wohnung → weniger Fehler, kein Briefing
+- Vermieter hat Planungssicherheit
+- Plattform wird sticky — beide Seiten wollen nicht wechseln
+- Provision läuft automatisch ohne aktive Vermittlung
+
+### Preislogik
+- Preis wird **einmalig zwischen Vermieter und Reiniger vereinbart** und in der App hinterlegt
+- Kein öffentliches Preisranking — kein Preisdruck auf Reiniger
+- Nur Vermieter + Reiniger sehen den vereinbarten Preis (+ Plattform für Provision)
+- Technisch: `preferredCleanerId` + `cleaningPrice` am Apartment hinterlegt
+
+### Bewertungsstrategie
+**Phase 1 — Daten sammeln, nichts anzeigen:**
+- Nach jeder Reinigung: Vermieter bewertet Reiniger intern (gut/okay/Problem)
+- Nach jeder Reinigung: Reiniger bewertet Vermieter intern (fair/okay/schwierig)
+- Nichts ist öffentlich sichtbar
+- Plattform sieht alle Daten → kann manuell eingreifen bei Problemen
+
+**Intern getrackte Signale (besser als Sterne):**
+- Bestätigungsrate des Reinigers
+- Stammreiniger-Wahlrate (bester Qualitätsindikator)
+- Absagenrate (kurzfristig?)
+- Reaktionszeit auf neue Anfragen
+- Vermieter: Stornierungsrate, Kommunikationsqualität (laut Reiniger)
+
+**Phase 2 (wenn Plattform groß genug):**
+- Gegenseitige Bewertungen sichtbar machen (wie Airbnb)
+- Vermieter sieht Reiniger-Score, Reiniger sieht Vermieter-Score
+- Erst ab ausreichend Datenpunkten sinnvoll — kleine Gemeinschaft = persönliche Konflikte vermeiden
+
+**Philosophie:** Reiniger sind die knappe Ressource. Gute Reiniger müssen faire Vermieter finden können. Deshalb bewerten beide Seiten.
+
 ## Aktueller Stand (Stand: 06.04.2026)
 
 ### Erledigt ✅
