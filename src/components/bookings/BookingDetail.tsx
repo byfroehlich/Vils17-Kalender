@@ -3,19 +3,22 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateLong, formatDate, getCleaningStatusColor, getLaundryStatusColor } from "@/lib/utils";
-import { Users, Calendar, Home, Globe, ArrowLeft, Brush, WashingMachine, CheckCircle } from "lucide-react";
+import { Users, Calendar, Globe, Phone, Mail, ArrowLeft, Sparkles, WashingMachine, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
-
-// Re-export helper from utils for component use
-function calculateLaundry(count: number) {
-  return { beds: count, towels: count * 2, kitchen: 1 };
-}
 
 interface Cleaner {
   id: string;
   name: string;
   email: string;
   phone?: string | null;
+}
+
+interface Apartment {
+  name: string;
+  color?: string | null;
+  laundryBedsDivisor?: number | null;
+  laundryTowelsPerGuest?: number | null;
+  laundryKitchenCount?: number | null;
 }
 
 interface Booking {
@@ -29,7 +32,7 @@ interface Booking {
   arrivalTime?: string | null;
   departureTime?: string | null;
   channelName?: string | null;
-  apartment: { name: string; color?: string | null };
+  apartment: Apartment;
   cleaningAssignment?: {
     id: string;
     status: string;
@@ -41,6 +44,17 @@ interface Booking {
     laundryOrderedAt?: Date | null;
     cleaner?: { id: string; name: string } | null;
   } | null;
+}
+
+function calcLaundry(guestCount: number, apt: Apartment) {
+  const divisor = apt.laundryBedsDivisor ?? 2;
+  const towelsPerGuest = apt.laundryTowelsPerGuest ?? 1;
+  const kitchenCount = apt.laundryKitchenCount ?? 1;
+  return {
+    beds: Math.ceil(guestCount / divisor),
+    towels: guestCount * towelsPerGuest,
+    kitchen: kitchenCount,
+  };
 }
 
 export function BookingDetail({
@@ -62,7 +76,22 @@ export function BookingDetail({
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const qty = calculateLaundry(booking.guestCount);
+  const qty = calcLaundry(booking.guestCount, booking.apartment);
+  const cleaningStatus = assignment?.status ?? "UNASSIGNED";
+  const laundryStatus = assignment?.laundryStatus ?? "OPEN";
+
+  const cleaningStatusLabel: Record<string, string> = {
+    UNASSIGNED: "Offen",
+    SELF_CLEAN: "Selbstreinigung",
+    ASSIGNED: `${assignment?.cleaner?.name ?? "Zugewiesen"}`,
+    COMPLETED: "Erledigt",
+  };
+
+  const laundryStatusLabel: Record<string, string> = {
+    OPEN: "Offen",
+    ORDERED: "Bestellt",
+    AVAILABLE: "Vorhanden",
+  };
 
   async function assignCleaner() {
     setSaving(true);
@@ -124,128 +153,111 @@ export function BookingDetail({
     }
   }
 
-  const cleaningStatus = assignment?.status ?? "UNASSIGNED";
-  const laundryStatus = assignment?.laundryStatus ?? "OPEN";
-
-  const cleaningStatusLabel: Record<string, string> = {
-    UNASSIGNED: "Offen",
-    SELF_CLEAN: "Selbstreinigung",
-    ASSIGNED: `Zugewiesen an ${assignment?.cleaner?.name ?? "–"}`,
-    COMPLETED: "Erledigt",
-  };
-
-  const laundryStatusLabel: Record<string, string> = {
-    OPEN: "Offen",
-    ORDERED: "Bestellt",
-    AVAILABLE: "Vorhanden",
-  };
-
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
+    <div className="max-w-2xl mx-auto space-y-4">
       {/* Zurück */}
       <Link
         href="/bookings"
-        className="inline-flex items-center gap-2 text-gray-500 hover:text-gray-800 font-medium text-lg"
+        className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-zinc-800 font-medium text-sm transition-colors"
       >
-        <ArrowLeft className="w-5 h-5" />
+        <ArrowLeft className="w-4 h-4" />
         Alle Buchungen
       </Link>
 
-      {/* Erfolgs-/Fehlermeldung */}
+      {/* Rückmeldung */}
       {message && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 font-semibold text-lg">
+        <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 font-medium text-sm">
           {message}
         </div>
       )}
 
       {/* Buchungsdaten */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <span
-            className="w-4 h-4 rounded-full"
-            style={{ backgroundColor: booking.apartment.color ?? "#3b82f6" }}
-          />
-          <span className="text-sm font-semibold text-gray-500 uppercase tracking-wide">
-            {booking.apartment.name}
-          </span>
-        </div>
-
-        <h1 className="text-3xl font-bold text-gray-900 mb-6">{booking.guestName}</h1>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-          <InfoRow icon={<Users className="w-6 h-6 text-gray-400" />} label="Gäste">
-            <span className="text-2xl font-bold">
-              {booking.guestCount}{" "}
-              {booking.guestCount === 1 ? "Person" : "Personen"}
+      <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+        {/* Farbstreifen oben */}
+        <div className="h-1.5" style={{ backgroundColor: booking.apartment.color ?? "#3b82f6" }} />
+        <div className="p-6">
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+              {booking.apartment.name}
             </span>
-          </InfoRow>
-
-          <InfoRow icon={<Calendar className="w-6 h-6 text-gray-400" />} label="Anreise">
-            <span className="font-semibold">{formatDateLong(booking.checkIn)}</span>
-            {booking.arrivalTime && (
-              <span className="text-gray-500"> ab {booking.arrivalTime} Uhr</span>
+            {booking.channelName && (
+              <>
+                <span className="text-zinc-300">·</span>
+                <span className="text-xs text-zinc-400">{booking.channelName}</span>
+              </>
             )}
-          </InfoRow>
+          </div>
+          <h1 className="text-2xl font-bold text-zinc-900 mb-5">{booking.guestName}</h1>
 
-          <InfoRow icon={<Calendar className="w-6 h-6 text-gray-400" />} label="Abreise">
-            <span className="font-semibold">{formatDateLong(booking.checkOut)}</span>
-            {booking.departureTime && (
-              <span className="text-gray-500"> bis {booking.departureTime} Uhr</span>
+          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
+            <InfoRow icon={<Calendar className="w-4 h-4" />} label="Anreise">
+              <span className="font-semibold text-zinc-800">{formatDateLong(booking.checkIn)}</span>
+              {booking.arrivalTime && (
+                <span className="text-zinc-400 text-sm ml-1">ab {booking.arrivalTime} Uhr</span>
+              )}
+            </InfoRow>
+
+            <InfoRow icon={<Calendar className="w-4 h-4" />} label="Abreise">
+              <span className="font-semibold text-zinc-800">{formatDateLong(booking.checkOut)}</span>
+              {booking.departureTime && (
+                <span className="text-zinc-400 text-sm ml-1">bis {booking.departureTime} Uhr</span>
+              )}
+            </InfoRow>
+
+            <InfoRow icon={<Users className="w-4 h-4" />} label="Gäste">
+              <span className="font-semibold text-zinc-800">
+                {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
+              </span>
+            </InfoRow>
+
+            {booking.guestPhone && (
+              <InfoRow icon={<Phone className="w-4 h-4" />} label="Telefon">
+                <a href={`tel:${booking.guestPhone}`} className="font-semibold text-blue-600 hover:underline">
+                  {booking.guestPhone}
+                </a>
+              </InfoRow>
             )}
-          </InfoRow>
 
-          {booking.channelName && (
-            <InfoRow icon={<Globe className="w-6 h-6 text-gray-400" />} label="Buchungskanal">
-              <span className="font-semibold">{booking.channelName}</span>
-            </InfoRow>
-          )}
+            {booking.guestEmail && (
+              <InfoRow icon={<Mail className="w-4 h-4" />} label="E-Mail">
+                <a href={`mailto:${booking.guestEmail}`} className="font-semibold text-blue-600 hover:underline truncate block max-w-[180px]">
+                  {booking.guestEmail}
+                </a>
+              </InfoRow>
+            )}
 
-          {booking.guestEmail && (
-            <InfoRow icon={<Home className="w-6 h-6 text-gray-400" />} label="E-Mail Gast">
-              <a href={`mailto:${booking.guestEmail}`} className="text-blue-600 underline">
-                {booking.guestEmail}
-              </a>
-            </InfoRow>
-          )}
-
-          {booking.guestPhone && (
-            <InfoRow icon={<Home className="w-6 h-6 text-gray-400" />} label="Tel. Gast">
-              <a href={`tel:${booking.guestPhone}`} className="text-blue-600 underline">
-                {booking.guestPhone}
-              </a>
-            </InfoRow>
-          )}
+            {booking.channelName && (
+              <InfoRow icon={<Globe className="w-4 h-4" />} label="Kanal">
+                <span className="font-semibold text-zinc-800">{booking.channelName}</span>
+              </InfoRow>
+            )}
+          </div>
         </div>
       </div>
 
       {/* Reinigung */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <Brush className="w-7 h-7 text-gray-500" />
+      <div className="bg-white rounded-2xl border border-zinc-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-zinc-400" />
             Reinigung
           </h2>
-          <span
-            className={`px-4 py-1.5 rounded-full text-base font-semibold border ${getCleaningStatusColor(cleaningStatus)}`}
-          >
-            {cleaningStatusLabel[cleaningStatus]}
-          </span>
+          <StatusBadge type="cleaning" status={cleaningStatus} label={cleaningStatusLabel[cleaningStatus] ?? cleaningStatus} />
         </div>
 
         {assignment?.notes && (
-          <div className="mb-4 p-4 bg-gray-50 rounded-xl text-gray-700">
-            <p className="font-medium text-gray-500 text-sm mb-1">Hinweise:</p>
-            <p>{assignment.notes}</p>
+          <div className="mb-4 p-3 bg-zinc-50 rounded-xl text-sm text-zinc-600 border border-zinc-100">
+            {assignment.notes}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setShowAssignDialog(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors text-lg"
+            className="btn-primary text-sm py-2 px-4"
           >
-            <Brush className="w-5 h-5" />
-            Reiniger zuweisen
+            <Sparkles className="w-4 h-4" />
+            {cleaningStatus === "UNASSIGNED" ? "Reiniger zuweisen" : "Zuweisung ändern"}
           </button>
 
           {cleaningStatus === "ASSIGNED" && (
@@ -258,96 +270,87 @@ export function BookingDetail({
                 });
                 router.refresh();
               }}
-              className="flex items-center gap-2 px-5 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors text-lg"
+              className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors text-sm"
             >
-              <CheckCircle className="w-5 h-5" />
-              Als erledigt markieren
+              <CheckCircle className="w-4 h-4" />
+              Erledigt
             </button>
           )}
         </div>
       </div>
 
       {/* Wäsche */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-5">
-          <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-            <WashingMachine className="w-7 h-7 text-gray-500" />
+      <div className="bg-white rounded-2xl border border-zinc-200 p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
+            <WashingMachine className="w-4 h-4 text-zinc-400" />
             Wäsche
           </h2>
-          <span
-            className={`px-4 py-1.5 rounded-full text-base font-semibold border ${getLaundryStatusColor(laundryStatus)}`}
-          >
-            {laundryStatusLabel[laundryStatus]}
-          </span>
+          <StatusBadge type="laundry" status={laundryStatus} label={laundryStatusLabel[laundryStatus] ?? laundryStatus} />
         </div>
 
-        {/* Menge */}
-        <div className="mb-5 p-4 bg-gray-50 rounded-xl">
-          <p className="text-gray-500 text-sm font-medium mb-2">Benötigte Menge:</p>
-          <div className="flex gap-6 text-lg font-semibold text-gray-800">
-            <span>🛏️ {qty.beds} Bettsets</span>
-            <span>🛁 {qty.towels} Handtücher</span>
-            <span>🍽️ {qty.kitchen} Küchentuch</span>
-          </div>
+        {/* Mengen-Chips */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
+          <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
+          <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
         </div>
 
-        {/* Wäsche-Notizen */}
-        <div className="mb-5">
-          <label className="block text-gray-600 font-medium mb-2">Bemerkungen zur Wäsche</label>
-          <textarea
-            value={laundryNotes}
-            onChange={(e) => setLaundryNotes(e.target.value)}
-            onBlur={async () => {
-              if (laundryNotes !== assignment?.laundryNotes) {
-                await fetch(`/api/bookings/${booking.id}/laundry`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ action: "status", status: laundryStatus, notes: laundryNotes }),
-                });
-              }
-            }}
-            placeholder="z.B. bei Müller bestellt, Bestellnummer 1234..."
-            rows={2}
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-400 focus:outline-none resize-none"
-          />
-        </div>
-
-        {/* Status-Buttons */}
-        <div className="flex flex-wrap gap-3 mb-4">
+        {/* Status-Toggle */}
+        <div className="flex gap-2 mb-4">
           {(["OPEN", "ORDERED", "AVAILABLE"] as const).map((s) => {
-            const label = { OPEN: "🔴 Offen", ORDERED: "🟡 Bestellt", AVAILABLE: "🟢 Vorhanden" };
+            const labels = { OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden" };
+            const active = laundryStatus === s;
             return (
               <button
                 key={s}
                 onClick={() => updateLaundryStatus(s)}
-                className={`px-5 py-3 rounded-xl font-semibold text-lg border-2 transition-colors ${
-                  laundryStatus === s
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-200 bg-white text-gray-600 hover:border-gray-400"
+                className={`px-3 py-1.5 rounded-lg font-medium text-sm border transition-colors ${
+                  active
+                    ? "border-zinc-800 bg-zinc-900 text-white"
+                    : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400"
                 }`}
               >
-                {label[s]}
+                {labels[s]}
               </button>
             );
           })}
         </div>
 
-        {/* Bestellen-Button */}
+        {/* Bemerkungen */}
+        <textarea
+          value={laundryNotes}
+          onChange={(e) => setLaundryNotes(e.target.value)}
+          onBlur={async () => {
+            if (laundryNotes !== assignment?.laundryNotes) {
+              await fetch(`/api/bookings/${booking.id}/laundry`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ action: "status", status: laundryStatus, notes: laundryNotes }),
+              });
+            }
+          }}
+          placeholder="Bemerkungen zur Wäsche…"
+          rows={2}
+          className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm focus:border-zinc-400 focus:outline-none resize-none text-zinc-700 placeholder-zinc-300 mb-3"
+        />
+
         {laundryStatus !== "ORDERED" && (
           <button
             onClick={() => setShowLaundryDialog(true)}
-            className="flex items-center gap-2 px-5 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-xl transition-colors text-lg"
+            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors text-sm"
           >
-            <WashingMachine className="w-5 h-5" />
+            <WashingMachine className="w-4 h-4" />
             Wäsche bestellen
           </button>
         )}
 
         {assignment?.laundryOrderId && (
-          <p className="mt-3 text-gray-500 text-sm">
+          <p className="mt-3 text-xs text-zinc-400 flex items-center gap-1">
+            <Clock className="w-3.5 h-3.5" />
             Bestell-Nr.: {assignment.laundryOrderId}
             {assignment.laundryOrderedAt && (
-              <span> · Bestellt am {formatDate(new Date(assignment.laundryOrderedAt))}</span>
+              <span> · {formatDate(new Date(assignment.laundryOrderedAt))}</span>
             )}
           </p>
         )}
@@ -355,75 +358,68 @@ export function BookingDetail({
 
       {/* Dialog: Reiniger zuweisen */}
       {showAssignDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-lg p-6">
-            <h3 className="text-2xl font-bold mb-6">Reiniger zuweisen</h3>
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+            <h3 className="text-lg font-bold text-zinc-900 mb-4">Reiniger zuweisen</h3>
 
-            <div className="space-y-3 mb-5">
-              {/* Selbst reinigen */}
-              <label className="flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer hover:border-blue-400 transition-colors">
+            <div className="space-y-2 mb-4">
+              <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:border-zinc-400 transition-colors">
                 <input
                   type="radio"
                   name="cleaner"
                   checked={isSelfClean}
                   onChange={() => { setIsSelfClean(true); setSelectedCleaner(""); }}
-                  className="w-5 h-5"
+                  className="w-4 h-4 accent-zinc-800"
                 />
                 <div>
-                  <p className="font-semibold text-lg">Selbst reinigen</p>
-                  <p className="text-gray-500">Keine Benachrichtigung wird gesendet</p>
+                  <p className="font-semibold text-sm text-zinc-800">Selbst reinigen</p>
+                  <p className="text-xs text-zinc-400">Keine Benachrichtigung</p>
                 </div>
               </label>
 
-              {/* Reinigungskräfte */}
               {cleaners.map((cleaner) => (
                 <label
                   key={cleaner.id}
-                  className="flex items-center gap-3 p-4 border-2 rounded-xl cursor-pointer hover:border-blue-400 transition-colors"
+                  className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:border-zinc-400 transition-colors"
                 >
                   <input
                     type="radio"
                     name="cleaner"
                     checked={!isSelfClean && selectedCleaner === cleaner.id}
                     onChange={() => { setIsSelfClean(false); setSelectedCleaner(cleaner.id); }}
-                    className="w-5 h-5"
+                    className="w-4 h-4 accent-zinc-800"
                   />
                   <div>
-                    <p className="font-semibold text-lg">{cleaner.name}</p>
-                    <p className="text-gray-500">{cleaner.email}</p>
-                    {cleaner.phone && <p className="text-gray-400 text-sm">{cleaner.phone}</p>}
+                    <p className="font-semibold text-sm text-zinc-800">{cleaner.name}</p>
+                    <p className="text-xs text-zinc-400">{cleaner.email}{cleaner.phone ? ` · ${cleaner.phone}` : ""}</p>
                   </div>
                 </label>
               ))}
-            </div>
 
-            <div className="mb-5">
-              <label className="block font-medium text-gray-700 mb-2">Hinweise für Reiniger</label>
-              <textarea
-                value={cleaningNotes}
-                onChange={(e) => setCleaningNotes(e.target.value)}
-                placeholder="Was soll besonders beachtet werden?"
-                rows={3}
-                className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-lg focus:border-blue-400 focus:outline-none resize-none"
-              />
-              {!isSelfClean && selectedCleaner && (
-                <p className="text-sm text-blue-600 mt-1">
-                  ℹ️ Der Reiniger wird per E-Mail und WhatsApp benachrichtigt.
-                </p>
+              {cleaners.length === 0 && (
+                <p className="text-sm text-zinc-400 px-3">Noch keine Reinigungskräfte angelegt.</p>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <textarea
+              value={cleaningNotes}
+              onChange={(e) => setCleaningNotes(e.target.value)}
+              placeholder="Hinweise für den Reiniger…"
+              rows={2}
+              className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm focus:border-zinc-400 focus:outline-none resize-none mb-4"
+            />
+
+            <div className="flex gap-2">
               <button
                 onClick={assignCleaner}
                 disabled={saving || (!isSelfClean && !selectedCleaner)}
-                className="flex-1 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-xl text-lg transition-colors"
+                className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 text-white font-semibold rounded-xl text-sm transition-colors"
               >
-                {saving ? "Wird gespeichert..." : "Zuweisen"}
+                {saving ? "Wird gespeichert…" : "Zuweisen"}
               </button>
               <button
                 onClick={() => setShowAssignDialog(false)}
-                className="px-6 py-4 border-2 border-gray-200 text-gray-600 font-semibold rounded-xl text-lg hover:border-gray-400 transition-colors"
+                className="px-4 py-2.5 border border-zinc-200 text-zinc-600 font-semibold rounded-xl text-sm hover:border-zinc-400 transition-colors"
               >
                 Abbrechen
               </button>
@@ -434,30 +430,26 @@ export function BookingDetail({
 
       {/* Dialog: Wäsche bestellen */}
       {showLaundryDialog && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
-            <h3 className="text-2xl font-bold mb-4">Wäsche bestellen?</h3>
-            <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 mb-6">
-              <p className="text-lg text-yellow-800">
-                Es werden bestellt:
-              </p>
-              <ul className="mt-2 space-y-1 text-yellow-900 font-semibold">
-                <li>🛏️ {qty.beds} Bettsets</li>
-                <li>🛁 {qty.towels} Handtücher</li>
-                <li>🍽️ {qty.kitchen} Küchenhandtuch</li>
-              </ul>
+        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <h3 className="text-lg font-bold text-zinc-900 mb-1">Wäsche bestellen</h3>
+            <p className="text-sm text-zinc-400 mb-4">Folgende Mengen werden bestellt:</p>
+            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5 space-y-1.5">
+              <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
+              <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
+              <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
             </div>
-            <div className="flex gap-3">
+            <div className="flex gap-2">
               <button
                 onClick={orderLaundry}
                 disabled={saving}
-                className="flex-1 py-4 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-300 text-white font-semibold rounded-xl text-lg transition-colors"
+                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-zinc-200 text-white font-semibold rounded-xl text-sm transition-colors"
               >
-                {saving ? "Wird bestellt..." : "Jetzt bestellen"}
+                {saving ? "Wird bestellt…" : "Jetzt bestellen"}
               </button>
               <button
                 onClick={() => setShowLaundryDialog(false)}
-                className="px-6 py-4 border-2 border-gray-200 text-gray-600 font-semibold rounded-xl text-lg hover:border-gray-400 transition-colors"
+                className="px-4 py-2.5 border border-zinc-200 text-zinc-600 font-semibold rounded-xl text-sm hover:border-zinc-400 transition-colors"
               >
                 Abbrechen
               </button>
@@ -479,12 +471,29 @@ function InfoRow({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex-shrink-0">{icon}</div>
-      <div>
-        <p className="text-sm text-gray-500 font-medium mb-0.5">{label}</p>
-        <div className="text-gray-900 text-lg">{children}</div>
+    <div>
+      <div className="flex items-center gap-1 text-xs text-zinc-400 font-medium mb-0.5">
+        {icon}
+        {label}
       </div>
+      <div className="text-sm">{children}</div>
     </div>
+  );
+}
+
+function QuantityChip({ emoji, value, label }: { emoji: string; value: number; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-700">
+      {emoji} <span className="font-bold">{value}</span> {label}
+    </span>
+  );
+}
+
+function StatusBadge({ type, status, label }: { type: "cleaning" | "laundry"; status: string; label: string }) {
+  const color = type === "cleaning" ? getCleaningStatusColor(status) : getLaundryStatusColor(status);
+  return (
+    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${color}`}>
+      {label}
+    </span>
   );
 }

@@ -90,6 +90,11 @@ model Apartment {
   color       String? // Hex-Farbe für Kalender, z.B. "#3b82f6"
   active      Boolean @default(true)
 
+  // Wäsche-Konfiguration
+  laundryBedsDivisor     Int @default(2) // 1 Bettset pro N Gäste (aufgerundet), z.B. 2 = 1 Set pro Doppelzimmer
+  laundryTowelsPerGuest  Int @default(1) // Handtücher pro Gast
+  laundryKitchenCount    Int @default(1) // Küchenhandtücher pro Buchung (fix)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

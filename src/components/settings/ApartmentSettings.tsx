@@ -21,6 +21,9 @@ interface Apartment {
   color: string | null;
   active: boolean;
   smoobuId: number | null;
+  laundryBedsDivisor: number;
+  laundryTowelsPerGuest: number;
+  laundryKitchenCount: number;
   _count: { bookings: number };
 }
 
@@ -29,6 +32,9 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editColor, setEditColor] = useState("");
+  const [editBedsDivisor, setEditBedsDivisor] = useState(2);
+  const [editTowelsPerGuest, setEditTowelsPerGuest] = useState(1);
+  const [editKitchenCount, setEditKitchenCount] = useState(1);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
 
@@ -36,6 +42,9 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     setEditingId(apt.id);
     setEditName(apt.name);
     setEditColor(apt.color ?? "#3b82f6");
+    setEditBedsDivisor(apt.laundryBedsDivisor ?? 2);
+    setEditTowelsPerGuest(apt.laundryTowelsPerGuest ?? 1);
+    setEditKitchenCount(apt.laundryKitchenCount ?? 1);
   }
 
   async function saveEdit(id: string) {
@@ -43,7 +52,13 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     await fetch(`/api/apartments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: editName, color: editColor }),
+      body: JSON.stringify({
+        name: editName,
+        color: editColor,
+        laundryBedsDivisor: editBedsDivisor,
+        laundryTowelsPerGuest: editTowelsPerGuest,
+        laundryKitchenCount: editKitchenCount,
+      }),
     });
     setSaving(false);
     setEditingId(null);
@@ -66,7 +81,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     <div className="bg-white rounded-2xl border border-zinc-200">
       <div className="px-6 py-4 border-b border-zinc-100">
         <h2 className="font-semibold text-zinc-900">Unterkünfte</h2>
-        <p className="text-sm text-zinc-500 mt-0.5">Name und Farbe im Kalender anpassen</p>
+        <p className="text-sm text-zinc-500 mt-0.5">Name, Farbe und Wäsche-Mengen anpassen</p>
       </div>
 
       <div className="divide-y divide-zinc-100">
@@ -74,13 +89,17 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
           <div key={apt.id} className="px-6 py-4">
             {editingId === apt.id ? (
               /* Bearbeitungs-Modus */
-              <div className="space-y-3">
-                <input
-                  value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
-                  className="form-input"
-                  placeholder="Name der Unterkunft"
-                />
+              <div className="space-y-5">
+                <div>
+                  <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Name</label>
+                  <input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="form-input"
+                    placeholder="Name der Unterkunft"
+                  />
+                </div>
+
                 <div>
                   <p className="text-sm font-medium text-zinc-600 mb-2">Kalenderfarbe</p>
                   <div className="flex gap-2 flex-wrap">
@@ -97,6 +116,65 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                     ))}
                   </div>
                 </div>
+
+                {/* Wäsche-Konfiguration */}
+                <div className="border-t border-zinc-100 pt-4">
+                  <p className="text-sm font-semibold text-zinc-700 mb-3">Wäsche-Mengen</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                        Bettsets: 1 pro … Gäste
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={1}
+                          max={10}
+                          value={editBedsDivisor}
+                          onChange={(e) => setEditBedsDivisor(Number(e.target.value))}
+                          className="form-input w-20 text-center"
+                        />
+                        <span className="text-sm text-zinc-400">Gäste/Set</span>
+                      </div>
+                      <p className="text-xs text-zinc-400 mt-1">
+                        z.B. 2 = 1 Set pro Doppelzimmer
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                        Handtücher pro Gast
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={10}
+                          value={editTowelsPerGuest}
+                          onChange={(e) => setEditTowelsPerGuest(Number(e.target.value))}
+                          className="form-input w-20 text-center"
+                        />
+                        <span className="text-sm text-zinc-400">Stück/Gast</span>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                        Küchenhandtücher pro Buchung
+                      </label>
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="number"
+                          min={0}
+                          max={10}
+                          value={editKitchenCount}
+                          onChange={(e) => setEditKitchenCount(Number(e.target.value))}
+                          className="form-input w-20 text-center"
+                        />
+                        <span className="text-sm text-zinc-400">Stück/Buchung</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
                 <div className="flex gap-2">
                   <button
                     onClick={() => saveEdit(apt.id)}
@@ -129,6 +207,9 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                     </p>
                     <p className="text-xs text-zinc-400">
                       {apt.smoobuId ? `Smoobu ID: ${apt.smoobuId}` : "Manuell angelegt"} · {apt._count.bookings} Buchungen
+                    </p>
+                    <p className="text-xs text-zinc-400 mt-0.5">
+                      🛏 1 Set/{apt.laundryBedsDivisor ?? 2} Gäste · 🛁 {apt.laundryTowelsPerGuest ?? 1}/Gast · 🍽 {apt.laundryKitchenCount ?? 1}/Buchung
                     </p>
                   </div>
                 </div>

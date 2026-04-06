@@ -17,7 +17,15 @@ export default async function BookingDetailPage({
     prisma.booking.findFirst({
       where: { id: params.id, organizationId: session.user.organizationId },
       include: {
-        apartment: true,
+        apartment: {
+          select: {
+            name: true,
+            color: true,
+            laundryBedsDivisor: true,
+            laundryTowelsPerGuest: true,
+            laundryKitchenCount: true,
+          },
+        },
         cleaningAssignment: { include: { cleaner: true } },
       },
     }),

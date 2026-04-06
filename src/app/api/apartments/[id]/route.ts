@@ -8,6 +8,9 @@ const UpdateSchema = z.object({
   name: z.string().min(1).optional(),
   color: z.string().optional().nullable(),
   active: z.boolean().optional(),
+  laundryBedsDivisor: z.number().int().min(1).max(10).optional(),
+  laundryTowelsPerGuest: z.number().int().min(0).max(10).optional(),
+  laundryKitchenCount: z.number().int().min(0).max(10).optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
