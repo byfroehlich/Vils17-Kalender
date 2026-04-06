@@ -24,7 +24,7 @@ export default async function BookingsPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Buchungen</h1>
+      <h1 className="text-2xl font-bold text-zinc-900">Buchungen</h1>
       <BookingTable bookings={bookings} />
     </div>
   );

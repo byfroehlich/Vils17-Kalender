@@ -90,15 +90,15 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
               </div>
             </div>
 
-            {/* Status */}
-            <div className="flex items-center gap-3 flex-shrink-0">
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <span className={`w-1.5 h-1.5 rounded-full ${cleaningDot[cleaningStatus] ?? "bg-zinc-300"}`} />
-                {cleaningLabel[cleaningStatus]}
+            {/* Status — Mobile: nur Punkte, Desktop: Punkte + Label */}
+            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
+              <span className="flex items-center gap-1 sm:gap-1.5 text-xs text-zinc-500">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cleaningDot[cleaningStatus] ?? "bg-zinc-300"}`} />
+                <span className="hidden sm:inline">{cleaningLabel[cleaningStatus]}</span>
               </span>
-              <span className="flex items-center gap-1.5 text-xs text-zinc-500">
-                <span className={`w-1.5 h-1.5 rounded-full ${laundryDot[laundryStatus] ?? "bg-zinc-300"}`} />
-                {laundryLabel[laundryStatus]}
+              <span className="flex items-center gap-1 sm:gap-1.5 text-xs text-zinc-500">
+                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${laundryDot[laundryStatus] ?? "bg-zinc-300"}`} />
+                <span className="hidden sm:inline">{laundryLabel[laundryStatus]}</span>
               </span>
             </div>
 

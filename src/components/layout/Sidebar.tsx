@@ -74,7 +74,7 @@ export function Sidebar({ role }: { role: string }) {
       </aside>
 
       {/* ── Mobile Bottom Nav (max 5 Items) ─────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex safe-bottom">
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
         {mobileItems.map((item) => {
           const active = pathname.startsWith(item.href);
           // Kurzlabel für enge Plätze
