@@ -80,11 +80,12 @@ export function BookingDetail({
   const cleaningStatus = assignment?.status ?? "UNASSIGNED";
   const laundryStatus = assignment?.laundryStatus ?? "OPEN";
 
+  const cleanerName = assignment?.cleaner?.name;
   const cleaningStatusLabel: Record<string, string> = {
     UNASSIGNED: "Offen",
     SELF_CLEAN: "Selbstreinigung",
-    ASSIGNED: `${assignment?.cleaner?.name ?? "Zugewiesen"}`,
-    COMPLETED: "Erledigt",
+    ASSIGNED: cleanerName ? `Zugewiesen · ${cleanerName}` : "Zugewiesen",
+    COMPLETED: cleanerName ? `Erledigt · ${cleanerName}` : "Erledigt",
   };
 
   const laundryStatusLabel: Record<string, string> = {
@@ -244,6 +245,18 @@ export function BookingDetail({
           </h2>
           <StatusBadge type="cleaning" status={cleaningStatus} label={cleaningStatusLabel[cleaningStatus] ?? cleaningStatus} />
         </div>
+
+        {/* Reiniger-Kontakt */}
+        {assignment?.cleaner && (
+          <div className="mb-3 flex items-center gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
+            <div className="w-7 h-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs font-bold text-zinc-600 flex-shrink-0">
+              {assignment.cleaner.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <p className="text-sm font-medium text-zinc-900">{assignment.cleaner.name}</p>
+            </div>
+          </div>
+        )}
 
         {assignment?.notes && (
           <div className="mb-4 p-3 bg-zinc-50 rounded-xl text-sm text-zinc-600 border border-zinc-100">

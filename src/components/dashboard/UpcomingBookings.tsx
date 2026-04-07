@@ -22,7 +22,7 @@ interface Booking {
 const cleaningBadge: Record<string, { bg: string; text: string; urgent: boolean; label: string }> = {
   UNASSIGNED: { bg: "bg-orange-100 border border-orange-300", text: "text-orange-800", urgent: true,  label: "⚠ Reinigung offen" },
   SELF_CLEAN:  { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Selbstreinigung" },
-  ASSIGNED:    { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Reiniger zugewiesen" },
+  ASSIGNED:    { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Zugewiesen" },
   COMPLETED:   { bg: "bg-green-100 border border-green-200",  text: "text-green-800",  urgent: false, label: "✓ Erledigt" },
 };
 
@@ -89,7 +89,7 @@ export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
                     <>
                       <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${cb?.bg ?? ""} ${cb?.text ?? "text-zinc-500"}`}>
                         {cb?.label ?? cleaningStatus}
-                        {cleaningStatus === "ASSIGNED" && assignment?.cleaner?.name && (
+                        {(cleaningStatus === "ASSIGNED" || cleaningStatus === "COMPLETED") && assignment?.cleaner?.name && (
                           <span className="ml-1 opacity-70">· {assignment.cleaner.name}</span>
                         )}
                       </span>
