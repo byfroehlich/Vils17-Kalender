@@ -6,20 +6,21 @@ import { cn } from "@/lib/utils";
 import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings, TrendingUp } from "lucide-react";
 import { signOut } from "next-auth/react";
 
+// adminMobileHide: sichtbar im Desktop-Menü für ADMIN, aber nicht im Mobile-Nav
+// (Slot 5 mobile gehört ADMIN=Einstellungen, MANAGER=Statistiken)
 const navItems = [
   { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, noClean: true,  mobileOrder: 1 },
-  { href: "/calendar",    label: "Kalender",       icon: Calendar,        noClean: true,  mobileOrder: 2 },
-  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        noClean: true,  mobileOrder: 3 },
-  { href: "/cleaners",    label: "Reinigung",      icon: Users,           noClean: true,  mobileOrder: null },
+  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        noClean: true,  mobileOrder: 2 },
+  { href: "/cleaners",    label: "Reinigung",      icon: Users,           noClean: true,  mobileOrder: 3 },
+  { href: "/calendar",    label: "Kalender",       icon: Calendar,        noClean: true,  mobileOrder: 4 },
   { href: "/my-jobs",     label: "Aufträge",       icon: Briefcase,       cleanerOnly: true, mobileOrder: 1 },
-  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 4 },
+  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 5, adminMobileHide: true },
   { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5 },
 ];
 
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin = role === "ADMIN";
-  const isManager = role === "MANAGER";
   const isCleaner = role === "CLEANER";
 
   const visibleItems = navItems.filter((item) => {
@@ -29,7 +30,11 @@ export function Sidebar({ role }: { role: string }) {
     return true;
   });
   const mobileItems = visibleItems
-    .filter((item) => item.mobileOrder !== null)
+    .filter((item) => {
+      if (item.mobileOrder === null) return false;
+      if ((item as any).adminMobileHide && isAdmin) return false;
+      return true;
+    })
     .sort((a, b) => (a.mobileOrder ?? 99) - (b.mobileOrder ?? 99));
 
   return (
@@ -82,7 +87,7 @@ export function Sidebar({ role }: { role: string }) {
       </aside>
 
       {/* ── Mobile Bottom Nav (max 5 Items) ─────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex" style={{ paddingBottom: "env(safe-area-inset-bottom)" }}>
+      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}>
         {mobileItems.map((item) => {
           const active = pathname.startsWith(item.href);
           // Kurzlabel für enge Plätze
