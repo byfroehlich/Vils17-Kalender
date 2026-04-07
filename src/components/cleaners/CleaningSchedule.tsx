@@ -3,7 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { AlertCircle, CalendarCheck, WashingMachine } from "lucide-react";
+import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react";
+import { CleanerList } from "./CleanerList";
 
 interface Assignment {
   id: string;
@@ -24,6 +25,17 @@ interface Assignment {
       laundryKitchenCount?: number | null;
     };
   };
+}
+
+interface Cleaner {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  notes?: string | null;
+  language: string;
+  active: boolean;
+  _count: { assignments: number };
 }
 
 const cleaningColors: Record<string, string> = {
@@ -53,6 +65,7 @@ function calcLaundry(guestCount: number, apt: Assignment["booking"]["apartment"]
 }
 
 function AssignmentRow({ a }: { a: Assignment }) {
+  const effectiveStatus = a.isSelfClean && a.status === "UNASSIGNED" ? "SELF_CLEAN" : a.status;
   return (
     <Link
       href={`/bookings/${a.booking.id}`}
@@ -76,8 +89,8 @@ function AssignmentRow({ a }: { a: Assignment }) {
           <p className="text-xs text-orange-600 font-medium">Nicht zugewiesen</p>
         )}
       </div>
-      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${cleaningColors[a.status] ?? "bg-zinc-100 text-zinc-600 border-zinc-200"}`}>
-        {cleaningLabels[a.status] ?? a.status}
+      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${cleaningColors[effectiveStatus] ?? "bg-zinc-100 text-zinc-600 border-zinc-200"}`}>
+        {cleaningLabels[effectiveStatus] ?? effectiveStatus}
       </span>
     </Link>
   );
@@ -115,39 +128,53 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-type Tab = "open" | "planned" | "laundry";
+type Tab = "open" | "planned" | "laundry" | "cleaners";
 
-export function CleaningSchedule({ assignments }: { assignments: Assignment[] }) {
+export function CleaningSchedule({
+  assignments,
+  cleaners,
+  isAdmin,
+}: {
+  assignments: Assignment[];
+  cleaners: Cleaner[];
+  isAdmin: boolean;
+}) {
   const [tab, setTab] = useState<Tab>("open");
 
-  const open    = assignments.filter(a => a.status === "UNASSIGNED");
-  const planned = assignments.filter(a => a.status === "ASSIGNED" || a.status === "SELF_CLEAN");
-  const laundry = assignments.filter(a => a.laundryStatus !== "OPEN" || a.status !== "COMPLETED");
+  // Offen: nicht zugewiesen UND kein Selbstreiniger
+  const open    = assignments.filter(a => a.status === "UNASSIGNED" && !a.isSelfClean);
+  // Geplant: zugewiesen, Selbstreinigung, oder isSelfClean-Flag gesetzt
+  const planned = assignments.filter(a =>
+    a.status === "ASSIGNED" || a.status === "SELF_CLEAN" || a.isSelfClean
+  );
+  // Wäsche: alles außer bereits erledigte Buchungen mit vorhandener Wäsche
+  const laundry = assignments.filter(a => !(a.laundryStatus === "AVAILABLE" && a.status === "COMPLETED"));
 
-  const tabs: { key: Tab; label: string; icon: React.ReactNode; count: number; urgent?: boolean }[] = [
-    { key: "open",    label: "Offen",     icon: <AlertCircle className="w-4 h-4" />,     count: open.length,    urgent: open.length > 0 },
-    { key: "planned", label: "Geplant",   icon: <CalendarCheck className="w-4 h-4" />,   count: planned.length },
-    { key: "laundry", label: "Wäsche",    icon: <WashingMachine className="w-4 h-4" />,  count: laundry.length },
+  const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number; urgent?: boolean }[] = [
+    { key: "open",     label: "Offen",    icon: <AlertCircle className="w-4 h-4" />,    count: open.length,     urgent: open.length > 0 },
+    { key: "planned",  label: "Geplant",  icon: <CalendarCheck className="w-4 h-4" />,  count: planned.length },
+    { key: "laundry",  label: "Wäsche",   icon: <WashingMachine className="w-4 h-4" />, count: laundry.length },
+    { key: "cleaners", label: "Reiniger", icon: <Users className="w-4 h-4" />,           count: cleaners.length },
   ];
 
   return (
     <div className="space-y-3">
       {/* Tabs */}
-      <div className="flex gap-1.5 bg-zinc-100 p-1 rounded-xl">
+      <div className="flex gap-1 bg-zinc-100 p-1 rounded-xl">
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 rounded-lg text-xs font-semibold transition-colors ${
+            className={`flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-colors ${
               tab === t.key
                 ? "bg-white text-zinc-900 shadow-sm"
                 : "text-zinc-500 hover:text-zinc-700"
             }`}
           >
             {t.icon}
-            <span>{t.label}</span>
-            {t.count > 0 && (
-              <span className={`ml-0.5 min-w-[18px] h-[18px] flex items-center justify-center rounded-full text-[10px] font-bold ${
+            <span className="hidden sm:inline">{t.label}</span>
+            {t.count !== undefined && t.count > 0 && (
+              <span className={`min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold px-1 ${
                 tab === t.key
                   ? t.urgent ? "bg-orange-500 text-white" : "bg-zinc-200 text-zinc-700"
                   : t.urgent ? "bg-orange-200 text-orange-700" : "bg-zinc-200 text-zinc-500"
@@ -159,7 +186,16 @@ export function CleaningSchedule({ assignments }: { assignments: Assignment[] })
         ))}
       </div>
 
-      {/* Tab-Inhalt */}
+      {/* Labels unter Icons auf Mobile */}
+      <div className="flex sm:hidden gap-1 px-1">
+        {tabs.map((t) => (
+          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 text-[10px] font-medium text-center transition-colors ${tab === t.key ? "text-zinc-900" : "text-zinc-400"}`}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Inhalte */}
       {tab === "open" && (
         <div className="space-y-2">
           {open.length === 0
@@ -185,6 +221,12 @@ export function CleaningSchedule({ assignments }: { assignments: Assignment[] })
             : laundry.map(a => <LaundryRow key={`l-${a.id}`} a={a} />)
           }
         </div>
+      )}
+
+      {tab === "cleaners" && (
+        isAdmin
+          ? <CleanerList cleaners={cleaners} />
+          : <EmptyState label="Reiniger werden von Administratoren verwaltet." />
       )}
     </div>
   );

@@ -3,7 +3,6 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { addDays } from "date-fns";
-import { CleanerList } from "@/components/cleaners/CleanerList";
 import { CleaningSchedule } from "@/components/cleaners/CleaningSchedule";
 
 export default async function CleanersPage() {
@@ -14,6 +13,7 @@ export default async function CleanersPage() {
   const orgId = session.user.organizationId;
   const now = new Date();
   const in60Days = addDays(now, 60);
+  const isAdmin = session.user.role === "ADMIN";
 
   const [cleaners, assignments] = await Promise.all([
     prisma.user.findMany({
@@ -53,23 +53,13 @@ export default async function CleanersPage() {
     }),
   ]);
 
-  const isAdmin = session.user.role === "ADMIN";
-
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-4 sm:space-y-5">
       <div>
         <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Reinigung</h1>
-        <p className="text-zinc-500 text-sm mt-0.5">Aufträge und Reinigungskräfte verwalten.</p>
+        <p className="text-zinc-500 text-sm mt-0.5">Aufträge, Wäsche und Reinigungskräfte.</p>
       </div>
-
-      <CleaningSchedule assignments={assignments} />
-
-      {isAdmin && (
-        <>
-          <hr className="border-zinc-100" />
-          <CleanerList cleaners={cleaners} />
-        </>
-      )}
+      <CleaningSchedule assignments={assignments} cleaners={cleaners} isAdmin={isAdmin} />
     </div>
   );
 }
