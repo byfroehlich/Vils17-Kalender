@@ -7,21 +7,25 @@ import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings
 import { signOut } from "next-auth/react";
 
 const navItems = [
-  { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, adminOnly: true,  mobileOrder: 1 },
-  { href: "/calendar",    label: "Kalender",       icon: Calendar,        adminOnly: true,  mobileOrder: 2 },
-  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        adminOnly: true,  mobileOrder: 3 },
-  { href: "/cleaners",    label: "Reinigung",      icon: Users,           adminOnly: true,  mobileOrder: null },
-  { href: "/my-jobs",     label: "Aufträge",       icon: Briefcase,                         mobileOrder: 1,  cleanerOnly: true },
-  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      adminOnly: true,  mobileOrder: 4 },
-  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true,  mobileOrder: 5 },
+  { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, noClean: true,  mobileOrder: 1 },
+  { href: "/calendar",    label: "Kalender",       icon: Calendar,        noClean: true,  mobileOrder: 2 },
+  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        noClean: true,  mobileOrder: 3 },
+  { href: "/cleaners",    label: "Reinigung",      icon: Users,           noClean: true,  mobileOrder: null },
+  { href: "/my-jobs",     label: "Aufträge",       icon: Briefcase,       cleanerOnly: true, mobileOrder: 1 },
+  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 4 },
+  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5 },
 ];
 
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin = role === "ADMIN";
+  const isManager = role === "MANAGER";
+  const isCleaner = role === "CLEANER";
+
   const visibleItems = navItems.filter((item) => {
-    if (item.adminOnly && !isAdmin) return false;
-    if ((item as { cleanerOnly?: boolean }).cleanerOnly && isAdmin) return false;
+    if ((item as any).adminOnly && !isAdmin) return false;
+    if ((item as any).cleanerOnly && !isCleaner) return false;
+    if ((item as any).noClean && isCleaner) return false;
     return true;
   });
   const mobileItems = visibleItems

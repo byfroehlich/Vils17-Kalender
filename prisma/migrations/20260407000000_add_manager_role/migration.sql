@@ -1,0 +1,2 @@
+-- Add MANAGER to Role enum
+ALTER TYPE "Role" ADD VALUE 'MANAGER';

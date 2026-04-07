@@ -15,6 +15,15 @@ export default withAuth(
       }
     }
 
+    // Manager darf keine Einstellungen sehen
+    if (token?.role === "MANAGER") {
+      const blocked = ["/settings"];
+      const isBlocked = blocked.some((path) => pathname.startsWith(path));
+      if (isBlocked) {
+        return NextResponse.redirect(new URL("/dashboard", req.url));
+      }
+    }
+
     return NextResponse.next();
   },
   {
@@ -31,5 +40,7 @@ export const config = {
     "/bookings/:path*",
     "/cleaners/:path*",
     "/my-jobs/:path*",
+    "/statistics/:path*",
+    "/settings/:path*",
   ],
 };

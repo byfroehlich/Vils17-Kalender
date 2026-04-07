@@ -5,13 +5,21 @@ import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
-const updateSchema = z.object({
+const adminUpdateSchema = z.object({
   name: z.string().min(2).optional(),
   phone: z.string().optional(),
   notes: z.string().optional(),
   language: z.enum(["de", "en"]).optional(),
   active: z.boolean().optional(),
+  role: z.enum(["ADMIN", "MANAGER", "CLEANER"]).optional(),
   password: z.string().min(8).optional(),
+});
+
+const ownUpdateSchema = z.object({
+  name: z.string().min(2).optional(),
+  phone: z.string().optional(),
+  currentPassword: z.string().optional(),
+  newPassword: z.string().min(8).optional(),
 });
 
 export async function PATCH(
@@ -19,7 +27,13 @@ export async function PATCH(
   { params }: { params: { id: string } }
 ) {
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+
+  const isSelf = session.user.id === params.id;
+  const isAdmin = session.user.role === "ADMIN";
+
+  // Nur ADMIN darf andere User bearbeiten
+  if (!isSelf && !isAdmin) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
@@ -29,7 +43,37 @@ export async function PATCH(
   if (!user) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
   const body = await req.json();
-  const parsed = updateSchema.safeParse(body);
+
+  if (isSelf && !isAdmin) {
+    // Eigenes Konto: nur Name, Telefon, Passwort ändern
+    const parsed = ownUpdateSchema.safeParse(body);
+    if (!parsed.success) {
+      return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
+    }
+    const { currentPassword, newPassword, ...rest } = parsed.data;
+    const updateData: Record<string, unknown> = { ...rest };
+
+    if (newPassword) {
+      if (!currentPassword) {
+        return NextResponse.json({ error: "Aktuelles Passwort erforderlich" }, { status: 400 });
+      }
+      const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+      if (!valid) {
+        return NextResponse.json({ error: "Aktuelles Passwort falsch" }, { status: 400 });
+      }
+      updateData.passwordHash = await bcrypt.hash(newPassword, 12);
+    }
+
+    const updated = await prisma.user.update({
+      where: { id: params.id },
+      data: updateData,
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+    return NextResponse.json(updated);
+  }
+
+  // Admin: kann alles ändern
+  const parsed = adminUpdateSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
   }
@@ -46,7 +90,7 @@ export async function PATCH(
     data: updateData,
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true,
+      notes: true, language: true, active: true, role: true,
     },
   });
 
@@ -62,13 +106,16 @@ export async function DELETE(
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
+  // Eigenen Account nicht löschen
+  if (session.user.id === params.id) {
+    return NextResponse.json({ error: "Eigenen Account nicht löschbar" }, { status: 400 });
+  }
+
   const user = await prisma.user.findFirst({
     where: { id: params.id, organizationId: session.user.organizationId },
   });
   if (!user) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
-  // Assignments bleiben erhalten (cleaner wird auf null gesetzt via onDelete: SetNull)
   await prisma.user.delete({ where: { id: params.id } });
-
   return NextResponse.json({ success: true });
 }

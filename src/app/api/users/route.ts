@@ -9,6 +9,7 @@ const createUserSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   password: z.string().min(8),
+  role: z.enum(["ADMIN", "MANAGER", "CLEANER"]).default("CLEANER"),
   phone: z.string().optional(),
   notes: z.string().optional(),
   language: z.enum(["de", "en"]).default("de"),
@@ -21,11 +22,12 @@ export async function GET(req: NextRequest) {
   }
 
   const users = await prisma.user.findMany({
-    where: { organizationId: session.user.organizationId, role: "CLEANER" },
-    orderBy: { name: "asc" },
+    where: { organizationId: session.user.organizationId },
+    orderBy: [{ role: "asc" }, { name: "asc" }],
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true, createdAt: true,
+      notes: true, language: true, active: true, role: true, createdAt: true,
+      _count: { select: { assignments: true } },
     },
   });
 
@@ -44,7 +46,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Ungültige Daten", issues: parsed.error.issues }, { status: 400 });
   }
 
-  const { name, email, password, phone, notes, language } = parsed.data;
+  const { name, email, password, role, phone, notes, language } = parsed.data;
 
   const existing = await prisma.user.findFirst({
     where: { email: email.toLowerCase(), organizationId: session.user.organizationId },
@@ -62,14 +64,14 @@ export async function POST(req: NextRequest) {
       name,
       email: email.toLowerCase(),
       passwordHash,
-      role: "CLEANER",
+      role,
       phone,
       notes,
       language,
     },
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true,
+      notes: true, language: true, active: true, role: true,
     },
   });
 

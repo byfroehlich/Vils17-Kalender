@@ -12,6 +12,7 @@ export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
   if (session.user.role === "CLEANER") redirect("/my-jobs");
+  // MANAGER darf Dashboard sehen (kein Redirect nötig)
 
   const orgId = session.user.organizationId;
   const now = new Date();

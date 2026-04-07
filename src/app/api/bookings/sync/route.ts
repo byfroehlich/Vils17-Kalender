@@ -20,9 +20,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ success: true, results });
   }
 
-  // Manueller Sync via Admin
+  // Manueller Sync via Admin oder Manager
   const session = await getServerSession(authOptions);
-  if (!session || session.user.role !== "ADMIN") {
+  if (!session || !["ADMIN", "MANAGER"].includes(session.user.role)) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 

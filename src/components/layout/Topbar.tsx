@@ -19,9 +19,10 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
       <div className="flex items-center gap-2">
         <span className="text-sm text-zinc-500">{userName}</span>
         {role === "ADMIN" && (
-          <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">
-            Admin
-          </span>
+          <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">Admin</span>
+        )}
+        {role === "MANAGER" && (
+          <span className="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">Verwaltung</span>
         )}
       </div>
     </header>
