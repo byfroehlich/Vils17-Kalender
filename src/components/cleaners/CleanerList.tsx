@@ -91,29 +91,29 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
   return (
     <div className="space-y-4">
       {message && (
-        <div className="p-4 bg-green-50 border border-green-200 rounded-xl text-green-800 font-semibold">
+        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-medium">
           {message}
         </div>
       )}
 
-      {/* Neue Reinigungskraft anlegen */}
+      {/* Neue Reinigungskraft */}
       {!showForm && (
         <button
           onClick={startNew}
-          className="flex items-center gap-2 px-5 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl text-lg transition-colors"
+          className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-700 text-white font-medium rounded-xl text-sm transition-colors"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           Neue Reinigungskraft
         </button>
       )}
 
       {/* Formular */}
       {showForm && (
-        <div className="bg-white rounded-2xl border-2 border-blue-200 p-6">
-          <h3 className="text-xl font-bold mb-5">
+        <div className="bg-white rounded-2xl border border-zinc-200 p-5">
+          <h3 className="text-base font-semibold text-zinc-900 mb-4">
             {editingId ? "Reinigungskraft bearbeiten" : "Neue Reinigungskraft"}
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <FormField label="Name *">
               <input
                 value={form.name}
@@ -128,7 +128,7 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
                 type="email"
                 disabled={!!editingId}
-                className="form-input disabled:bg-gray-50"
+                className="form-input disabled:bg-zinc-50"
                 placeholder="max@beispiel.de"
               />
             </FormField>
@@ -168,17 +168,17 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
               />
             </FormField>
           </div>
-          <div className="flex gap-3 mt-5">
+          <div className="flex gap-3 mt-4">
             <button
               onClick={handleSave}
               disabled={saving}
-              className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-semibold rounded-xl text-lg"
+              className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 text-white font-medium rounded-xl text-sm transition-colors"
             >
               {saving ? "Wird gespeichert..." : "Speichern"}
             </button>
             <button
               onClick={() => setShowForm(false)}
-              className="px-6 py-3 border-2 border-gray-200 text-gray-600 font-semibold rounded-xl text-lg hover:border-gray-400"
+              className="px-5 py-2.5 border border-zinc-200 text-zinc-600 font-medium rounded-xl text-sm hover:bg-zinc-50 transition-colors"
             >
               Abbrechen
             </button>
@@ -188,67 +188,67 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
 
       {/* Liste */}
       {cleaners.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-gray-200 p-10 text-center text-gray-400 text-xl">
+        <div className="bg-white rounded-2xl border border-zinc-200 p-10 text-center text-zinc-400 text-sm">
           Noch keine Reinigungskräfte angelegt.
         </div>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-2.5">
           {cleaners.map((cleaner) => (
             <div
               key={cleaner.id}
-              className={`bg-white rounded-2xl border border-gray-200 p-5 ${!cleaner.active ? "opacity-60" : ""}`}
+              className={`bg-white rounded-2xl border border-zinc-200 p-4 ${!cleaner.active ? "opacity-50" : ""}`}
             >
               <div className="flex items-start justify-between gap-4">
-                <div className="flex-1">
+                <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-xl font-bold text-gray-900">{cleaner.name}</h3>
+                    <h3 className="text-sm font-semibold text-zinc-900">{cleaner.name}</h3>
                     {!cleaner.active && (
-                      <span className="text-sm bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">
+                      <span className="text-xs bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">
                         Inaktiv
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-wrap gap-3 text-gray-500">
+                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
                     <span className="flex items-center gap-1.5">
-                      <Mail className="w-4 h-4" />
+                      <Mail className="w-3.5 h-3.5" />
                       {cleaner.email}
                     </span>
                     {cleaner.phone && (
                       <span className="flex items-center gap-1.5">
-                        <Phone className="w-4 h-4" />
+                        <Phone className="w-3.5 h-3.5" />
                         {cleaner.phone}
                       </span>
                     )}
                   </div>
                   {cleaner.notes && (
-                    <p className="text-gray-400 text-sm mt-1">{cleaner.notes}</p>
+                    <p className="text-xs text-zinc-400 mt-1">{cleaner.notes}</p>
                   )}
-                  <p className="text-gray-400 text-sm mt-1">
+                  <p className="text-xs text-zinc-400 mt-1">
                     {cleaner._count.assignments} Aufträge insgesamt
                   </p>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-1">
                   <button
                     onClick={() => startEdit(cleaner)}
-                    className="p-2.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-colors"
+                    className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
                     title="Bearbeiten"
                   >
-                    <Pencil className="w-5 h-5" />
+                    <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => toggleActive(cleaner.id, cleaner.active)}
-                    className="p-2.5 text-gray-400 hover:text-orange-600 hover:bg-orange-50 rounded-xl transition-colors"
+                    className="p-2 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
                     title={cleaner.active ? "Deaktivieren" : "Aktivieren"}
                   >
-                    <Power className="w-5 h-5" />
+                    <Power className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => handleDelete(cleaner.id, cleaner.name)}
-                    className="p-2.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-colors"
+                    className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                     title="Löschen"
                   >
-                    <Trash2 className="w-5 h-5" />
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               </div>
@@ -263,7 +263,7 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-base font-medium text-gray-700 mb-1.5">{label}</label>
+      <label className="block text-xs font-medium text-zinc-600 mb-1">{label}</label>
       {children}
     </div>
   );

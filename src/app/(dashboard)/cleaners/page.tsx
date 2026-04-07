@@ -21,12 +21,12 @@ export default async function CleanersPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reinigungskräfte</h1>
-          <p className="text-gray-500 mt-1">
-            Verwalten Sie hier alle Reinigungskräfte und Firmen.
+          <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Reinigung</h1>
+          <p className="text-zinc-500 text-sm mt-0.5">
+            Reinigungskräfte und Firmen verwalten.
           </p>
         </div>
       </div>
