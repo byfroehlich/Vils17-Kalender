@@ -9,22 +9,20 @@ const glass = {
 } as React.CSSProperties;
 
 interface Props {
-  upcomingCheckouts: number;
-  upcomingCheckins: number;
-  openCleanings: number;
-  openLaundry: number;
+  activeNow: number;
+  checkoutsWeek: number;
+  checkinsWeek: number;
 }
 
-export function StatsCards({ upcomingCheckouts, upcomingCheckins, openCleanings, openLaundry }: Props) {
+export function StatsCards({ activeNow, checkoutsWeek, checkinsWeek }: Props) {
   const cards = [
-    { label: "Ankünfte diese Woche",  value: upcomingCheckins,  dot: "#14B8A6" },
-    { label: "Abreisen diese Woche",  value: upcomingCheckouts, dot: "#F59E0B" },
-    { label: "Offene Reinigungen",    value: openCleanings,     dot: openCleanings > 0 ? "#EF4444" : "#0D9488" },
-    { label: "Wäsche offen",          value: openLaundry,       dot: openLaundry  > 0 ? "#EF4444" : "#0F766E" },
+    { label: "Aktiv",        value: activeNow,     dot: "#22c55e" },
+    { label: "Checkout",     value: checkoutsWeek, dot: "#F59E0B" },
+    { label: "Diese Woche",  value: checkinsWeek,  dot: "#3b82f6" },
   ];
 
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-3 gap-3">
       {cards.map((card) => (
         <div key={card.label} style={glass}>
           <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: card.dot, marginBottom: 10 }} />
