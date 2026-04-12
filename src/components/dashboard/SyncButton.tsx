@@ -27,48 +27,62 @@ export function SyncButton() {
       try {
         data = await res.json();
       } catch {
-        setMessage(`Serverfehler ${res.status}`);
+        setMessage(`Fehler ${res.status}`);
         return;
       }
 
       if (data.success) {
-        const apart = (data.apartmentsImported as number) ?? 0;
+        const apart     = (data.apartmentsImported as number) ?? 0;
         const cancelled = (data.cancelled as number) ?? 0;
-        const created = (data.created as number) ?? 0;
+        const created   = (data.created as number) ?? 0;
         const parts: string[] = [];
-        if (apart > 0) parts.push(`${apart} Unterkunft(en) importiert`);
-        if (created > 0) parts.push(`+${created} neu`);
-        if (cancelled > 0) parts.push(`−${cancelled} storniert`);
-        const msg = parts.length > 0 ? `✓ ${parts.join(", ")}` : "✓ Alles aktuell";
-        setMessage(msg);
+        if (apart     > 0) parts.push(`${apart} importiert`);
+        if (created   > 0) parts.push(`+${created} neu`);
+        if (cancelled > 0) parts.push(`−${cancelled}`);
+        setMessage(parts.length > 0 ? `✓ ${parts.join(", ")}` : "✓ Aktuell");
         router.refresh();
       } else {
         setMessage(`Fehler: ${(data.error as string) ?? "unbekannt"}`);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {
-        setMessage("Timeout – bitte nochmal versuchen");
+        setMessage("Timeout");
       } else {
-        setMessage(`Netzwerkfehler: ${err instanceof Error ? err.message : "unbekannt"}`);
+        setMessage("Netzwerkfehler");
       }
     } finally {
       setLoading(false);
-      setTimeout(() => setMessage(""), 6000);
+      setTimeout(() => setMessage(""), 5000);
     }
   }
 
   return (
-    <div className="flex items-center gap-3">
+    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
       {message && (
-        <span className="text-base text-gray-600 font-medium">{message}</span>
+        <span style={{ fontSize: 12, color: "#14B8A6", fontWeight: 600 }}>{message}</span>
       )}
       <button
         onClick={handleSync}
         disabled={loading}
-        className="flex items-center gap-2 px-5 py-3 bg-white border-2 border-gray-200 hover:border-blue-400 text-gray-700 hover:text-blue-700 font-semibold rounded-xl transition-colors disabled:opacity-50"
+        style={{
+          display: "flex", alignItems: "center", gap: 6,
+          padding: "8px 14px",
+          background: "rgba(255,255,255,0.1)",
+          border: "1px solid rgba(13,148,136,0.45)",
+          borderRadius: 12,
+          color: "#14B8A6",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: loading ? "not-allowed" : "pointer",
+          opacity: loading ? 0.5 : 1,
+          backdropFilter: "blur(10px)",
+          WebkitBackdropFilter: "blur(10px)",
+          transition: "background 0.15s, border-color 0.15s",
+          whiteSpace: "nowrap" as const,
+        }}
       >
-        <RefreshCw className={`w-5 h-5 ${loading ? "animate-spin" : ""}`} />
-        {loading ? "Synchronisiert..." : "Smoobu syncen"}
+        <RefreshCw className={loading ? "animate-spin" : ""} style={{ width: 14, height: 14 }} />
+        {loading ? "Sync..." : "Sync"}
       </button>
     </div>
   );

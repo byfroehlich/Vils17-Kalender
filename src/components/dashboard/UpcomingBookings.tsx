@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { Users, ChevronRight } from "lucide-react";
+import { Users } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -18,25 +18,48 @@ interface Booking {
   } | null;
 }
 
-// Badge-Stil: bg + Text + ob es "Handlungsbedarf" hat (= auffälliger)
-const cleaningBadge: Record<string, { bg: string; text: string; urgent: boolean; label: string }> = {
-  UNASSIGNED: { bg: "bg-orange-100 border border-orange-300", text: "text-orange-800", urgent: true,  label: "⚠ Reinigung offen" },
-  SELF_CLEAN:  { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Selbstreinigung" },
-  ASSIGNED:    { bg: "bg-blue-100  border border-blue-200",   text: "text-blue-800",   urgent: false, label: "✓ Zugewiesen" },
-  COMPLETED:   { bg: "bg-green-100 border border-green-200",  text: "text-green-800",  urgent: false, label: "✓ Erledigt" },
+const glass = {
+  background: "rgba(255,255,255,0.1)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(255,255,255,0.18)",
+  borderRadius: 20,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.15)",
+} as React.CSSProperties;
+
+type BadgeInfo = { bg: string; text: string; label: string };
+
+const cleaningBadge: Record<string, BadgeInfo> = {
+  UNASSIGNED: { bg: "rgba(239,68,68,0.18)",   text: "#FCA5A5", label: "⚠ Reinigung offen"  },
+  SELF_CLEAN: { bg: "rgba(13,148,136,0.18)",  text: "#5EEAD4", label: "✓ Selbstreinigung"  },
+  ASSIGNED:   { bg: "rgba(13,148,136,0.18)",  text: "#5EEAD4", label: "✓ Zugewiesen"        },
+  COMPLETED:  { bg: "rgba(34,197,94,0.18)",   text: "#86EFAC", label: "✓ Erledigt"          },
 };
 
-const laundryBadge: Record<string, { bg: string; text: string; urgent: boolean; label: string }> = {
-  OPEN:      { bg: "bg-red-100    border border-red-300",    text: "text-red-800",    urgent: true,  label: "⚠ Wäsche offen" },
-  ORDERED:   { bg: "bg-amber-100  border border-amber-200",  text: "text-amber-800",  urgent: false, label: "◷ Wäsche bestellt" },
-  AVAILABLE: { bg: "bg-green-100  border border-green-200",  text: "text-green-800",  urgent: false, label: "✓ Wäsche vorhanden" },
+const laundryBadge: Record<string, BadgeInfo> = {
+  OPEN:      { bg: "rgba(239,68,68,0.18)",   text: "#FCA5A5", label: "⚠ Wäsche offen"    },
+  ORDERED:   { bg: "rgba(245,158,11,0.18)",  text: "#FCD34D", label: "◷ Wäsche bestellt"  },
+  AVAILABLE: { bg: "rgba(34,197,94,0.18)",   text: "#86EFAC", label: "✓ Wäsche vorhanden" },
 };
 
-export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
+function Badge({ bg, text, label }: BadgeInfo) {
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center",
+      padding: "4px 10px", borderRadius: 20,
+      background: bg, color: text,
+      fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" as const,
+    }}>
+      {label}
+    </span>
+  );
+}
+
+export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[]; dreherIds: Set<string> }) {
   if (bookings.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-zinc-100 p-10 text-center">
-        <p className="text-zinc-400 text-sm">Keine Buchungen in den nächsten Tagen</p>
+      <div style={{ ...glass, padding: "40px 24px", textAlign: "center" }}>
+        <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14 }}>Keine Buchungen in den nächsten Tagen</p>
       </div>
     );
   }
@@ -44,65 +67,79 @@ export function UpcomingBookings({ bookings }: { bookings: Booking[] }) {
   return (
     <div className="space-y-2">
       {bookings.map((booking) => {
-        const assignment = booking.cleaningAssignment;
+        const assignment     = booking.cleaningAssignment;
         const cleaningStatus = assignment?.status ?? "UNASSIGNED";
-        const laundryStatus = assignment?.laundryStatus ?? "OPEN";
+        const laundryStatus  = assignment?.laundryStatus ?? "OPEN";
+        const isDreher       = dreherIds.has(booking.id);
+        const cb = cleaningBadge[cleaningStatus];
+        const lb = laundryBadge[laundryStatus];
 
         return (
-          <Link
-            key={booking.id}
-            href={`/bookings/${booking.id}`}
-            className="flex items-center gap-4 bg-white rounded-2xl border border-zinc-100 px-5 py-4 hover:border-zinc-200 hover:shadow-sm transition-all group"
-          >
-            {/* Apartment Farbe */}
-            <div
-              className="w-1 self-stretch rounded-full flex-shrink-0"
-              style={{ backgroundColor: booking.apartment.color ?? "#18181b" }}
-            />
+          <Link key={booking.id} href={`/bookings/${booking.id}`} style={{ display: "block", textDecoration: "none" }}>
+            <div style={{ ...glass, padding: "16px 18px", display: "flex", alignItems: "flex-start", gap: 14, transition: "border-color 0.15s" }}>
+              {/* Apartment-Farbbalken */}
+              <div style={{
+                width: 4, alignSelf: "stretch", borderRadius: 4, flexShrink: 0,
+                backgroundColor: booking.apartment.color ?? "#18181b",
+              }} />
 
-            {/* Content */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2 mb-1">
-                <span className="font-semibold text-zinc-900 text-base truncate">
-                  {booking.guestName}
-                </span>
-                <span className="text-zinc-400 text-xs flex-shrink-0">{booking.apartment.name}</span>
-              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Dreher-Alert */}
+                {isDreher && (
+                  <div style={{
+                    display: "flex", alignItems: "center", gap: 6,
+                    background: "rgba(239,68,68,0.18)",
+                    border: "1px solid rgba(239,68,68,0.4)",
+                    borderRadius: 10, padding: "5px 10px", marginBottom: 10,
+                  }}>
+                    <span style={{ fontSize: 14 }}>⚡</span>
+                    <span style={{ fontSize: 12, fontWeight: 700, color: "#FCA5A5" }}>
+                      Nur 5 Stunden Wechselzeit — Abreise &amp; Anreise gleicher Tag!
+                    </span>
+                  </div>
+                )}
 
-              <div className="flex items-center gap-4 text-sm text-zinc-500 mb-2.5">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3.5 h-3.5" />
-                  {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
-                </span>
-                <span>
-                  {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
-                  {booking.departureTime && <span className="text-zinc-400"> bis {booking.departureTime}</span>}
-                </span>
-              </div>
+                {/* Name + Wohnung */}
+                <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 6, flexWrap: "wrap" as const }}>
+                  <span style={{ fontSize: 16, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>
+                    {booking.guestName}
+                  </span>
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", flexShrink: 0 }}>
+                    {booking.apartment.name}
+                  </span>
+                </div>
 
-              {/* Status Badges */}
-              <div className="flex items-center gap-2 flex-wrap">
-                {(() => {
-                  const cb = cleaningBadge[cleaningStatus];
-                  const lb = laundryBadge[laundryStatus];
-                  return (
-                    <>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${cb?.bg ?? ""} ${cb?.text ?? "text-zinc-500"}`}>
-                        {cb?.label ?? cleaningStatus}
-                        {(cleaningStatus === "ASSIGNED" || cleaningStatus === "COMPLETED") && assignment?.cleaner?.name && (
-                          <span className="ml-1 opacity-70">· {assignment.cleaner.name}</span>
-                        )}
-                      </span>
-                      <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold ${lb?.bg ?? ""} ${lb?.text ?? "text-zinc-500"}`}>
-                        {lb?.label ?? laundryStatus}
-                      </span>
-                    </>
-                  );
-                })()}
+                {/* Personen + Datum */}
+                <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 10, flexWrap: "wrap" as const }}>
+                  <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                    <Users style={{ width: 13, height: 13 }} />
+                    {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
+                  </span>
+                  <span>
+                    {formatDate(booking.checkIn)} → {formatDate(booking.checkOut)}
+                    {booking.departureTime && (
+                      <span style={{ color: "rgba(255,255,255,0.3)" }}> bis {booking.departureTime}</span>
+                    )}
+                  </span>
+                </div>
+
+                {/* Status Badges */}
+                <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+                  {cb && (
+                    <Badge
+                      bg={cb.bg}
+                      text={cb.text}
+                      label={
+                        (cleaningStatus === "ASSIGNED" || cleaningStatus === "COMPLETED") && assignment?.cleaner?.name
+                          ? `${cb.label} · ${assignment.cleaner.name}`
+                          : cb.label
+                      }
+                    />
+                  )}
+                  {lb && <Badge {...lb} />}
+                </div>
               </div>
             </div>
-
-            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-400 flex-shrink-0 transition-colors" />
           </Link>
         );
       })}

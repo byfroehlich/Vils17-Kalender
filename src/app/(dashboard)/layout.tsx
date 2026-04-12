@@ -14,7 +14,7 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen flex">
       {/* Sidebar – auf Mobilgerät versteckt */}
       <Sidebar role={session.user.role} />
 

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { AlertTriangle } from "lucide-react";
 import { formatDate } from "@/lib/utils";
 
 interface ProblemBooking {
@@ -15,48 +14,54 @@ export function WarningBanner({ bookings }: { bookings: ProblemBooking[] }) {
   if (bookings.length === 0) return null;
 
   return (
-    <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-      <div className="flex items-center gap-3 mb-3">
-        <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-          <AlertTriangle className="w-4 h-4 text-amber-600" />
-        </div>
+    <div style={{
+      background: "rgba(245,158,11,0.12)",
+      border: "1px solid rgba(245,158,11,0.35)",
+      backdropFilter: "blur(20px)",
+      WebkitBackdropFilter: "blur(20px)",
+      borderRadius: 16,
+      padding: 16,
+    }}>
+      {/* Header */}
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
+        <span style={{ fontSize: 20 }}>⚠️</span>
         <div>
-          <p className="font-semibold text-amber-900 text-sm">
-            {bookings.length === 1
-              ? "1 Buchung braucht Aufmerksamkeit"
-              : `${bookings.length} Buchungen brauchen Aufmerksamkeit`}
+          <p style={{ fontSize: 14, fontWeight: 700, color: "#FCD34D" }}>
+            {bookings.length === 1 ? "1 Buchung braucht Aufmerksamkeit" : `${bookings.length} Buchungen brauchen Aufmerksamkeit`}
           </p>
-          <p className="text-xs text-amber-700">Reinigung oder Wäsche nicht organisiert</p>
+          <p style={{ fontSize: 12, color: "rgba(253,211,77,0.65)", marginTop: 1 }}>
+            Reinigung oder Wäsche nicht organisiert
+          </p>
         </div>
       </div>
 
-      <div className="space-y-2">
+      {/* Buchungszeilen */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
         {bookings.map((b) => (
-          <Link
-            key={b.id}
-            href={`/bookings/${b.id}`}
-            className="block bg-white rounded-xl px-4 py-3 border border-amber-100 hover:border-amber-300 transition-colors"
-          >
-            {/* Zeile 1: Name + Datum */}
-            <div className="flex items-baseline justify-between gap-2 mb-1.5">
-              <span className="font-semibold text-zinc-900 text-sm truncate">
-                {b.guestName}
-              </span>
-              <span className="text-xs text-zinc-400 flex-shrink-0">
-                {formatDate(b.checkIn)}
-              </span>
-            </div>
-            {/* Zeile 2: Apartment + Badges */}
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-zinc-500 truncate">{b.apartment.name}</span>
-              <div className="flex items-center gap-1.5 flex-shrink-0">
+          <Link key={b.id} href={`/bookings/${b.id}`} style={{ textDecoration: "none" }}>
+            <div style={{
+              background: "rgba(255,255,255,0.07)",
+              border: "1px solid rgba(245,158,11,0.2)",
+              borderRadius: 12,
+              padding: "10px 14px",
+              display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8,
+            }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                  {b.guestName}
+                </p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>
+                  {b.apartment.name} · {formatDate(b.checkIn)}
+                </p>
+              </div>
+              <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
                 {b.cleaningUnassigned && (
-                  <span className="px-2 py-0.5 rounded-md bg-orange-100 text-orange-700 text-xs font-medium whitespace-nowrap">
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: "rgba(239,68,68,0.2)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}>
                     Reinigung
                   </span>
                 )}
                 {b.laundryOpen && (
-                  <span className="px-2 py-0.5 rounded-md bg-red-100 text-red-700 text-xs font-medium whitespace-nowrap">
+                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: "rgba(245,158,11,0.2)", color: "#FCD34D", border: "1px solid rgba(245,158,11,0.3)" }}>
                     Wäsche
                   </span>
                 )}

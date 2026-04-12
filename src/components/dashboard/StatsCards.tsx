@@ -1,3 +1,13 @@
+const glass = {
+  background: "rgba(255,255,255,0.12)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(255,255,255,0.22)",
+  borderRadius: 20,
+  boxShadow: "0 4px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.18)",
+  padding: "16px 18px",
+} as React.CSSProperties;
+
 interface Props {
   upcomingCheckouts: number;
   upcomingCheckins: number;
@@ -7,44 +17,23 @@ interface Props {
 
 export function StatsCards({ upcomingCheckouts, upcomingCheckins, openCleanings, openLaundry }: Props) {
   const cards = [
-    {
-      label: "Abreisen diese Woche",
-      value: upcomingCheckouts,
-      bg: "bg-blue-50",
-      text: "text-blue-700",
-      num: "text-blue-900",
-    },
-    {
-      label: "Ankünfte diese Woche",
-      value: upcomingCheckins,
-      bg: "bg-emerald-50",
-      text: "text-emerald-700",
-      num: "text-emerald-900",
-    },
-    {
-      label: "Offene Reinigungen",
-      value: openCleanings,
-      bg: openCleanings > 0 ? "bg-orange-50" : "bg-zinc-50",
-      text: openCleanings > 0 ? "text-orange-600" : "text-zinc-400",
-      num: openCleanings > 0 ? "text-orange-700" : "text-zinc-500",
-    },
-    {
-      label: "Wäsche offen",
-      value: openLaundry,
-      bg: openLaundry > 0 ? "bg-red-50" : "bg-zinc-50",
-      text: openLaundry > 0 ? "text-red-600" : "text-zinc-400",
-      num: openLaundry > 0 ? "text-red-700" : "text-zinc-500",
-    },
+    { label: "Ankünfte diese Woche",  value: upcomingCheckins,  dot: "#14B8A6" },
+    { label: "Abreisen diese Woche",  value: upcomingCheckouts, dot: "#F59E0B" },
+    { label: "Offene Reinigungen",    value: openCleanings,     dot: openCleanings > 0 ? "#EF4444" : "#0D9488" },
+    { label: "Wäsche offen",          value: openLaundry,       dot: openLaundry  > 0 ? "#EF4444" : "#0F766E" },
   ];
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5">
+    <div className="grid grid-cols-2 gap-3">
       {cards.map((card) => (
-        <div key={card.label} className={`${card.bg} rounded-2xl p-4`}>
-          <p className={`text-3xl font-bold tracking-tight mb-1 ${card.num}`}>
+        <div key={card.label} style={glass}>
+          <div style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: card.dot, marginBottom: 10 }} />
+          <p style={{ fontSize: 28, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1, marginBottom: 6 }}>
             {card.value}
           </p>
-          <p className={`text-xs font-medium leading-tight ${card.text}`}>{card.label}</p>
+          <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.5px", textTransform: "uppercase", lineHeight: 1.3 }}>
+            {card.label}
+          </p>
         </div>
       ))}
     </div>
