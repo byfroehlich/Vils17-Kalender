@@ -78,20 +78,20 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   }
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200">
-      <div className="px-6 py-4 border-b border-zinc-100">
-        <h2 className="font-semibold text-zinc-900">Unterkünfte</h2>
-        <p className="text-sm text-zinc-500 mt-0.5">Name, Farbe und Wäsche-Mengen anpassen</p>
+    <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 20 }}>
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <h2 style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 15 }}>Unterkünfte</h2>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Name, Farbe und Wäsche-Mengen anpassen</p>
       </div>
 
-      <div className="divide-y divide-zinc-100">
+      <div className="divide-y divide-white/5">
         {apartments.map((apt) => (
-          <div key={apt.id} className="px-6 py-4">
+          <div key={apt.id} style={{ padding: "16px 24px" }}>
             {editingId === apt.id ? (
               /* Bearbeitungs-Modus */
               <div className="space-y-5">
                 <div>
-                  <label className="text-sm font-medium text-zinc-600 mb-1.5 block">Name</label>
+                  <label style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.55)", marginBottom: 6, display: "block" }}>Name</label>
                   <input
                     value={editName}
                     onChange={(e) => setEditName(e.target.value)}
@@ -101,7 +101,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-zinc-600 mb-2">Kalenderfarbe</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.55)", marginBottom: 8, display: "block" }}>Kalenderfarbe</p>
                   <div className="flex gap-2 flex-wrap">
                     {COLOR_OPTIONS.map((c) => (
                       <button
@@ -118,11 +118,11 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                 </div>
 
                 {/* Wäsche-Konfiguration */}
-                <div className="border-t border-zinc-100 pt-4">
-                  <p className="text-sm font-semibold text-zinc-700 mb-3">Wäsche-Mengen</p>
+                <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", paddingTop: 16 }}>
+                  <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.7)", marginBottom: 12, display: "block" }}>Wäsche-Mengen</p>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                      <label style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>
                         Bettsets: 1 pro … Gäste
                       </label>
                       <div className="flex items-center gap-2">
@@ -134,14 +134,14 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                           onChange={(e) => setEditBedsDivisor(Number(e.target.value))}
                           className="form-input w-20 text-center"
                         />
-                        <span className="text-sm text-zinc-400">Gäste/Set</span>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Gäste/Set</span>
                       </div>
-                      <p className="text-xs text-zinc-400 mt-1">
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4, display: "block" }}>
                         z.B. 2 = 1 Set pro Doppelzimmer
                       </p>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                      <label style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>
                         Handtücher pro Gast
                       </label>
                       <div className="flex items-center gap-2">
@@ -153,11 +153,11 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                           onChange={(e) => setEditTowelsPerGuest(Number(e.target.value))}
                           className="form-input w-20 text-center"
                         />
-                        <span className="text-sm text-zinc-400">Stück/Gast</span>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Stück/Gast</span>
                       </div>
                     </div>
                     <div>
-                      <label className="text-xs font-medium text-zinc-500 mb-1.5 block">
+                      <label style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>
                         Küchenhandtücher pro Buchung
                       </label>
                       <div className="flex items-center gap-2">
@@ -169,7 +169,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                           onChange={(e) => setEditKitchenCount(Number(e.target.value))}
                           className="form-input w-20 text-center"
                         />
-                        <span className="text-sm text-zinc-400">Stück/Buchung</span>
+                        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>Stück/Buchung</span>
                       </div>
                     </div>
                   </div>
@@ -202,10 +202,10 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                     style={{ backgroundColor: apt.color ?? "#3b82f6" }}
                   />
                   <div className="min-w-0">
-                    <p className={`font-medium ${apt.active ? "text-zinc-900" : "text-zinc-400 line-through"}`}>
+                    <p style={{ fontWeight: 500, color: apt.active ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.3)", textDecoration: apt.active ? "none" : "line-through" }}>
                       {apt.name}
                     </p>
-                    <p className="text-xs text-zinc-400">
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", display: "block" }}>
                       {apt.smoobuId ? `Smoobu ID: ${apt.smoobuId}` : "Manuell angelegt"} · {apt._count.bookings} Buchungen
                     </p>
                     <p className="text-xs text-zinc-400 mt-0.5">
@@ -216,14 +216,14 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <button
                     onClick={() => startEdit(apt)}
-                    className="p-2 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition-colors"
+                    style={{ padding: 8, borderRadius: 8, color: "rgba(255,255,255,0.4)", cursor: "pointer", background: "transparent", border: "none" }}
                   >
                     <Pencil className="w-4 h-4" />
                   </button>
                   <button
                     onClick={() => deleteApartment(apt.id, apt._count.bookings)}
                     disabled={deleting === apt.id}
-                    className="p-2 rounded-lg text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                    style={{ padding: 8, borderRadius: 8, color: "rgba(255,255,255,0.4)", cursor: "pointer", background: "transparent", border: "none" }}
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>

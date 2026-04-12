@@ -122,7 +122,7 @@ function LaundryRow({ a }: { a: Assignment }) {
 
 function EmptyState({ label }: { label: string }) {
   return (
-    <div className="bg-white rounded-xl border border-zinc-200 p-8 text-center text-zinc-400 text-sm">
+    <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "32px 24px", textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: 14 }}>
       {label}
     </div>
   );
@@ -160,25 +160,28 @@ export function CleaningSchedule({
   return (
     <div className="space-y-3">
       {/* Tabs */}
-      <div className="flex gap-1 bg-zinc-100 p-1 rounded-xl">
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
-            className={`flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-colors ${
-              tab === t.key
-                ? "bg-white text-zinc-900 shadow-sm"
-                : "text-zinc-500 hover:text-zinc-700"
-            }`}
+            className="flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-colors"
+            style={{
+              background: tab === t.key ? "rgba(255,255,255,0.12)" : "transparent",
+              color: tab === t.key ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)",
+              boxShadow: tab === t.key ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
+            }}
           >
             {t.icon}
             <span className="hidden sm:inline">{t.label}</span>
             {t.count !== undefined && t.count > 0 && (
-              <span className={`min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold px-1 ${
-                tab === t.key
-                  ? t.urgent ? "bg-orange-500 text-white" : "bg-zinc-200 text-zinc-700"
-                  : t.urgent ? "bg-orange-200 text-orange-700" : "bg-zinc-200 text-zinc-500"
-              }`}>
+              <span
+                className="min-w-[16px] h-4 flex items-center justify-center rounded-full text-[10px] font-bold px-1"
+                style={{
+                  background: t.urgent ? (tab === t.key ? "#f97316" : "rgba(249,115,22,0.25)") : "rgba(255,255,255,0.15)",
+                  color: t.urgent ? (tab === t.key ? "white" : "#fb923c") : "rgba(255,255,255,0.6)",
+                }}
+              >
                 {t.count}
               </span>
             )}
@@ -189,7 +192,7 @@ export function CleaningSchedule({
       {/* Labels unter Icons auf Mobile */}
       <div className="flex sm:hidden gap-1 px-1">
         {tabs.map((t) => (
-          <button key={t.key} onClick={() => setTab(t.key)} className={`flex-1 text-[10px] font-medium text-center transition-colors ${tab === t.key ? "text-zinc-900" : "text-zinc-400"}`}>
+          <button key={t.key} onClick={() => setTab(t.key)} style={{ flex: 1, fontSize: 10, fontWeight: 500, textAlign: "center" as const, color: tab === t.key ? "rgba(255,255,255,0.9)" : "rgba(255,255,255,0.35)" }}>
             {t.label}
           </button>
         ))}

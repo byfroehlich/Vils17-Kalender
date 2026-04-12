@@ -27,13 +27,13 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-zinc-900">Einstellungen</h1>
-        <p className="text-zinc-500 text-sm mt-0.5">Unterkünfte, Benutzer und Ansichten verwalten</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Einstellungen</h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Unterkünfte, Benutzer und Ansichten verwalten</p>
       </div>
       <ApartmentSettings apartments={apartments} />
-      <hr className="border-zinc-100" />
+      <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
       <UserManagement users={users} currentUserId={session.user.id} />
-      <hr className="border-zinc-100" />
+      <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
       <CalendarViewSettings />
     </div>
   );

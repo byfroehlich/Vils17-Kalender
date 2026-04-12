@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { format, getYear, getMonth, differenceInCalendarDays } from "date-fns";
-import { de } from "date-fns/locale";
-import { getCommission, calcPayout, DEFAULT_COMMISSIONS } from "@/lib/commissions";
+import { getYear, getMonth, differenceInCalendarDays } from "date-fns";
+import { getCommission, calcPayout } from "@/lib/commissions";
 import { TrendingUp, Calendar, Home, Info } from "lucide-react";
 
 interface Apartment {
@@ -35,6 +34,15 @@ function nights(b: Booking): number {
   return Math.max(1, differenceInCalendarDays(new Date(b.checkOut), new Date(b.checkIn)));
 }
 
+const glassCard: React.CSSProperties = {
+  background: "rgba(255,255,255,0.08)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 20,
+  overflow: "hidden",
+};
+
 export function StatisticsView({
   apartments,
   bookings,
@@ -60,7 +68,6 @@ export function StatisticsView({
     [bookings, selectedYear, selectedAptId]
   );
 
-  // Monatliche Gruppierung
   const monthlyData = useMemo(() => {
     return MONTHS.map((label, monthIdx) => {
       const monthBookings = filtered.filter((b) => getMonth(new Date(b.checkIn)) === monthIdx);
@@ -82,7 +89,6 @@ export function StatisticsView({
     noPriceCount: filtered.filter((b) => b.price === null).length,
   }), [filtered]);
 
-  // Kanal-Aufschlüsselung
   const channelBreakdown = useMemo(() => {
     const map = new Map<string, { count: number; gross: number; payout: number }>();
     for (const b of filtered) {
@@ -105,24 +111,26 @@ export function StatisticsView({
       {/* Titel + Filter */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-zinc-900 flex items-center gap-2">
-            <TrendingUp className="w-6 h-6 text-zinc-400" />
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em", display: "flex", alignItems: "center", gap: 8 }}>
+            <TrendingUp style={{ width: 20, height: 20, color: "#14B8A6" }} />
             Statistiken
           </h1>
-          <p className="text-sm text-zinc-500 mt-0.5">Ertrag und Belegung im Überblick</p>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Ertrag und Belegung im Überblick</p>
         </div>
-        <div className="flex gap-2">
+        <div style={{ display: "flex", gap: 8 }}>
           <select
             value={selectedYear}
             onChange={(e) => setSelectedYear(Number(e.target.value))}
-            className="px-3 py-2 text-sm border border-zinc-200 rounded-xl bg-white text-zinc-700 font-medium focus:outline-none focus:border-zinc-400"
+            className="form-input"
+            style={{ width: "auto", paddingLeft: 12, paddingRight: 12 }}
           >
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
           <select
             value={selectedAptId}
             onChange={(e) => setSelectedAptId(e.target.value)}
-            className="px-3 py-2 text-sm border border-zinc-200 rounded-xl bg-white text-zinc-700 font-medium focus:outline-none focus:border-zinc-400"
+            className="form-input"
+            style={{ width: "auto", paddingLeft: 12, paddingRight: 12 }}
           >
             <option value="all">Alle Wohnungen</option>
             {apartments.map((a) => <option key={a.id} value={a.id}>{a.name}</option>)}
@@ -130,77 +138,54 @@ export function StatisticsView({
         </div>
       </div>
 
-      {/* Hinweis wenn Sync noch keine Preise hat */}
+      {/* Hinweis wenn kein Preis */}
       {!hasAnyPrice && filtered.length > 0 && (
-        <div className="flex items-start gap-3 p-4 bg-amber-50 border border-amber-200 rounded-xl text-sm text-amber-800">
-          <Info className="w-4 h-4 mt-0.5 flex-shrink-0" />
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 10, padding: "12px 16px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 14, fontSize: 13, color: "#fcd34d" }}>
+          <Info style={{ width: 16, height: 16, marginTop: 1, flexShrink: 0 }} />
           <span>Noch keine Preis-Daten vorhanden — bitte einmal Sync starten um die Preise aus Smoobu zu laden.</span>
         </div>
       )}
 
       {/* Jahres-Karten */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <SummaryCard
-          label="Umsatz brutto"
-          value={hasAnyPrice ? `€ ${fmt(yearTotals.gross)}` : "–"}
-          sub="inkl. Portalgebühren"
-          color="text-zinc-800"
-        />
-        <SummaryCard
-          label="Auszahlung netto"
-          value={hasAnyPrice ? `€ ${fmt(yearTotals.payout)}` : "–"}
-          sub="nach Provision"
-          color="text-green-700"
-        />
-        <SummaryCard
-          label="Buchungen"
-          value={String(yearTotals.bookings)}
-          sub={`${yearTotals.noPriceCount > 0 ? `${yearTotals.noPriceCount} ohne Preis` : "alle mit Preis"}`}
-          color="text-zinc-800"
-        />
-        <SummaryCard
-          label="Nächte"
-          value={String(yearTotals.nights)}
-          sub="Belegungsnächte"
-          color="text-zinc-800"
-        />
+        <SummaryCard label="Umsatz brutto" value={hasAnyPrice ? `€ ${fmt(yearTotals.gross)}` : "–"} sub="inkl. Portalgebühren" accent="#14B8A6" />
+        <SummaryCard label="Auszahlung netto" value={hasAnyPrice ? `€ ${fmt(yearTotals.payout)}` : "–"} sub="nach Provision" accent="#10b981" />
+        <SummaryCard label="Buchungen" value={String(yearTotals.bookings)} sub={yearTotals.noPriceCount > 0 ? `${yearTotals.noPriceCount} ohne Preis` : "alle mit Preis"} accent="#3b82f6" />
+        <SummaryCard label="Nächte" value={String(yearTotals.nights)} sub="Belegungsnächte" accent="#8b5cf6" />
       </div>
 
-      {/* Monatsübersicht — Desktop: Tabelle, Mobile: Karten */}
-      <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-        <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
-          <Calendar className="w-4 h-4 text-zinc-400" />
-          <span className="text-sm font-semibold text-zinc-800">Monatliche Übersicht {selectedYear}</span>
+      {/* Monatsübersicht */}
+      <div style={glassCard}>
+        <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 8 }}>
+          <Calendar style={{ width: 16, height: 16, color: "#14B8A6" }} />
+          <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Monatliche Übersicht {selectedYear}</span>
         </div>
 
         {/* Desktop-Tabelle */}
         <div className="hidden sm:block overflow-x-auto">
-          <table className="w-full text-sm">
+          <table style={{ width: "100%", fontSize: 13, borderCollapse: "collapse" }}>
             <thead>
-              <tr className="border-b border-zinc-100">
-                <th className="text-left px-5 py-2.5 font-medium text-zinc-400 w-16">Monat</th>
-                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Buchungen</th>
-                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Nächte</th>
-                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Umsatz</th>
-                <th className="text-right px-4 py-2.5 font-medium text-zinc-400">Provision</th>
-                <th className="text-right px-5 py-2.5 font-medium text-zinc-800">Auszahlung</th>
+              <tr style={{ borderBottom: "1px solid rgba(255,255,255,0.07)" }}>
+                {["Monat", "Buchungen", "Nächte", "Umsatz", "Provision", "Auszahlung"].map((h, i) => (
+                  <th key={h} style={{ padding: "8px 16px", fontWeight: 600, fontSize: 11, color: "rgba(255,255,255,0.35)", textAlign: i === 0 ? "left" : "right" }}>{h}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {monthlyData.map((m) => {
                 const hasData = m.bookings.length > 0;
                 return (
-                  <tr key={m.monthIdx} className={`border-b border-zinc-50 ${hasData ? "hover:bg-zinc-50/60" : ""}`}>
-                    <td className={`px-5 py-3 font-semibold ${hasData ? "text-zinc-800" : "text-zinc-300"}`}>{m.label}</td>
-                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>{hasData ? m.bookings.length : "–"}</td>
-                    <td className={`px-4 py-3 text-right ${hasData ? "text-zinc-600" : "text-zinc-300"}`}>{hasData ? m.nightsTotal : "–"}</td>
-                    <td className={`px-4 py-3 text-right ${hasData && m.grossTotal > 0 ? "text-zinc-700" : "text-zinc-300"}`}>
+                  <tr key={m.monthIdx} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)" }}>
+                    <td style={{ padding: "10px 16px", fontWeight: 600, color: hasData ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.2)" }}>{m.label}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: hasData ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)" }}>{hasData ? m.bookings.length : "–"}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: hasData ? "rgba(255,255,255,0.6)" : "rgba(255,255,255,0.2)" }}>{hasData ? m.nightsTotal : "–"}</td>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: hasData && m.grossTotal > 0 ? "rgba(255,255,255,0.7)" : "rgba(255,255,255,0.2)" }}>
                       {hasData && m.grossTotal > 0 ? `€ ${fmt(m.grossTotal)}` : "–"}
                     </td>
-                    <td className={`px-4 py-3 text-right ${hasData && m.commissionTotal > 0 ? "text-red-400" : "text-zinc-300"}`}>
+                    <td style={{ padding: "10px 16px", textAlign: "right", color: hasData && m.commissionTotal > 0 ? "#fca5a5" : "rgba(255,255,255,0.2)" }}>
                       {hasData && m.commissionTotal > 0 ? `–€ ${fmt(m.commissionTotal)}` : "–"}
                     </td>
-                    <td className={`px-5 py-3 text-right font-semibold ${hasData && m.payoutTotal > 0 ? "text-green-700" : "text-zinc-300"}`}>
+                    <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: hasData && m.payoutTotal > 0 ? "#6ee7b7" : "rgba(255,255,255,0.2)" }}>
                       {hasData && m.payoutTotal > 0 ? `€ ${fmt(m.payoutTotal)}` : "–"}
                     </td>
                   </tr>
@@ -209,13 +194,13 @@ export function StatisticsView({
             </tbody>
             {hasAnyPrice && (
               <tfoot>
-                <tr className="border-t-2 border-zinc-200 bg-zinc-50/60">
-                  <td className="px-5 py-3 font-bold text-zinc-800">Gesamt</td>
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-700">{yearTotals.bookings}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-700">{yearTotals.nights}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-zinc-700">€ {fmt(yearTotals.gross)}</td>
-                  <td className="px-4 py-3 text-right font-semibold text-red-400">–€ {fmt(yearTotals.gross - yearTotals.payout)}</td>
-                  <td className="px-5 py-3 text-right font-bold text-green-700">€ {fmt(yearTotals.payout)}</td>
+                <tr style={{ borderTop: "2px solid rgba(255,255,255,0.12)", background: "rgba(255,255,255,0.04)" }}>
+                  <td style={{ padding: "10px 16px", fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>Gesamt</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>{yearTotals.bookings}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>{yearTotals.nights}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "rgba(255,255,255,0.7)" }}>€ {fmt(yearTotals.gross)}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 600, color: "#fca5a5" }}>–€ {fmt(yearTotals.gross - yearTotals.payout)}</td>
+                  <td style={{ padding: "10px 16px", textAlign: "right", fontWeight: 700, color: "#6ee7b7" }}>€ {fmt(yearTotals.payout)}</td>
                 </tr>
               </tfoot>
             )}
@@ -223,39 +208,37 @@ export function StatisticsView({
         </div>
 
         {/* Mobile-Karten */}
-        <div className="sm:hidden divide-y divide-zinc-50">
+        <div className="sm:hidden">
           {monthlyData.filter((m) => m.bookings.length > 0).map((m) => (
-            <div key={m.monthIdx} className="px-4 py-3">
-              <div className="flex items-center justify-between mb-2">
-                <span className="font-semibold text-zinc-800">{m.label}</span>
-                <span className="text-xs text-zinc-400">{m.bookings.length} Buchung{m.bookings.length !== 1 ? "en" : ""} · {m.nightsTotal} Nächte</span>
+            <div key={m.monthIdx} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
+                <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{m.label}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{m.bookings.length} Buchung{m.bookings.length !== 1 ? "en" : ""} · {m.nightsTotal} Nächte</span>
               </div>
-              <div className="flex items-center justify-between">
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
                 <div>
-                  <p className="text-xs text-zinc-400">Umsatz</p>
-                  <p className="text-sm font-medium text-zinc-700">€ {fmt(m.grossTotal)}</p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Umsatz</p>
+                  <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)" }}>€ {fmt(m.grossTotal)}</p>
                 </div>
                 {m.commissionTotal > 0 && (
-                  <div className="text-right">
-                    <p className="text-xs text-zinc-400">Provision</p>
-                    <p className="text-sm text-red-400">–€ {fmt(m.commissionTotal)}</p>
+                  <div style={{ textAlign: "right" }}>
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Provision</p>
+                    <p style={{ fontSize: 13, color: "#fca5a5" }}>–€ {fmt(m.commissionTotal)}</p>
                   </div>
                 )}
-                <div className="text-right">
-                  <p className="text-xs text-zinc-400">Auszahlung</p>
-                  <p className="text-base font-bold text-green-700">€ {fmt(m.payoutTotal)}</p>
+                <div style={{ textAlign: "right" }}>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Auszahlung</p>
+                  <p style={{ fontSize: 15, fontWeight: 700, color: "#6ee7b7" }}>€ {fmt(m.payoutTotal)}</p>
                 </div>
               </div>
             </div>
           ))}
           {hasAnyPrice && (
-            <div className="px-4 py-3 bg-zinc-50/60">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-zinc-800">Gesamt {selectedYear}</span>
-                <div className="text-right">
-                  <p className="text-xs text-zinc-400">Auszahlung gesamt</p>
-                  <p className="text-lg font-bold text-green-700">€ {fmt(yearTotals.payout)}</p>
-                </div>
+            <div style={{ padding: "12px 16px", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)", fontSize: 14 }}>Gesamt {selectedYear}</span>
+              <div style={{ textAlign: "right" }}>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Auszahlung gesamt</p>
+                <p style={{ fontSize: 17, fontWeight: 700, color: "#6ee7b7" }}>€ {fmt(yearTotals.payout)}</p>
               </div>
             </div>
           )}
@@ -264,36 +247,38 @@ export function StatisticsView({
 
       {/* Kanal-Aufschlüsselung */}
       {channelBreakdown.length > 0 && (
-        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-          <div className="px-4 py-3 border-b border-zinc-100 flex items-center gap-2">
-            <Home className="w-4 h-4 text-zinc-400" />
-            <span className="text-sm font-semibold text-zinc-800">Buchungskanäle {selectedYear}</span>
+        <div style={glassCard}>
+          <div style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", gap: 8 }}>
+            <Home style={{ width: 16, height: 16, color: "#14B8A6" }} />
+            <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>Buchungskanäle {selectedYear}</span>
           </div>
-          <div className="divide-y divide-zinc-50">
+          <div>
             {channelBreakdown.map((ch) => (
-              <div key={ch.channel} className="px-4 py-3">
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <span className="text-sm font-medium text-zinc-800">{ch.channel}</span>
-                    {ch.commission > 0 && (
-                      <span className="ml-2 text-xs px-1.5 py-0.5 bg-zinc-100 text-zinc-500 rounded-full font-medium">
-                        {ch.commission}%
-                      </span>
-                    )}
-                    <p className="text-xs text-zinc-400 mt-0.5">{ch.count} Buchung{ch.count !== 1 ? "en" : ""}</p>
+              <div key={ch.channel} style={{ padding: "12px 20px", borderBottom: "1px solid rgba(255,255,255,0.05)" }}>
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 }}>
+                  <div style={{ minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.8)" }}>{ch.channel}</span>
+                      {ch.commission > 0 && (
+                        <span style={{ fontSize: 11, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.5)", padding: "1px 7px", borderRadius: 20, fontWeight: 600 }}>
+                          {ch.commission}%
+                        </span>
+                      )}
+                    </div>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{ch.count} Buchung{ch.count !== 1 ? "en" : ""}</p>
                   </div>
                   {ch.gross > 0 && (
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-xs text-zinc-400">€ {fmt(ch.gross)}</p>
-                      <p className="text-sm font-semibold text-green-700">→ € {fmt(ch.payout)}</p>
+                    <div style={{ textAlign: "right", flexShrink: 0 }}>
+                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>€ {fmt(ch.gross)}</p>
+                      <p style={{ fontSize: 13, fontWeight: 600, color: "#6ee7b7" }}>→ € {fmt(ch.payout)}</p>
                     </div>
                   )}
                 </div>
               </div>
             ))}
           </div>
-          <div className="px-4 py-2.5 border-t border-zinc-100 bg-zinc-50/60">
-            <p className="text-xs text-zinc-400">
+          <div style={{ padding: "10px 20px", borderTop: "1px solid rgba(255,255,255,0.07)" }}>
+            <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)" }}>
               Schätzwerte: Airbnb 18%, Booking.com 18%, FeWo-direkt 11%, Direkt 0%
             </p>
           </div>
@@ -301,7 +286,7 @@ export function StatisticsView({
       )}
 
       {filtered.length === 0 && (
-        <div className="text-center py-12 text-zinc-400 text-sm">
+        <div style={{ textAlign: "center", padding: "48px 24px", color: "rgba(255,255,255,0.3)", fontSize: 14 }}>
           Keine Buchungen für {selectedYear}{selectedAptId !== "all" ? " / diese Wohnung" : ""} gefunden.
         </div>
       )}
@@ -309,12 +294,19 @@ export function StatisticsView({
   );
 }
 
-function SummaryCard({ label, value, sub, color }: { label: string; value: string; sub: string; color: string }) {
+function SummaryCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200 p-4">
-      <p className="text-xs font-medium text-zinc-400 mb-1">{label}</p>
-      <p className={`text-xl font-bold ${color}`}>{value}</p>
-      <p className="text-xs text-zinc-400 mt-0.5">{sub}</p>
+    <div style={{
+      background: "rgba(255,255,255,0.08)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      border: "1px solid rgba(255,255,255,0.12)",
+      borderRadius: 16,
+      padding: 16,
+    }}>
+      <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
+      <p style={{ fontSize: 20, fontWeight: 700, color: accent, lineHeight: 1.1 }}>{value}</p>
+      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{sub}</p>
     </div>
   );
 }

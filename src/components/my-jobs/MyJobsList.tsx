@@ -40,10 +40,10 @@ export function MyJobsList({ assignments }: { assignments: Assignment[] }) {
 
   if (assignments.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-        <ClipboardList className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-        <p className="text-xl text-gray-400">Keine Aufträge ausstehend.</p>
-        <p className="text-gray-300 mt-1">Sie werden benachrichtigt wenn ein Auftrag zugewiesen wird.</p>
+      <div style={{ background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 20, padding: "48px 24px", textAlign: "center" }}>
+        <ClipboardList style={{ width: 48, height: 48, color: "rgba(255,255,255,0.15)", margin: "0 auto 16px" }} />
+        <p style={{ fontSize: 17, color: "rgba(255,255,255,0.45)", fontWeight: 500 }}>Keine Aufträge ausstehend.</p>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.25)", marginTop: 6 }}>Sie werden benachrichtigt wenn ein Auftrag zugewiesen wird.</p>
       </div>
     );
   }
@@ -53,7 +53,7 @@ export function MyJobsList({ assignments }: { assignments: Assignment[] }) {
       {/* Ausstehende Aufträge */}
       {pending.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-gray-700 mb-3">
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.6)", marginBottom: 10 }}>
             Ausstehend ({pending.length})
           </h2>
           <div className="space-y-3">
@@ -72,10 +72,10 @@ export function MyJobsList({ assignments }: { assignments: Assignment[] }) {
       {/* Erledigte Aufträge */}
       {done.length > 0 && (
         <section>
-          <h2 className="text-xl font-bold text-gray-500 mb-3">
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 10 }}>
             Erledigt ({done.length})
           </h2>
-          <div className="space-y-3 opacity-60">
+          <div className="space-y-3" style={{ opacity: 0.55 }}>
             {done.map((a) => (
               <JobCard key={a.id} assignment={a} loading={false} />
             ))}
@@ -97,82 +97,108 @@ function JobCard({
 }) {
   const b = assignment.booking;
   const isDone = assignment.status === "COMPLETED";
+  const aptColor = b.apartment.color ?? "#3b82f6";
 
   return (
-    <div
-      className={`bg-white rounded-2xl border-2 p-6 ${
-        isDone ? "border-green-200" : "border-blue-200"
-      }`}
-    >
-      {/* Wohnung */}
-      <div className="flex items-center gap-2 mb-3">
-        <span
-          className="w-4 h-4 rounded-full"
-          style={{ backgroundColor: b.apartment.color ?? "#3b82f6" }}
-        />
-        <span className="font-bold text-gray-500 uppercase tracking-wide">
-          {b.apartment.name}
-        </span>
-        {isDone && (
-          <span className="ml-auto flex items-center gap-1 text-green-600 font-semibold">
-            <CheckCircle className="w-5 h-5" />
-            Erledigt
-          </span>
+    <div style={{
+      background: "rgba(255,255,255,0.08)",
+      backdropFilter: "blur(16px)",
+      WebkitBackdropFilter: "blur(16px)",
+      border: isDone
+        ? "1px solid rgba(16,185,129,0.3)"
+        : "1px solid rgba(255,255,255,0.14)",
+      borderRadius: 20,
+      overflow: "hidden",
+    }}>
+      {/* Farbstreifen oben */}
+      <div style={{ height: 4, backgroundColor: aptColor, width: "100%" }} />
+
+      <div style={{ padding: 20 }}>
+        {/* Wohnung + Status */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.5)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+              {b.apartment.name}
+            </span>
+          </div>
+          {isDone && (
+            <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}>
+              <CheckCircle style={{ width: 16, height: 16 }} />
+              Erledigt
+            </span>
+          )}
+        </div>
+
+        {/* Details */}
+        <div className="space-y-3">
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <Home style={{ width: 22, height: 22, color: "rgba(255,255,255,0.3)", marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Reinigung nach Abreise</p>
+              <p style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>
+                {formatDateLong(b.checkOut)}
+              </p>
+              {b.departureTime && (
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>
+              )}
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Clock style={{ width: 22, height: 22, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.4)" }}>Nächste Anreise</p>
+              <p style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.8)", marginTop: 1 }}>
+                {formatDateLong(b.checkIn)}
+                {b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}
+              </p>
+            </div>
+          </div>
+
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Users style={{ width: 22, height: 22, color: "rgba(255,255,255,0.3)", flexShrink: 0 }} />
+            <p style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>
+              {b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}
+            </p>
+          </div>
+
+          {assignment.notes && (
+            <div style={{ padding: "12px 14px", background: "rgba(245,158,11,0.1)", border: "1px solid rgba(245,158,11,0.3)", borderRadius: 12 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 4 }}>Hinweise:</p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>{assignment.notes}</p>
+            </div>
+          )}
+        </div>
+
+        {/* Erledigt-Button */}
+        {!isDone && onMarkDone && (
+          <button
+            onClick={onMarkDone}
+            disabled={loading}
+            style={{
+              marginTop: 20,
+              width: "100%",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: 8,
+              padding: "16px 24px",
+              background: loading ? "rgba(255,255,255,0.1)" : "rgba(16,185,129,0.85)",
+              border: "none",
+              borderRadius: 14,
+              color: "white",
+              fontWeight: 700,
+              fontSize: 18,
+              cursor: loading ? "not-allowed" : "pointer",
+              transition: "background 0.15s",
+            }}
+          >
+            <CheckCircle style={{ width: 22, height: 22 }} />
+            {loading ? "Wird gespeichert..." : "Als erledigt markieren"}
+          </button>
         )}
       </div>
-
-      {/* Details */}
-      <div className="space-y-3">
-        <div className="flex items-start gap-3">
-          <Home className="w-6 h-6 text-gray-400 mt-0.5" />
-          <div>
-            <p className="text-sm text-gray-500">Reinigung nach Abreise</p>
-            <p className="text-2xl font-bold text-gray-900">
-              {formatDateLong(b.checkOut)}
-            </p>
-            {b.departureTime && (
-              <p className="text-gray-500">Abreise bis {b.departureTime} Uhr</p>
-            )}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Clock className="w-6 h-6 text-gray-400" />
-          <div>
-            <p className="text-sm text-gray-500">Nächste Anreise</p>
-            <p className="text-lg font-semibold text-gray-800">
-              {formatDateLong(b.checkIn)}
-              {b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}
-            </p>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <Users className="w-6 h-6 text-gray-400" />
-          <p className="text-lg font-semibold text-gray-800">
-            {b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}
-          </p>
-        </div>
-
-        {assignment.notes && (
-          <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-xl">
-            <p className="font-semibold text-yellow-800 text-sm mb-1">Hinweise:</p>
-            <p className="text-yellow-900">{assignment.notes}</p>
-          </div>
-        )}
-      </div>
-
-      {/* Erledigt-Button */}
-      {!isDone && onMarkDone && (
-        <button
-          onClick={onMarkDone}
-          disabled={loading}
-          className="mt-5 w-full flex items-center justify-center gap-2 py-4 bg-green-600 hover:bg-green-700 disabled:bg-gray-300 text-white font-bold rounded-xl text-xl transition-colors"
-        >
-          <CheckCircle className="w-6 h-6" />
-          {loading ? "Wird gespeichert..." : "Als erledigt markieren"}
-        </button>
-      )}
     </div>
   );
 }

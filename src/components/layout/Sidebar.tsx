@@ -2,12 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
 import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings, TrendingUp } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 // adminMobileHide: sichtbar im Desktop-Menü für ADMIN, aber nicht im Mobile-Nav
-// (Slot 5 mobile gehört ADMIN=Einstellungen, MANAGER=Statistiken)
 const navItems = [
   { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, noClean: true,  mobileOrder: 1 },
   { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        noClean: true,  mobileOrder: 2 },
@@ -18,17 +16,25 @@ const navItems = [
   { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5 },
 ];
 
+const sidebarGlass = {
+  background: "rgba(2,15,14,0.75)",
+  backdropFilter: "blur(24px)",
+  WebkitBackdropFilter: "blur(24px)",
+  borderRight: "1px solid rgba(255,255,255,0.08)",
+} as React.CSSProperties;
+
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
-  const isAdmin = role === "ADMIN";
+  const isAdmin   = role === "ADMIN";
   const isCleaner = role === "CLEANER";
 
   const visibleItems = navItems.filter((item) => {
-    if ((item as any).adminOnly && !isAdmin) return false;
+    if ((item as any).adminOnly   && !isAdmin)   return false;
     if ((item as any).cleanerOnly && !isCleaner) return false;
-    if ((item as any).noClean && isCleaner) return false;
+    if ((item as any).noClean     && isCleaner)  return false;
     return true;
   });
+
   const mobileItems = visibleItems
     .filter((item) => {
       if (item.mobileOrder === null) return false;
@@ -40,17 +46,17 @@ export function Sidebar({ role }: { role: string }) {
   return (
     <>
       {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 bg-white border-r border-zinc-100 z-30">
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 z-30" style={sidebarGlass}>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 h-16 border-b border-zinc-100">
-          <div className="w-8 h-8 rounded-lg bg-zinc-900 flex items-center justify-center flex-shrink-0">
+        <div className="flex items-center gap-3 px-5 h-16" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #0D9488, #0F766E)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 18L9 6l4 8 3-5 5 9H3z"/>
             </svg>
           </div>
           <div>
-            <p className="font-semibold text-zinc-900 text-sm tracking-tight">Vils17</p>
-            <p className="text-zinc-400 text-xs">Ferienwohnungen</p>
+            <p style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 14, letterSpacing: "-0.01em" }}>Vils17</p>
+            <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 12 }}>Ferienwohnungen</p>
           </div>
         </div>
 
@@ -62,10 +68,12 @@ export function Sidebar({ role }: { role: string }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={cn(
-                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors",
-                  active ? "bg-zinc-900 text-white" : "text-zinc-500 hover:text-zinc-900 hover:bg-zinc-50"
-                )}
+                className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
+                style={{
+                  background: active ? "rgba(13,148,136,0.2)" : "transparent",
+                  color: active ? "#14B8A6" : "rgba(255,255,255,0.5)",
+                  border: active ? "1px solid rgba(13,148,136,0.3)" : "1px solid transparent",
+                }}
               >
                 <item.icon className="w-4 h-4 flex-shrink-0" />
                 <span>{item.label}</span>
@@ -75,10 +83,13 @@ export function Sidebar({ role }: { role: string }) {
         </nav>
 
         {/* Logout */}
-        <div className="px-2 py-4 border-t border-zinc-100">
+        <div className="px-2 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium text-zinc-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+            className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium transition-colors"
+            style={{ color: "rgba(255,255,255,0.3)" }}
+            onMouseEnter={(e) => (e.currentTarget.style.color = "#ef4444")}
+            onMouseLeave={(e) => (e.currentTarget.style.color = "rgba(255,255,255,0.3)")}
           >
             <LogOut className="w-4 h-4" />
             <span>Abmelden</span>
@@ -86,11 +97,19 @@ export function Sidebar({ role }: { role: string }) {
         </div>
       </aside>
 
-      {/* ── Mobile Bottom Nav (max 5 Items) ─────────────────────────────── */}
-      <nav className="lg:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-100 z-30 flex" style={{ paddingBottom: "max(env(safe-area-inset-bottom), 8px)" }}>
+      {/* ── Mobile Bottom Nav ─────────────────────────────────────────────── */}
+      <nav
+        className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex"
+        style={{
+          background: "rgba(2,15,14,0.85)",
+          backdropFilter: "blur(30px)",
+          WebkitBackdropFilter: "blur(30px)",
+          borderTop: "1px solid rgba(255,255,255,0.1)",
+          paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+        }}
+      >
         {mobileItems.map((item) => {
           const active = pathname.startsWith(item.href);
-          // Kurzlabel für enge Plätze
           const shortLabel: Record<string, string> = {
             "Übersicht": "Übersicht",
             "Kalender": "Kalender",
@@ -103,10 +122,8 @@ export function Sidebar({ role }: { role: string }) {
             <Link
               key={item.href}
               href={item.href}
-              className={cn(
-                "flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors",
-                active ? "text-zinc-900" : "text-zinc-400"
-              )}
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors"
+              style={{ color: active ? "#0D9488" : "rgba(255,255,255,0.35)" }}
             >
               <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">

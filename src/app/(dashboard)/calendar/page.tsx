@@ -28,8 +28,11 @@ export default async function CalendarPage() {
   ]);
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Kalender</h1>
+    <div className="space-y-4">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Kalender</h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Belegungsübersicht</p>
+      </div>
       <CalendarGrid apartments={apartments} bookings={bookings} />
     </div>
   );

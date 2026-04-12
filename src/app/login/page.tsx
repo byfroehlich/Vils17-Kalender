@@ -34,33 +34,61 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-sm">
+    <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 16, position: "relative" }}>
+      {/* Petrol gradient background */}
+      <div aria-hidden style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 0,
+        background: [
+          "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(13,148,136,0.35) 0%, transparent 60%)",
+          "radial-gradient(ellipse 60% 50% at 80% 80%, rgba(8,108,100,0.25) 0%, transparent 55%)",
+          "linear-gradient(160deg, #020f0e 0%, #041f1c 40%, #051a18 100%)"
+        ].join(", "),
+      }} />
 
-        {/* Marke */}
-        <div className="text-center mb-10">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-zinc-900 mb-5">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <div style={{ width: "100%", maxWidth: 380, position: "relative", zIndex: 1 }}>
+        {/* Logo */}
+        <div style={{ textAlign: "center", marginBottom: 36 }}>
+          <div style={{
+            display: "inline-flex", alignItems: "center", justifyContent: "center",
+            width: 52, height: 52, borderRadius: 16, marginBottom: 16,
+            background: "linear-gradient(135deg, #0D9488 0%, #0891b2 100%)",
+            boxShadow: "0 8px 24px rgba(13,148,136,0.35)",
+          }}>
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 18L9 6l4 8 3-5 5 9H3z"/>
             </svg>
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 tracking-tight">Vils17</h1>
-          <p className="text-zinc-400 text-sm mt-1">Ferienwohnungen</p>
+          <h1 style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.03em" }}>Vils17</h1>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Ferienwohnungen</p>
         </div>
 
-        {/* Formular */}
-        <div className="bg-white rounded-2xl border border-zinc-200 shadow-sm p-8">
-          <h2 className="text-lg font-semibold text-zinc-900 mb-6">Anmelden</h2>
+        {/* Glasskarte */}
+        <div style={{
+          background: "rgba(255,255,255,0.09)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          border: "1px solid rgba(255,255,255,0.14)",
+          borderRadius: 24,
+          padding: 28,
+          boxShadow: "0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)",
+        }}>
+          <h2 style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginBottom: 22 }}>Anmelden</h2>
 
           {error && (
-            <div className="mb-5 px-4 py-3 bg-red-50 border border-red-100 rounded-xl text-red-600 text-sm font-medium">
+            <div style={{
+              marginBottom: 16, padding: "10px 14px",
+              background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)",
+              borderRadius: 12, color: "#fca5a5", fontSize: 13, fontWeight: 500,
+            }}>
               {error}
             </div>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-700 mb-1.5">
+              <label htmlFor="email" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
                 E-Mail
               </label>
               <input
@@ -76,7 +104,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-zinc-700 mb-1.5">
+              <label htmlFor="password" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
                 Passwort
               </label>
               <input

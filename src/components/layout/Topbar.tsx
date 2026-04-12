@@ -2,27 +2,45 @@
 
 export function Topbar({ userName, role }: { userName: string; role: string }) {
   return (
-    <header className="bg-white border-b border-zinc-100 px-6 h-16 flex items-center justify-between">
-      {/* Mobile: Logo */}
-      <div className="lg:hidden flex items-center gap-2.5">
-        <div className="w-7 h-7 rounded-lg bg-zinc-900 flex items-center justify-center">
+    <header
+      className="px-5 h-14 flex items-center justify-between lg:hidden"
+      style={{
+        background: "rgba(2,15,14,0.6)",
+        backdropFilter: "blur(20px)",
+        WebkitBackdropFilter: "blur(20px)",
+        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        position: "relative",
+        zIndex: 10,
+      }}
+    >
+      {/* Logo */}
+      <div className="flex items-center gap-2">
+        <div
+          style={{
+            width: 28, height: 28, borderRadius: 8,
+            background: "linear-gradient(135deg, #0D9488, #0F766E)",
+            display: "flex", alignItems: "center", justifyContent: "center",
+          }}
+        >
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="M3 18L9 6l4 8 3-5 5 9H3z"/>
           </svg>
         </div>
-        <span className="font-semibold text-zinc-900 text-sm">Vils17</span>
+        <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 15 }}>Vils17</span>
       </div>
 
-      <div className="hidden lg:block" />
-
-      {/* User */}
+      {/* Rolle */}
       <div className="flex items-center gap-2">
-        <span className="text-sm text-zinc-500">{userName}</span>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{userName}</span>
         {role === "ADMIN" && (
-          <span className="text-xs bg-zinc-100 text-zinc-600 px-2 py-0.5 rounded-full font-medium">Admin</span>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}>
+            Admin
+          </span>
         )}
         {role === "MANAGER" && (
-          <span className="text-xs bg-sky-100 text-sky-700 px-2 py-0.5 rounded-full font-medium">Verwaltung</span>
+          <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(14,116,144,0.3)", color: "#67e8f9", border: "1px solid rgba(14,116,144,0.4)" }}>
+            Verwaltung
+          </span>
         )}
       </div>
     </header>

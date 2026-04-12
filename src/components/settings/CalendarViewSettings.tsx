@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react";
 import { LayoutGrid, Columns } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 export type CalendarViewMode = "separate" | "combined";
 
@@ -41,32 +40,41 @@ export function CalendarViewSettings() {
   ];
 
   return (
-    <div className="bg-white rounded-2xl border border-zinc-200">
-      <div className="px-6 py-4 border-b border-zinc-100">
-        <h2 className="font-semibold text-zinc-900">Kalender-Ansicht</h2>
-        <p className="text-sm text-zinc-500 mt-0.5">Wie sollen mehrere Unterkünfte im Kalender dargestellt werden?</p>
+    <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 20 }}>
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <h2 style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 15 }}>Kalender-Ansicht</h2>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Wie sollen mehrere Unterkünfte im Kalender dargestellt werden?</p>
       </div>
-      <div className="p-4 grid grid-cols-1 sm:grid-cols-2 gap-3">
-        {options.map((opt) => (
-          <button
-            key={opt.value}
-            onClick={() => select(opt.value)}
-            className={cn(
-              "flex items-start gap-3 p-4 rounded-xl border-2 text-left transition-all",
-              mode === opt.value
-                ? "border-zinc-900 bg-zinc-50"
-                : "border-zinc-200 hover:border-zinc-300"
-            )}
-          >
-            <opt.icon className={cn("w-5 h-5 mt-0.5 flex-shrink-0", mode === opt.value ? "text-zinc-900" : "text-zinc-400")} />
-            <div>
-              <p className={cn("font-semibold text-sm", mode === opt.value ? "text-zinc-900" : "text-zinc-600")}>
-                {opt.label}
-              </p>
-              <p className="text-xs text-zinc-400 mt-0.5">{opt.desc}</p>
-            </div>
-          </button>
-        ))}
+      <div style={{ padding: 16, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+        {options.map((opt) => {
+          const active = mode === opt.value;
+          return (
+            <button
+              key={opt.value}
+              onClick={() => select(opt.value)}
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                gap: 12,
+                padding: 16,
+                borderRadius: 14,
+                border: active ? "2px solid rgba(13,148,136,0.7)" : "2px solid rgba(255,255,255,0.1)",
+                background: active ? "rgba(13,148,136,0.12)" : "rgba(255,255,255,0.04)",
+                textAlign: "left",
+                cursor: "pointer",
+                transition: "border-color 0.15s, background 0.15s",
+              }}
+            >
+              <opt.icon style={{ width: 18, height: 18, marginTop: 2, flexShrink: 0, color: active ? "#14B8A6" : "rgba(255,255,255,0.35)" }} />
+              <div>
+                <p style={{ fontWeight: 600, fontSize: 13, color: active ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.6)" }}>
+                  {opt.label}
+                </p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>{opt.desc}</p>
+              </div>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

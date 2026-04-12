@@ -23,8 +23,11 @@ export default async function BookingsPage() {
   });
 
   return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-zinc-900">Buchungen</h1>
+    <div className="space-y-4">
+      <div>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Buchungen</h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Alle bestätigten Buchungen</p>
+      </div>
       <BookingTable bookings={bookings} />
     </div>
   );

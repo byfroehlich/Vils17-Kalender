@@ -83,29 +83,38 @@ export function CalendarGrid({
   const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
   const startOffset = (getDay(monthStart) + 6) % 7;
 
+  const glassCard = {
+    background: "rgba(255,255,255,0.08)",
+    backdropFilter: "blur(16px)",
+    WebkitBackdropFilter: "blur(16px)",
+    border: "1px solid rgba(255,255,255,0.12)",
+    borderRadius: 20,
+    overflow: "hidden",
+  } as React.CSSProperties;
+
   const navBar = (
-    <div className="flex items-center justify-between px-5 py-3">
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 20px" }}>
       <button
         onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-        className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-zinc-100 transition-colors"
+        style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
       >
-        <ChevronLeft className="w-5 h-5 text-zinc-500" />
+        <ChevronLeft style={{ width: 18, height: 18, color: "rgba(255,255,255,0.6)" }} />
       </button>
-      <span className="text-base font-semibold text-zinc-800">
+      <span style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
         {format(currentMonth, "MMMM yyyy", { locale: de })}
       </span>
-      <div className="flex items-center gap-1">
+      <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
         <button
           onClick={() => setCurrentMonth(new Date())}
-          className="px-3 py-1.5 text-xs font-semibold text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          style={{ padding: "4px 12px", fontSize: 12, fontWeight: 600, color: "#14B8A6", background: "rgba(13,148,136,0.15)", border: "1px solid rgba(13,148,136,0.3)", borderRadius: 8, cursor: "pointer" }}
         >
           Heute
         </button>
         <button
           onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-          className="w-9 h-9 flex items-center justify-center rounded-xl hover:bg-zinc-100 transition-colors"
+          style={{ width: 36, height: 36, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: 10, background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", cursor: "pointer" }}
         >
-          <ChevronRight className="w-5 h-5 text-zinc-500" />
+          <ChevronRight style={{ width: 18, height: 18, color: "rgba(255,255,255,0.6)" }} />
         </button>
       </div>
     </div>
@@ -131,28 +140,28 @@ export function CalendarGrid({
 
     return (
       <div className="space-y-4">
-        <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
+        <div style={glassCard}>
           {navBar}
-          <div className="px-3 pb-2 flex flex-wrap gap-3">
+          <div style={{ padding: "0 12px 8px", display: "flex", flexWrap: "wrap" as const, gap: 12, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             {apartments.map((apt) => {
               const [c1] = getAptPair(apt.color ?? "#3b82f6");
               return (
-                <span key={apt.id} className="flex items-center gap-1.5 text-xs font-medium text-zinc-500">
-                  <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: c1 }} />
+                <span key={apt.id} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.5)", paddingTop: 8 }}>
+                  <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: c1, display: "inline-block" }} />
                   {apt.name}
                 </span>
               );
             })}
           </div>
-          <div className="border-t border-zinc-100">
+          <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
             <div className="grid grid-cols-7">
               {WEEKDAYS.map((d) => (
-                <div key={d} className="py-2 text-center text-xs font-medium text-zinc-400">{d}</div>
+                <div key={d} style={{ padding: "8px 0", textAlign: "center", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.35)" }}>{d}</div>
               ))}
             </div>
-            <div className="grid grid-cols-7 border-t border-zinc-100">
+            <div className="grid grid-cols-7" style={{ borderTop: "1px solid rgba(255,255,255,0.06)" }}>
               {Array.from({ length: startOffset }).map((_, i) => (
-                <div key={`o-${i}`} className="border-b border-r border-zinc-50" style={{ minHeight: 60 }} />
+                <div key={`o-${i}`} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", minHeight: 60 }} />
               ))}
               {days.map((day) => {
                 const today = isToday(day);
@@ -161,8 +170,8 @@ export function CalendarGrid({
                   .sort((a, b) => isCheckoutOnly(day, a) ? 1 : isCheckoutOnly(day, b) ? -1 : 0);
                 const dayIndex = (getDay(day) + 6) % 7;
                 return (
-                  <div key={day.toISOString()} className={cn("border-b border-r border-zinc-100 flex flex-col p-1", today && "bg-blue-50/60")} style={{ minHeight: 60 }}>
-                    <span className={cn("text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full mb-0.5", today ? "bg-blue-600 text-white" : "text-zinc-500")}>
+                  <div key={day.toISOString()} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", minHeight: 60, display: "flex", flexDirection: "column", padding: 4, background: today ? "rgba(13,148,136,0.08)" : "transparent" }}>
+                    <span style={{ fontSize: 11, fontWeight: 600, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", marginBottom: 2, background: today ? "#0D9488" : "transparent", color: today ? "white" : "rgba(255,255,255,0.5)" }}>
                       {format(day, "d")}
                     </span>
                     <div className="flex flex-col gap-px">
@@ -198,9 +207,7 @@ export function CalendarGrid({
   return (
     <div className="space-y-4">
       {/* Navigation */}
-      <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-        {navBar}
-      </div>
+      <div style={glassCard}>{navBar}</div>
 
       <div className={cn("grid gap-4", apartments.length >= 2 ? "lg:grid-cols-2" : "grid-cols-1")}>
         {apartments.map((apt) => {
@@ -218,20 +225,20 @@ export function CalendarGrid({
           }
 
           return (
-            <div key={apt.id} className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-              {/* Apartment-Header: schmaler Farbstreifen + Name */}
-              <div className="flex items-center gap-3 px-4 py-3 border-b border-zinc-100">
-                <div className="flex gap-1">
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c1 }} />
-                  <span className="w-3 h-3 rounded-full" style={{ backgroundColor: c2 }} />
+            <div key={apt.id} style={glassCard}>
+              {/* Apartment-Header */}
+              <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 16px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+                <div style={{ display: "flex", gap: 4 }}>
+                  <span style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: c1, display: "inline-block" }} />
+                  <span style={{ width: 12, height: 12, borderRadius: "50%", backgroundColor: c2, display: "inline-block" }} />
                 </div>
-                <span className="text-sm font-semibold text-zinc-800">{apt.name}</span>
+                <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.8)" }}>{apt.name}</span>
               </div>
 
               {/* Wochentage */}
-              <div className="grid grid-cols-7 border-b border-zinc-100">
+              <div className="grid grid-cols-7" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
                 {WEEKDAYS.map((day) => (
-                  <div key={day} className="py-1.5 text-center text-xs font-medium text-zinc-400">
+                  <div key={day} style={{ padding: "6px 0", textAlign: "center", fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.3)" }}>
                     {day}
                   </div>
                 ))}
@@ -240,9 +247,8 @@ export function CalendarGrid({
               {/* Tage */}
               <div className="grid grid-cols-7">
                 {Array.from({ length: startOffset }).map((_, i) => (
-                  <div key={`offset-${i}`} className="h-14 border-b border-r border-zinc-50" />
+                  <div key={`offset-${i}`} style={{ height: 56, borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)" }} />
                 ))}
-
                 {days.map((day) => {
                   const dayBookings = aptBookings.filter((b) => isOccupied(day, b));
                   const today = isToday(day);
@@ -251,40 +257,35 @@ export function CalendarGrid({
                   return (
                     <div
                       key={day.toISOString()}
-                      className={cn("h-14 border-b border-r border-zinc-100 flex flex-col", today && "bg-blue-50/60")}
+                      style={{ height: 56, borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", display: "flex", flexDirection: "column", background: today ? "rgba(13,148,136,0.08)" : "transparent" }}
                     >
-                      <div className="px-1.5 pt-1">
-                        <span className={cn(
-                          "text-xs font-semibold w-5 h-5 flex items-center justify-center rounded-full",
-                          today ? "bg-blue-600 text-white" : "text-zinc-500"
-                        )}>
+                      <div style={{ padding: "4px 6px" }}>
+                        <span style={{ fontSize: 11, fontWeight: 600, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", background: today ? "#0D9488" : "transparent", color: today ? "white" : "rgba(255,255,255,0.45)" }}>
                           {format(day, "d")}
                         </span>
                       </div>
-
                       {dayBookings.length > 0 && (
-                        <div className="flex-1 flex flex-col justify-end gap-px pb-1">
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", gap: 1, paddingBottom: 4 }}>
                           {dayBookings.map((b) => {
                             const color = bookingColor(b);
                             const isFirstDay = isSameDay(day, new Date(b.checkIn));
-                            const isLastDay = isSameDay(day, new Date(b.checkOut));
-                            const barLeft = isFirstDay || dayIndex === 0;
-                            const barRight = isLastDay || dayIndex === 6;
-                            const tall = dayBookings.length === 1;
-
+                            const isLastDay  = isSameDay(day, new Date(b.checkOut));
+                            const barLeft    = isFirstDay || dayIndex === 0;
+                            const barRight   = isLastDay  || dayIndex === 6;
+                            const tall       = dayBookings.length === 1;
                             return (
-                              <div key={b.id} className="w-full flex items-center">
+                              <div key={b.id} style={{ width: "100%", display: "flex", alignItems: "center" }}>
                                 <div
                                   className={cn(
                                     "w-full flex items-center overflow-hidden",
                                     tall ? "h-6" : "h-[9px]",
-                                    barLeft ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
+                                    barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
                                     barRight ? "mr-1 rounded-r-full" : "mr-0"
                                   )}
                                   style={{ backgroundColor: color.bg }}
                                 >
                                   {(isFirstDay || dayIndex === 0) && tall && (
-                                    <span className="text-xs font-semibold truncate leading-none" style={{ color: color.text }}>
+                                    <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
                                       {b.guestName.split(" ")[0]}
                                     </span>
                                   )}

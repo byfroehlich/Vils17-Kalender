@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { ChevronRight, Users } from "lucide-react";
+import { Users } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -18,36 +18,34 @@ interface Booking {
 }
 
 const cleaningDot: Record<string, string> = {
-  UNASSIGNED: "bg-orange-400",
-  SELF_CLEAN: "bg-blue-400",
-  ASSIGNED: "bg-blue-500",
-  COMPLETED: "bg-green-500",
+  UNASSIGNED: "#f97316",
+  SELF_CLEAN:  "#38bdf8",
+  ASSIGNED:    "#14B8A6",
+  COMPLETED:   "#4ade80",
 };
-
 const cleaningLabel: Record<string, string> = {
-  UNASSIGNED: "Offen",
-  SELF_CLEAN: "Selbst",
-  ASSIGNED: "Zugewiesen",
-  COMPLETED: "Erledigt",
+  UNASSIGNED: "Offen", SELF_CLEAN: "Selbst", ASSIGNED: "Zugewiesen", COMPLETED: "Erledigt",
 };
-
 const laundryDot: Record<string, string> = {
-  OPEN: "bg-red-400",
-  ORDERED: "bg-amber-400",
-  AVAILABLE: "bg-green-500",
+  OPEN: "#ef4444", ORDERED: "#f59e0b", AVAILABLE: "#4ade80",
+};
+const laundryLabel: Record<string, string> = {
+  OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
 };
 
-const laundryLabel: Record<string, string> = {
-  OPEN: "Offen",
-  ORDERED: "Bestellt",
-  AVAILABLE: "Vorhanden",
-};
+const glass = {
+  background: "rgba(255,255,255,0.08)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255,255,255,0.12)",
+  borderRadius: 16,
+} as React.CSSProperties;
 
 export function BookingTable({ bookings }: { bookings: Booking[] }) {
   if (bookings.length === 0) {
     return (
-      <div className="bg-white rounded-2xl border border-zinc-100 p-10 text-center">
-        <p className="text-zinc-400 text-sm">Keine Buchungen gefunden</p>
+      <div style={{ ...glass, padding: "40px 24px", textAlign: "center" }}>
+        <p style={{ color: "rgba(255,255,255,0.3)", fontSize: 14 }}>Keine Buchungen gefunden</p>
       </div>
     );
   }
@@ -56,53 +54,50 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
     <div className="space-y-1.5">
       {bookings.map((booking) => {
         const cleaningStatus = booking.cleaningAssignment?.status ?? "UNASSIGNED";
-        const laundryStatus = booking.cleaningAssignment?.laundryStatus ?? "OPEN";
+        const laundryStatus  = booking.cleaningAssignment?.laundryStatus ?? "OPEN";
 
         return (
           <Link
             key={booking.id}
             href={`/bookings/${booking.id}`}
-            className="flex items-center gap-4 bg-white rounded-xl border border-zinc-100 px-5 py-3.5 hover:border-zinc-200 hover:shadow-sm transition-all group"
+            style={{ display: "flex", alignItems: "center", gap: 14, ...glass, padding: "12px 16px", textDecoration: "none" }}
           >
             {/* Apartment color bar */}
-            <div
-              className="w-1 h-8 rounded-full flex-shrink-0"
-              style={{ backgroundColor: booking.apartment.color ?? "#18181b" }}
-            />
+            <div style={{ width: 4, height: 36, borderRadius: 4, flexShrink: 0, backgroundColor: booking.apartment.color ?? "#18181b" }} />
 
             {/* Main info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-baseline gap-2">
-                <span className="font-semibold text-zinc-900 truncate">{booking.guestName}</span>
-                <span className="text-zinc-400 text-xs">{booking.apartment.name}</span>
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.95)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
+                  {booking.guestName}
+                </span>
+                <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{booking.apartment.name}</span>
               </div>
-              <div className="flex items-center gap-3 mt-0.5 text-xs text-zinc-400">
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
+                  <Users style={{ width: 12, height: 12 }} />
                   {booking.guestCount}
                 </span>
                 <span>{formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}</span>
                 {booking.channelName && (
-                  <span className="bg-zinc-100 text-zinc-500 px-1.5 py-0.5 rounded-md">
+                  <span style={{ background: "rgba(255,255,255,0.08)", padding: "1px 6px", borderRadius: 6 }}>
                     {booking.channelName}
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Status — Mobile: nur Punkte, Desktop: Punkte + Label */}
-            <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-              <span className="flex items-center gap-1 sm:gap-1.5 text-xs text-zinc-500">
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${cleaningDot[cleaningStatus] ?? "bg-zinc-300"}`} />
+            {/* Status dots */}
+            <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: cleaningDot[cleaningStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
                 <span className="hidden sm:inline">{cleaningLabel[cleaningStatus]}</span>
               </span>
-              <span className="flex items-center gap-1 sm:gap-1.5 text-xs text-zinc-500">
-                <span className={`w-2 h-2 rounded-full flex-shrink-0 ${laundryDot[laundryStatus] ?? "bg-zinc-300"}`} />
+              <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                <span style={{ width: 8, height: 8, borderRadius: "50%", background: laundryDot[laundryStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
                 <span className="hidden sm:inline">{laundryLabel[laundryStatus]}</span>
               </span>
             </div>
-
-            <ChevronRight className="w-4 h-4 text-zinc-300 group-hover:text-zinc-400 transition-colors" />
           </Link>
         );
       })}

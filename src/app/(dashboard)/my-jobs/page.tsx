@@ -23,8 +23,8 @@ export default async function MyJobsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Meine Aufträge</h1>
-        <p className="text-gray-500 mt-1">Ihre zugewiesenen Reinigungsaufträge</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Meine Aufträge</h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Ihre zugewiesenen Reinigungsaufträge</p>
       </div>
       <MyJobsList assignments={assignments} />
     </div>

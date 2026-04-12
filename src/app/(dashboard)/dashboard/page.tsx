@@ -92,22 +92,6 @@ export default async function DashboardPage() {
 
   return (
     <>
-      {/* Hintergrund-Gradient */}
-      <div
-        aria-hidden
-        style={{
-          position: "fixed",
-          inset: 0,
-          zIndex: -1,
-          background: [
-            "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(13,148,136,0.4) 0%, transparent 60%)",
-            "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(15,118,110,0.3) 0%, transparent 55%)",
-            "radial-gradient(ellipse 70% 60% at 50% 80%, rgba(20,184,166,0.2) 0%, transparent 60%)",
-            "linear-gradient(160deg, #020f0e 0%, #041f1c 40%, #051a18 100%)",
-          ].join(", "),
-        }}
-      />
-
       <div style={{ color: "rgba(255,255,255,0.95)" }}>
         {/* Header */}
         <div

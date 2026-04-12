@@ -46,24 +46,30 @@ interface Booking {
   } | null;
 }
 
+const glass = {
+  background: "rgba(255,255,255,0.08)",
+  backdropFilter: "blur(20px)",
+  WebkitBackdropFilter: "blur(20px)",
+  border: "1px solid rgba(255,255,255,0.14)",
+  borderRadius: 20,
+} as React.CSSProperties;
+
+const glassAmber = {
+  background: "rgba(245,158,11,0.1)",
+  border: "1px solid rgba(245,158,11,0.3)",
+  borderRadius: 16,
+  padding: "16px",
+} as React.CSSProperties;
+
 function calcLaundry(guestCount: number, apt: Apartment) {
-  const divisor = apt.laundryBedsDivisor ?? 2;
-  const towelsPerGuest = apt.laundryTowelsPerGuest ?? 1;
-  const kitchenCount = apt.laundryKitchenCount ?? 1;
   return {
-    beds: Math.ceil(guestCount / divisor),
-    towels: guestCount * towelsPerGuest,
-    kitchen: kitchenCount,
+    beds: Math.ceil(guestCount / (apt.laundryBedsDivisor ?? 2)),
+    towels: guestCount * (apt.laundryTowelsPerGuest ?? 1),
+    kitchen: apt.laundryKitchenCount ?? 1,
   };
 }
 
-export function BookingDetail({
-  booking,
-  cleaners,
-}: {
-  booking: Booking;
-  cleaners: Cleaner[];
-}) {
+export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaners: Cleaner[] }) {
   const router = useRouter();
   const assignment = booking.cleaningAssignment;
 
@@ -78,20 +84,17 @@ export function BookingDetail({
 
   const qty = calcLaundry(booking.guestCount, booking.apartment);
   const cleaningStatus = assignment?.status ?? "UNASSIGNED";
-  const laundryStatus = assignment?.laundryStatus ?? "OPEN";
+  const laundryStatus  = assignment?.laundryStatus ?? "OPEN";
+  const cleanerName    = assignment?.cleaner?.name;
 
-  const cleanerName = assignment?.cleaner?.name;
   const cleaningStatusLabel: Record<string, string> = {
     UNASSIGNED: "Offen",
     SELF_CLEAN: "Selbstreinigung",
-    ASSIGNED: cleanerName ? `Zugewiesen · ${cleanerName}` : "Zugewiesen",
-    COMPLETED: cleanerName ? `Erledigt · ${cleanerName}` : "Erledigt",
+    ASSIGNED:   cleanerName ? `Zugewiesen · ${cleanerName}` : "Zugewiesen",
+    COMPLETED:  cleanerName ? `Erledigt · ${cleanerName}` : "Erledigt",
   };
-
   const laundryStatusLabel: Record<string, string> = {
-    OPEN: "Offen",
-    ORDERED: "Bestellt",
-    AVAILABLE: "Vorhanden",
+    OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
   };
 
   async function assignCleaner() {
@@ -100,19 +103,10 @@ export function BookingDetail({
       const res = await fetch(`/api/bookings/${booking.id}/assign`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          cleanerId: isSelfClean ? null : selectedCleaner || null,
-          isSelfClean,
-          notes: cleaningNotes,
-        }),
+        body: JSON.stringify({ cleanerId: isSelfClean ? null : selectedCleaner || null, isSelfClean, notes: cleaningNotes }),
       });
-      if (res.ok) {
-        setMessage("✓ Reiniger zugewiesen");
-        setShowAssignDialog(false);
-        router.refresh();
-      } else {
-        setMessage("Fehler beim Speichern");
-      }
+      if (res.ok) { setMessage("✓ Reiniger zugewiesen"); setShowAssignDialog(false); router.refresh(); }
+      else setMessage("Fehler beim Speichern");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
@@ -120,15 +114,13 @@ export function BookingDetail({
   }
 
   async function updateLaundryStatus(status: string) {
-    const res = await fetch(`/api/bookings/${booking.id}/laundry`, {
+    await fetch(`/api/bookings/${booking.id}/laundry`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ action: "status", status, notes: laundryNotes }),
     });
-    if (res.ok) {
-      setMessage("✓ Wäschestatus aktualisiert");
-      router.refresh();
-    }
+    setMessage("✓ Wäschestatus aktualisiert");
+    router.refresh();
     setTimeout(() => setMessage(""), 3000);
   }
 
@@ -145,9 +137,7 @@ export function BookingDetail({
         setMessage(`✓ Wäsche bestellt${data.orderId ? ` (Nr. ${data.orderId})` : ""}`);
         setShowLaundryDialog(false);
         router.refresh();
-      } else {
-        setMessage(data.message ?? "Bestellung fehlgeschlagen");
-      }
+      } else setMessage(data.message ?? "Bestellung fehlgeschlagen");
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 5000);
@@ -159,77 +149,67 @@ export function BookingDetail({
       {/* Zurück */}
       <Link
         href="/bookings"
-        className="inline-flex items-center gap-1.5 text-zinc-500 hover:text-zinc-800 font-medium text-sm transition-colors"
+        style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "rgba(255,255,255,0.45)", fontSize: 14, fontWeight: 500, textDecoration: "none" }}
       >
-        <ArrowLeft className="w-4 h-4" />
+        <ArrowLeft style={{ width: 16, height: 16 }} />
         Alle Buchungen
       </Link>
 
-      {/* Rückmeldung */}
+      {/* Feedback */}
       {message && (
-        <div className="p-3 bg-green-50 border border-green-200 rounded-xl text-green-800 font-medium text-sm">
+        <div style={{ padding: "10px 16px", background: "rgba(34,197,94,0.15)", border: "1px solid rgba(34,197,94,0.3)", borderRadius: 12, color: "#86efac", fontSize: 14, fontWeight: 600 }}>
           {message}
         </div>
       )}
 
       {/* Buchungsdaten */}
-      <div className="bg-white rounded-2xl border border-zinc-200 overflow-hidden">
-        {/* Farbstreifen oben */}
-        <div className="h-1.5" style={{ backgroundColor: booking.apartment.color ?? "#3b82f6" }} />
-        <div className="p-6">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-xs font-semibold text-zinc-400 uppercase tracking-wider">
+      <div style={{ ...glass, overflow: "hidden" }}>
+        <div style={{ height: 4, backgroundColor: booking.apartment.color ?? "#0D9488" }} />
+        <div style={{ padding: "20px 24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               {booking.apartment.name}
             </span>
             {booking.channelName && (
               <>
-                <span className="text-zinc-300">·</span>
-                <span className="text-xs text-zinc-400">{booking.channelName}</span>
+                <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{booking.channelName}</span>
               </>
             )}
           </div>
-          <h1 className="text-2xl font-bold text-zinc-900 mb-5">{booking.guestName}</h1>
+          <h1 style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 20, letterSpacing: "-0.02em" }}>
+            {booking.guestName}
+          </h1>
 
-          <div className="grid grid-cols-2 gap-x-8 gap-y-4">
-            <InfoRow icon={<Calendar className="w-4 h-4" />} label="Anreise">
-              <span className="font-semibold text-zinc-800">{formatDateLong(booking.checkIn)}</span>
-              {booking.arrivalTime && (
-                <span className="text-zinc-400 text-sm ml-1">ab {booking.arrivalTime} Uhr</span>
-              )}
+          <div className="grid grid-cols-2 gap-x-8 gap-y-5">
+            <InfoRow icon={<Calendar style={{ width: 14, height: 14 }} />} label="Anreise">
+              <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{formatDateLong(booking.checkIn)}</span>
+              {booking.arrivalTime && <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginLeft: 4 }}>ab {booking.arrivalTime} Uhr</span>}
             </InfoRow>
-
-            <InfoRow icon={<Calendar className="w-4 h-4" />} label="Abreise">
-              <span className="font-semibold text-zinc-800">{formatDateLong(booking.checkOut)}</span>
-              {booking.departureTime && (
-                <span className="text-zinc-400 text-sm ml-1">bis {booking.departureTime} Uhr</span>
-              )}
+            <InfoRow icon={<Calendar style={{ width: 14, height: 14 }} />} label="Abreise">
+              <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{formatDateLong(booking.checkOut)}</span>
+              {booking.departureTime && <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginLeft: 4 }}>bis {booking.departureTime} Uhr</span>}
             </InfoRow>
-
-            <InfoRow icon={<Users className="w-4 h-4" />} label="Gäste">
-              <span className="font-semibold text-zinc-800">
+            <InfoRow icon={<Users style={{ width: 14, height: 14 }} />} label="Gäste">
+              <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
                 {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
               </span>
             </InfoRow>
-
             {booking.guestPhone && (
-              <InfoRow icon={<Phone className="w-4 h-4" />} label="Telefon">
-                <a href={`tel:${booking.guestPhone}`} className="font-semibold text-blue-600 hover:underline">
-                  {booking.guestPhone}
-                </a>
+              <InfoRow icon={<Phone style={{ width: 14, height: 14 }} />} label="Telefon">
+                <a href={`tel:${booking.guestPhone}`} style={{ fontWeight: 600, color: "#14B8A6" }}>{booking.guestPhone}</a>
               </InfoRow>
             )}
-
             {booking.guestEmail && (
-              <InfoRow icon={<Mail className="w-4 h-4" />} label="E-Mail">
-                <a href={`mailto:${booking.guestEmail}`} className="font-semibold text-blue-600 hover:underline truncate block max-w-[180px]">
+              <InfoRow icon={<Mail style={{ width: 14, height: 14 }} />} label="E-Mail">
+                <a href={`mailto:${booking.guestEmail}`} style={{ fontWeight: 600, color: "#14B8A6", overflow: "hidden", textOverflow: "ellipsis", display: "block", maxWidth: 180 }}>
                   {booking.guestEmail}
                 </a>
               </InfoRow>
             )}
-
             {booking.channelName && (
-              <InfoRow icon={<Globe className="w-4 h-4" />} label="Kanal">
-                <span className="font-semibold text-zinc-800">{booking.channelName}</span>
+              <InfoRow icon={<Globe style={{ width: 14, height: 14 }} />} label="Kanal">
+                <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{booking.channelName}</span>
               </InfoRow>
             )}
           </div>
@@ -237,42 +217,35 @@ export function BookingDetail({
       </div>
 
       {/* Reinigung */}
-      <div className="bg-white rounded-2xl border border-zinc-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-zinc-400" />
+      <div style={{ ...glass, padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 8 }}>
+            <Sparkles style={{ width: 16, height: 16, color: "#14B8A6" }} />
             Reinigung
           </h2>
           <StatusBadge type="cleaning" status={cleaningStatus} label={cleaningStatusLabel[cleaningStatus] ?? cleaningStatus} />
         </div>
 
-        {/* Reiniger-Kontakt */}
         {assignment?.cleaner && (
-          <div className="mb-3 flex items-center gap-3 p-3 bg-zinc-50 rounded-xl border border-zinc-100">
-            <div className="w-7 h-7 rounded-full bg-zinc-200 flex items-center justify-center text-xs font-bold text-zinc-600 flex-shrink-0">
+          <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(255,255,255,0.06)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", marginBottom: 12 }}>
+            <div style={{ width: 28, height: 28, borderRadius: "50%", background: "rgba(13,148,136,0.3)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, color: "#14B8A6", flexShrink: 0 }}>
               {assignment.cleaner.name.charAt(0)}
             </div>
-            <div className="min-w-0">
-              <p className="text-sm font-medium text-zinc-900">{assignment.cleaner.name}</p>
-            </div>
+            <p style={{ fontSize: 14, fontWeight: 500, color: "rgba(255,255,255,0.85)" }}>{assignment.cleaner.name}</p>
           </div>
         )}
 
         {assignment?.notes && (
-          <div className="mb-4 p-3 bg-zinc-50 rounded-xl text-sm text-zinc-600 border border-zinc-100">
+          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 10, fontSize: 13, color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
             {assignment.notes}
           </div>
         )}
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setShowAssignDialog(true)}
-            className="btn-primary text-sm py-2 px-4"
-          >
-            <Sparkles className="w-4 h-4" />
+        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
+          <button onClick={() => setShowAssignDialog(true)} className="btn-primary text-sm" style={{ padding: "8px 16px", fontSize: 13 }}>
+            <Sparkles style={{ width: 14, height: 14 }} />
             {cleaningStatus === "UNASSIGNED" ? "Reiniger zuweisen" : "Zuweisung ändern"}
           </button>
-
           {cleaningStatus === "ASSIGNED" && (
             <button
               onClick={async () => {
@@ -283,9 +256,9 @@ export function BookingDetail({
                 });
                 router.refresh();
               }}
-              className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors text-sm"
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(34,197,94,0.2)", border: "1px solid rgba(34,197,94,0.4)", borderRadius: 12, color: "#4ade80", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
             >
-              <CheckCircle className="w-4 h-4" />
+              <CheckCircle style={{ width: 14, height: 14 }} />
               Erledigt
             </button>
           )}
@@ -293,24 +266,23 @@ export function BookingDetail({
       </div>
 
       {/* Wäsche */}
-      <div className="bg-white rounded-2xl border border-zinc-200 p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-bold text-zinc-900 flex items-center gap-2">
-            <WashingMachine className="w-4 h-4 text-zinc-400" />
+      <div style={{ ...glass, padding: "20px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 8 }}>
+            <WashingMachine style={{ width: 16, height: 16, color: "#14B8A6" }} />
             Wäsche
           </h2>
           <StatusBadge type="laundry" status={laundryStatus} label={laundryStatusLabel[laundryStatus] ?? laundryStatus} />
         </div>
 
-        {/* Mengen-Chips */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8, marginBottom: 16 }}>
           <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
           <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
           <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
         </div>
 
         {/* Status-Toggle */}
-        <div className="flex gap-2 mb-4">
+        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
           {(["OPEN", "ORDERED", "AVAILABLE"] as const).map((s) => {
             const labels = { OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden" };
             const active = laundryStatus === s;
@@ -318,11 +290,12 @@ export function BookingDetail({
               <button
                 key={s}
                 onClick={() => updateLaundryStatus(s)}
-                className={`px-3 py-1.5 rounded-lg font-medium text-sm border transition-colors ${
-                  active
-                    ? "border-zinc-800 bg-zinc-900 text-white"
-                    : "border-zinc-200 bg-white text-zinc-500 hover:border-zinc-400"
-                }`}
+                style={{
+                  padding: "6px 14px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer",
+                  background: active ? "rgba(13,148,136,0.3)" : "rgba(255,255,255,0.06)",
+                  border: active ? "1px solid rgba(13,148,136,0.5)" : "1px solid rgba(255,255,255,0.12)",
+                  color: active ? "#14B8A6" : "rgba(255,255,255,0.5)",
+                }}
               >
                 {labels[s]}
               </button>
@@ -330,7 +303,6 @@ export function BookingDetail({
           })}
         </div>
 
-        {/* Bemerkungen */}
         <textarea
           value={laundryNotes}
           onChange={(e) => setLaundryNotes(e.target.value)}
@@ -345,72 +317,54 @@ export function BookingDetail({
           }}
           placeholder="Bemerkungen zur Wäsche…"
           rows={2}
-          className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm focus:border-zinc-400 focus:outline-none resize-none text-zinc-700 placeholder-zinc-300 mb-3"
+          className="form-input"
+          style={{ resize: "none", marginBottom: 12 }}
         />
 
         {laundryStatus !== "ORDERED" && (
           <button
             onClick={() => setShowLaundryDialog(true)}
-            className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white font-semibold rounded-xl transition-colors text-sm"
+            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 12, color: "#fcd34d", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
           >
-            <WashingMachine className="w-4 h-4" />
+            <WashingMachine style={{ width: 14, height: 14 }} />
             Wäsche bestellen
           </button>
         )}
 
         {assignment?.laundryOrderId && (
-          <p className="mt-3 text-xs text-zinc-400 flex items-center gap-1">
-            <Clock className="w-3.5 h-3.5" />
+          <p style={{ marginTop: 10, fontSize: 12, color: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", gap: 4 }}>
+            <Clock style={{ width: 12, height: 12 }} />
             Bestell-Nr.: {assignment.laundryOrderId}
-            {assignment.laundryOrderedAt && (
-              <span> · {formatDate(new Date(assignment.laundryOrderedAt))}</span>
-            )}
+            {assignment.laundryOrderedAt && <span> · {formatDate(new Date(assignment.laundryOrderedAt))}</span>}
           </p>
         )}
       </div>
 
       {/* Dialog: Reiniger zuweisen */}
       {showAssignDialog && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
-            <h3 className="text-lg font-bold text-zinc-900 mb-4">Reiniger zuweisen</h3>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
+          <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 16 }}>Reiniger zuweisen</h3>
 
-            <div className="space-y-2 mb-4">
-              <label className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:border-zinc-400 transition-colors">
-                <input
-                  type="radio"
-                  name="cleaner"
-                  checked={isSelfClean}
-                  onChange={() => { setIsSelfClean(true); setSelectedCleaner(""); }}
-                  className="w-4 h-4 accent-zinc-800"
-                />
+            <div style={{ display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 16 }}>
+              <label style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "2px solid rgba(255,255,255,0.12)", borderRadius: 14, cursor: "pointer" }}>
+                <input type="radio" name="cleaner" checked={isSelfClean} onChange={() => { setIsSelfClean(true); setSelectedCleaner(""); }} style={{ accentColor: "#14B8A6" }} />
                 <div>
-                  <p className="font-semibold text-sm text-zinc-800">Selbst reinigen</p>
-                  <p className="text-xs text-zinc-400">Keine Benachrichtigung</p>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>Selbst reinigen</p>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Keine Benachrichtigung</p>
                 </div>
               </label>
-
               {cleaners.map((cleaner) => (
-                <label
-                  key={cleaner.id}
-                  className="flex items-center gap-3 p-3 border-2 rounded-xl cursor-pointer hover:border-zinc-400 transition-colors"
-                >
-                  <input
-                    type="radio"
-                    name="cleaner"
-                    checked={!isSelfClean && selectedCleaner === cleaner.id}
-                    onChange={() => { setIsSelfClean(false); setSelectedCleaner(cleaner.id); }}
-                    className="w-4 h-4 accent-zinc-800"
-                  />
+                <label key={cleaner.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "10px 14px", border: "2px solid rgba(255,255,255,0.12)", borderRadius: 14, cursor: "pointer" }}>
+                  <input type="radio" name="cleaner" checked={!isSelfClean && selectedCleaner === cleaner.id} onChange={() => { setIsSelfClean(false); setSelectedCleaner(cleaner.id); }} style={{ accentColor: "#14B8A6" }} />
                   <div>
-                    <p className="font-semibold text-sm text-zinc-800">{cleaner.name}</p>
-                    <p className="text-xs text-zinc-400">{cleaner.email}{cleaner.phone ? ` · ${cleaner.phone}` : ""}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{cleaner.name}</p>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{cleaner.email}{cleaner.phone ? ` · ${cleaner.phone}` : ""}</p>
                   </div>
                 </label>
               ))}
-
               {cleaners.length === 0 && (
-                <p className="text-sm text-zinc-400 px-3">Noch keine Reinigungskräfte angelegt.</p>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.3)", padding: "0 14px" }}>Noch keine Reinigungskräfte angelegt.</p>
               )}
             </div>
 
@@ -419,21 +373,15 @@ export function BookingDetail({
               onChange={(e) => setCleaningNotes(e.target.value)}
               placeholder="Hinweise für den Reiniger…"
               rows={2}
-              className="w-full px-3 py-2 border border-zinc-200 rounded-xl text-sm focus:border-zinc-400 focus:outline-none resize-none mb-4"
+              className="form-input"
+              style={{ resize: "none", marginBottom: 14 }}
             />
 
-            <div className="flex gap-2">
-              <button
-                onClick={assignCleaner}
-                disabled={saving || (!isSelfClean && !selectedCleaner)}
-                className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-200 disabled:text-zinc-400 text-white font-semibold rounded-xl text-sm transition-colors"
-              >
+            <div style={{ display: "flex", gap: 8 }}>
+              <button onClick={assignCleaner} disabled={saving || (!isSelfClean && !selectedCleaner)} className="btn-primary" style={{ flex: 1, padding: "10px 0" }}>
                 {saving ? "Wird gespeichert…" : "Zuweisen"}
               </button>
-              <button
-                onClick={() => setShowAssignDialog(false)}
-                className="px-4 py-2.5 border border-zinc-200 text-zinc-600 font-semibold rounded-xl text-sm hover:border-zinc-400 transition-colors"
-              >
+              <button onClick={() => setShowAssignDialog(false)} className="btn-secondary" style={{ padding: "10px 18px" }}>
                 Abbrechen
               </button>
             </div>
@@ -443,27 +391,24 @@ export function BookingDetail({
 
       {/* Dialog: Wäsche bestellen */}
       {showLaundryDialog && (
-        <div className="fixed inset-0 bg-black/40 flex items-end sm:items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-            <h3 className="text-lg font-bold text-zinc-900 mb-1">Wäsche bestellen</h3>
-            <p className="text-sm text-zinc-400 mb-4">Folgende Mengen werden bestellt:</p>
-            <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 mb-5 space-y-1.5">
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
+          <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 400, padding: 24 }}>
+            <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 4 }}>Wäsche bestellen</h3>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
+            <div style={{ ...glassAmber, display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 20 }}>
               <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
               <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
               <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
             </div>
-            <div className="flex gap-2">
+            <div style={{ display: "flex", gap: 8 }}>
               <button
                 onClick={orderLaundry}
                 disabled={saving}
-                className="flex-1 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:bg-zinc-200 text-white font-semibold rounded-xl text-sm transition-colors"
+                style={{ flex: 1, padding: "10px 0", background: "rgba(245,158,11,0.25)", border: "1px solid rgba(245,158,11,0.5)", borderRadius: 12, color: "#fcd34d", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.5 : 1 }}
               >
                 {saving ? "Wird bestellt…" : "Jetzt bestellen"}
               </button>
-              <button
-                onClick={() => setShowLaundryDialog(false)}
-                className="px-4 py-2.5 border border-zinc-200 text-zinc-600 font-semibold rounded-xl text-sm hover:border-zinc-400 transition-colors"
-              >
+              <button onClick={() => setShowLaundryDialog(false)} className="btn-secondary" style={{ padding: "10px 18px" }}>
                 Abbrechen
               </button>
             </div>
@@ -474,30 +419,22 @@ export function BookingDetail({
   );
 }
 
-function InfoRow({
-  icon,
-  label,
-  children,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  children: React.ReactNode;
-}) {
+function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="flex items-center gap-1 text-xs text-zinc-400 font-medium mb-0.5">
+      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginBottom: 3 }}>
         {icon}
         {label}
       </div>
-      <div className="text-sm">{children}</div>
+      <div style={{ fontSize: 14 }}>{children}</div>
     </div>
   );
 }
 
 function QuantityChip({ emoji, value, label }: { emoji: string; value: number; label: string }) {
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-zinc-100 rounded-lg text-sm font-medium text-zinc-700">
-      {emoji} <span className="font-bold">{value}</span> {label}
+    <span style={{ display: "inline-flex", alignItems: "center", gap: 6, padding: "6px 12px", background: "rgba(255,255,255,0.08)", borderRadius: 10, fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.75)" }}>
+      {emoji} <strong style={{ color: "rgba(255,255,255,0.95)" }}>{value}</strong> {label}
     </span>
   );
 }

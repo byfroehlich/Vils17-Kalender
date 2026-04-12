@@ -88,174 +88,145 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
     router.refresh();
   }
 
+  const iconBtn: React.CSSProperties = {
+    padding: 7,
+    borderRadius: 8,
+    background: "transparent",
+    border: "none",
+    color: "rgba(255,255,255,0.4)",
+    cursor: "pointer",
+  };
+
   return (
-    <div className="space-y-4">
-      {message && (
-        <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm font-medium">
-          {message}
+    <div style={{ background: "rgba(255,255,255,0.08)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 20 }}>
+      <div style={{ padding: "16px 24px", borderBottom: "1px solid rgba(255,255,255,0.08)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <div>
+          <h2 style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 15 }}>Reinigungskräfte</h2>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Logins und Kontaktdaten verwalten</p>
         </div>
-      )}
+        {!showForm && (
+          <button onClick={startNew} className="btn-primary py-2 px-3 text-sm">
+            <Plus className="w-3.5 h-3.5" />
+            Neue Reinigungskraft
+          </button>
+        )}
+      </div>
 
-      {/* Neue Reinigungskraft */}
-      {!showForm && (
-        <button
-          onClick={startNew}
-          className="flex items-center gap-2 px-4 py-2.5 bg-zinc-900 hover:bg-zinc-700 text-white font-medium rounded-xl text-sm transition-colors"
-        >
-          <Plus className="w-4 h-4" />
-          Neue Reinigungskraft
-        </button>
-      )}
+      <div style={{ padding: "16px 24px" }} className="space-y-4">
+        {message && (
+          <div style={{
+            padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 500,
+            background: "rgba(16,185,129,0.12)", border: "1px solid rgba(16,185,129,0.3)", color: "#6ee7b7",
+          }}>
+            {message}
+          </div>
+        )}
 
-      {/* Formular */}
-      {showForm && (
-        <div className="bg-white rounded-2xl border border-zinc-200 p-5">
-          <h3 className="text-base font-semibold text-zinc-900 mb-4">
-            {editingId ? "Reinigungskraft bearbeiten" : "Neue Reinigungskraft"}
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormField label="Name *">
-              <input
-                value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
-                className="form-input"
-                placeholder="Max Mustermann"
-              />
-            </FormField>
-            <FormField label={editingId ? "E-Mail (nicht änderbar)" : "E-Mail *"}>
-              <input
-                value={form.email}
-                onChange={(e) => setForm({ ...form, email: e.target.value })}
-                type="email"
-                disabled={!!editingId}
-                className="form-input disabled:bg-zinc-50"
-                placeholder="max@beispiel.de"
-              />
-            </FormField>
-            <FormField label={editingId ? "Neues Passwort (leer = unverändert)" : "Passwort *"}>
-              <input
-                value={form.password}
-                onChange={(e) => setForm({ ...form, password: e.target.value })}
-                type="password"
-                className="form-input"
-                placeholder={editingId ? "Nur ausfüllen zum Ändern" : "Mindestens 8 Zeichen"}
-              />
-            </FormField>
-            <FormField label="Telefon / WhatsApp">
-              <input
-                value={form.phone}
-                onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                className="form-input"
-                placeholder="+43 660 1234567"
-              />
-            </FormField>
-            <FormField label="Sprache">
-              <select
-                value={form.language}
-                onChange={(e) => setForm({ ...form, language: e.target.value })}
-                className="form-input"
+        {/* Formular */}
+        {showForm && (
+          <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", borderRadius: 16, padding: 20 }}>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 16 }}>
+              {editingId ? "Reinigungskraft bearbeiten" : "Neue Reinigungskraft"}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <FormField label="Name *">
+                <input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className="form-input" placeholder="Max Mustermann" />
+              </FormField>
+              <FormField label={editingId ? "E-Mail (nicht änderbar)" : "E-Mail *"}>
+                <input value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} type="email" disabled={!!editingId} className="form-input" style={editingId ? { opacity: 0.5 } : {}} placeholder="max@beispiel.de" />
+              </FormField>
+              <FormField label={editingId ? "Neues Passwort (leer = unverändert)" : "Passwort *"}>
+                <input value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} type="password" className="form-input" placeholder={editingId ? "Nur ausfüllen zum Ändern" : "Mindestens 8 Zeichen"} />
+              </FormField>
+              <FormField label="Telefon / WhatsApp">
+                <input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} className="form-input" placeholder="+43 660 1234567" />
+              </FormField>
+              <FormField label="Sprache">
+                <select value={form.language} onChange={(e) => setForm({ ...form, language: e.target.value })} className="form-input">
+                  <option value="de">Deutsch</option>
+                  <option value="en">Englisch</option>
+                </select>
+              </FormField>
+              <FormField label="Bemerkungen">
+                <input value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} className="form-input" placeholder="z.B. Firmenname, Zahlungsinfos" />
+              </FormField>
+            </div>
+            <div className="flex gap-3 mt-4">
+              <button onClick={handleSave} disabled={saving} className="btn-primary py-2 px-4 text-sm flex-1">
+                {saving ? "Wird gespeichert..." : "Speichern"}
+              </button>
+              <button onClick={() => setShowForm(false)} className="btn-secondary py-2 px-4 text-sm">
+                Abbrechen
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Liste */}
+        {cleaners.length === 0 ? (
+          <div style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 14, padding: "32px 24px", textAlign: "center", fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
+            Noch keine Reinigungskräfte angelegt.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {cleaners.map((cleaner) => (
+              <div
+                key={cleaner.id}
+                style={{
+                  background: "rgba(255,255,255,0.05)",
+                  border: "1px solid rgba(255,255,255,0.09)",
+                  borderRadius: 12,
+                  padding: "12px 16px",
+                  opacity: cleaner.active ? 1 : 0.45,
+                }}
               >
-                <option value="de">Deutsch</option>
-                <option value="en">Englisch</option>
-              </select>
-            </FormField>
-            <FormField label="Bemerkungen">
-              <input
-                value={form.notes}
-                onChange={(e) => setForm({ ...form, notes: e.target.value })}
-                className="form-input"
-                placeholder="z.B. Firmenname, Zahlungsinfos"
-              />
-            </FormField>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button
-              onClick={handleSave}
-              disabled={saving}
-              className="flex-1 py-2.5 bg-zinc-900 hover:bg-zinc-700 disabled:bg-zinc-300 text-white font-medium rounded-xl text-sm transition-colors"
-            >
-              {saving ? "Wird gespeichert..." : "Speichern"}
-            </button>
-            <button
-              onClick={() => setShowForm(false)}
-              className="px-5 py-2.5 border border-zinc-200 text-zinc-600 font-medium rounded-xl text-sm hover:bg-zinc-50 transition-colors"
-            >
-              Abbrechen
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Liste */}
-      {cleaners.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-zinc-200 p-10 text-center text-zinc-400 text-sm">
-          Noch keine Reinigungskräfte angelegt.
-        </div>
-      ) : (
-        <div className="space-y-2.5">
-          {cleaners.map((cleaner) => (
-            <div
-              key={cleaner.id}
-              className={`bg-white rounded-2xl border border-zinc-200 p-4 ${!cleaner.active ? "opacity-50" : ""}`}
-            >
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-sm font-semibold text-zinc-900">{cleaner.name}</h3>
-                    {!cleaner.active && (
-                      <span className="text-xs bg-zinc-100 text-zinc-500 px-2 py-0.5 rounded-full">
-                        Inaktiv
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 16 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+                      <h3 style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{cleaner.name}</h3>
+                      {!cleaner.active && (
+                        <span style={{ fontSize: 11, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", padding: "2px 8px", borderRadius: 20 }}>
+                          Inaktiv
+                        </span>
+                      )}
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap" as const, gap: "4px 16px" }}>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", gap: 5 }}>
+                        <Mail style={{ width: 12, height: 12 }} />
+                        {cleaner.email}
                       </span>
+                      {cleaner.phone && (
+                        <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", gap: 5 }}>
+                          <Phone style={{ width: 12, height: 12 }} />
+                          {cleaner.phone}
+                        </span>
+                      )}
+                    </div>
+                    {cleaner.notes && (
+                      <p style={{ fontSize: 12, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{cleaner.notes}</p>
                     )}
+                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.25)", marginTop: 4 }}>
+                      {cleaner._count.assignments} Aufträge insgesamt
+                    </p>
                   </div>
-                  <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-zinc-500">
-                    <span className="flex items-center gap-1.5">
-                      <Mail className="w-3.5 h-3.5" />
-                      {cleaner.email}
-                    </span>
-                    {cleaner.phone && (
-                      <span className="flex items-center gap-1.5">
-                        <Phone className="w-3.5 h-3.5" />
-                        {cleaner.phone}
-                      </span>
-                    )}
-                  </div>
-                  {cleaner.notes && (
-                    <p className="text-xs text-zinc-400 mt-1">{cleaner.notes}</p>
-                  )}
-                  <p className="text-xs text-zinc-400 mt-1">
-                    {cleaner._count.assignments} Aufträge insgesamt
-                  </p>
-                </div>
 
-                <div className="flex gap-1">
-                  <button
-                    onClick={() => startEdit(cleaner)}
-                    className="p-2 text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 rounded-lg transition-colors"
-                    title="Bearbeiten"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => toggleActive(cleaner.id, cleaner.active)}
-                    className="p-2 text-zinc-400 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
-                    title={cleaner.active ? "Deaktivieren" : "Aktivieren"}
-                  >
-                    <Power className="w-4 h-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(cleaner.id, cleaner.name)}
-                    className="p-2 text-zinc-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                    title="Löschen"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </button>
+                  <div style={{ display: "flex", gap: 2 }}>
+                    <button onClick={() => startEdit(cleaner)} style={iconBtn} title="Bearbeiten">
+                      <Pencil style={{ width: 15, height: 15 }} />
+                    </button>
+                    <button onClick={() => toggleActive(cleaner.id, cleaner.active)} style={iconBtn} title={cleaner.active ? "Deaktivieren" : "Aktivieren"}>
+                      <Power style={{ width: 15, height: 15 }} />
+                    </button>
+                    <button onClick={() => handleDelete(cleaner.id, cleaner.name)} style={iconBtn} title="Löschen">
+                      <Trash2 style={{ width: 15, height: 15 }} />
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -263,7 +234,7 @@ export function CleanerList({ cleaners }: { cleaners: Cleaner[] }) {
 function FormField({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-zinc-600 mb-1">{label}</label>
+      <label style={{ display: "block", fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.45)", marginBottom: 6 }}>{label}</label>
       {children}
     </div>
   );

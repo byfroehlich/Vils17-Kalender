@@ -57,30 +57,47 @@
 
 @layer components {
   .form-input {
-    @apply w-full px-4 py-3.5 text-base border border-zinc-200 rounded-xl
-           focus:border-zinc-800 focus:outline-none
-           transition-all bg-white placeholder:text-zinc-400;
+    @apply w-full px-4 py-3.5 text-base rounded-xl
+           focus:outline-none transition-all;
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.95);
   }
+  .form-input::placeholder { color: rgba(255,255,255,0.3); }
+  .form-input:focus { border-color: rgba(13,148,136,0.7); background: rgba(255,255,255,0.12); }
+  .form-input:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* selects need explicit option styling */
+  .form-input option { background: #041f1c; color: rgba(255,255,255,0.9); }
 
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2
-           bg-zinc-900 hover:bg-zinc-800
-           text-white font-semibold rounded-xl
+           font-semibold rounded-xl
            px-5 py-3 transition-colors
            disabled:opacity-40 disabled:cursor-not-allowed;
+    background: rgba(13,148,136,0.8);
+    color: white;
   }
+  .btn-primary:hover:not(:disabled) { background: rgba(13,148,136,1); }
 
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2
-           bg-white hover:bg-zinc-50
-           text-zinc-800 font-semibold rounded-xl
-           border border-zinc-200 hover:border-zinc-300
+           font-semibold rounded-xl
            px-5 py-3 transition-colors
            disabled:opacity-40 disabled:cursor-not-allowed;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: rgba(255,255,255,0.85);
   }
+  .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
 
   .card {
-    @apply bg-white rounded-2xl border border-zinc-100 shadow-sm;
+    background: rgba(255,255,255,0.1);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 20px;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.15);
   }
 }
