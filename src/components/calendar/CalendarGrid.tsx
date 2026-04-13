@@ -204,12 +204,12 @@ export function CalendarGrid({
                           const depBarLeft = isSameDay(day, startOfDay(new Date(item.dep.checkIn))) || dayIndex === 0;
                           const arrBarRight = isSameDay(day, startOfDay(new Date(item.arr.checkOut))) || dayIndex === 6;
                           return (
-                            <div key={`${item.dep.id}-${item.arr.id}`} className="h-5 flex" style={{ marginLeft: depBarLeft ? 2 : 0, marginRight: arrBarRight ? 2 : 0 }}>
-                              <Link href={`/bookings/${item.dep.id}`} style={{ flex: 1, textDecoration: "none" }}>
-                                <div className={cn("h-full transition-opacity hover:opacity-75", depBarLeft ? "rounded-l-full" : "")} style={{ background: depC.bg }} />
+                            <div key={`${item.dep.id}-${item.arr.id}`} style={{ display: "flex", marginLeft: depBarLeft ? 2 : 0, marginRight: arrBarRight ? 2 : 0 }}>
+                              <Link href={`/bookings/${item.dep.id}`} style={{ flex: 1, display: "block", textDecoration: "none", minWidth: 0 }}>
+                                <div className="transition-opacity hover:opacity-75" style={{ height: 20, background: depC.bg, borderRadius: depBarLeft ? "9999px 0 0 9999px" : 0 }} />
                               </Link>
-                              <Link href={`/bookings/${item.arr.id}`} style={{ flex: 1, textDecoration: "none" }}>
-                                <div className={cn("h-full flex items-center overflow-hidden transition-opacity hover:opacity-75 pl-1", arrBarRight ? "rounded-r-full" : "")} style={{ background: arrC.bg, color: arrC.text }}>
+                              <Link href={`/bookings/${item.arr.id}`} style={{ flex: 1, display: "block", textDecoration: "none", minWidth: 0 }}>
+                                <div className="transition-opacity hover:opacity-75" style={{ height: 20, background: arrC.bg, borderRadius: arrBarRight ? "0 9999px 9999px 0" : 0, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3, color: arrC.text }}>
                                   <span className="truncate text-[9px] font-bold">{item.arr.guestName.split(" ")[0]}</span>
                                 </div>
                               </Link>
@@ -305,21 +305,32 @@ export function CalendarGrid({
                       </div>
 
                       {isDreher ? (
-                        /* Dreher: 50/50 Split, flache Farben */
-                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4, paddingLeft: 4, paddingRight: 4 }}>
-                          <div style={{ display: "flex", height: 24 }}>
-                            <Link href={`/bookings/${dep.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                        /* Dreher: 50/50 Split — gleiche Höhe wie Einzelbalken */
+                        <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4 }}>
+                          <div style={{ display: "flex", marginLeft: 4, marginRight: 4 }}>
+                            <Link href={`/bookings/${dep.id}`} style={{ flex: 1, display: "block", textDecoration: "none", minWidth: 0 }}>
                               <div
-                                className={cn("h-full transition-opacity hover:opacity-75", (isSameDay(day, new Date(dep.checkIn)) || dayIndex === 0) ? "rounded-l-full" : "")}
-                                style={{ background: bookingColor(dep).bg }}
+                                className="transition-opacity hover:opacity-75"
+                                style={{
+                                  height: 24,
+                                  background: bookingColor(dep).bg,
+                                  borderRadius: (isSameDay(day, new Date(dep.checkIn)) || dayIndex === 0) ? "9999px 0 0 9999px" : 0,
+                                }}
                               />
                             </Link>
-                            <Link href={`/bookings/${arr.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                            <Link href={`/bookings/${arr.id}`} style={{ flex: 1, display: "block", textDecoration: "none", minWidth: 0 }}>
                               <div
-                                className={cn("h-full flex items-center overflow-hidden transition-opacity hover:opacity-75 pl-1", (isSameDay(day, new Date(arr.checkOut)) || dayIndex === 6) ? "rounded-r-full" : "")}
-                                style={{ background: bookingColor(arr).bg, color: bookingColor(arr).text }}
+                                className="transition-opacity hover:opacity-75"
+                                style={{
+                                  height: 24,
+                                  background: bookingColor(arr).bg,
+                                  borderRadius: (isSameDay(day, new Date(arr.checkOut)) || dayIndex === 6) ? "0 9999px 9999px 0" : 0,
+                                  display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3,
+                                }}
                               >
-                                <span style={{ fontSize: 10, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1 }}>{arr.guestName.split(" ")[0]}</span>
+                                <span style={{ fontSize: 10, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: bookingColor(arr).text }}>
+                                  {arr.guestName.split(" ")[0]}
+                                </span>
                               </div>
                             </Link>
                           </div>
