@@ -126,13 +126,45 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                 {/* 7-column bar row */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
                   {days.map((day, dayIdx) => {
-                    const dayBks = apt.bookings.filter((b) => isOccupied(day, b));
+                    const arriving = apt.bookings.filter((b) => isOccupied(day, b));
+                    const departing = apt.bookings.filter((b) => isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut))));
+                    const isDreher = departing.length === 1 && arriving.length === 1;
 
-                    if (dayBks.length === 0) {
+                    if (!isDreher && arriving.length === 0) {
                       return <div key={day.toISOString()} style={{ height: 20 }} />;
                     }
 
-                    const b = dayBks[0];
+                    if (isDreher) {
+                      const dep = departing[0], arr = arriving[0];
+                      const depBase = colorMap.get(dep.id) ?? apt.color;
+                      const arrBase = colorMap.get(arr.id) ?? apt.color;
+                      const depBarColor = lightenHex(depBase, bookingFraction(day, dep) * 0.25);
+                      const depBarLeft = isSameDay(day, new Date(dep.checkIn)) || dayIdx === 0;
+                      const arrBarRight = isSameDay(addDays(day, 1), new Date(arr.checkOut)) || dayIdx === 6;
+                      return (
+                        <div key={day.toISOString()} style={{ height: 20, display: "flex" }}>
+                          <div style={{
+                            flex: 1,
+                            background: depBarColor,
+                            borderRadius: depBarLeft ? "9999px 0 0 9999px" : 0,
+                            marginLeft: depBarLeft ? 1 : 0,
+                          }} />
+                          <div style={{
+                            flex: 1,
+                            background: arrBase,
+                            borderRadius: arrBarRight ? "0 9999px 9999px 0" : 0,
+                            marginRight: arrBarRight ? 1 : 0,
+                            display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 2,
+                          }}>
+                            <span style={{ fontSize: 8, fontWeight: 700, color: textColorFor(arrBase), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                              {arr.guestName.split(" ")[0]}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
+                    const b = arriving[0];
                     const baseColor = colorMap.get(b.id) ?? apt.color;
                     const frac = bookingFraction(day, b);
                     const barColor = lightenHex(baseColor, frac * 0.25);

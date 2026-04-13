@@ -171,24 +171,60 @@ export function CalendarGrid({
               ))}
               {days.map((day) => {
                 const today = isToday(day);
-                const dayBookings = allBookingsSorted.filter((b) => isOccupied(day, b));
+                const arriving = allBookingsSorted.filter((b) => isOccupied(day, b));
+                const departing = allBookingsSorted.filter((b) => isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut))));
                 const dayIndex = (getDay(day) + 6) % 7;
+
+                // Build render items: pair Dreher (same apt, dep+arr on same day) or single
+                type RenderItem = { kind: "single"; b: Booking } | { kind: "split"; dep: Booking; arr: Booking };
+                const items: RenderItem[] = [];
+                const usedIds = new Set<string>();
+                for (const arr of arriving) {
+                  const dep = departing.find((d) => d.apartmentId === arr.apartmentId && !usedIds.has(d.id));
+                  if (dep) {
+                    items.push({ kind: "split", dep, arr });
+                    usedIds.add(dep.id);
+                    usedIds.add(arr.id);
+                  } else if (!usedIds.has(arr.id)) {
+                    items.push({ kind: "single", b: arr });
+                    usedIds.add(arr.id);
+                  }
+                }
+
                 return (
                   <div key={day.toISOString()} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", minHeight: 60, display: "flex", flexDirection: "column", padding: 4, background: today ? "rgba(13,148,136,0.08)" : "transparent" }}>
                     <span style={{ fontSize: 11, fontWeight: 600, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", marginBottom: 2, background: today ? "#0D9488" : "transparent", color: today ? "white" : "rgba(255,255,255,0.5)" }}>
                       {format(day, "d")}
                     </span>
                     <div className="flex flex-col gap-px">
-                      {dayBookings.map((b) => {
+                      {items.map((item) => {
+                        if (item.kind === "split") {
+                          const depC = bookingColorMap.get(item.dep.id) ?? { bg: "#3b82f6", text: "#fff" };
+                          const arrC = bookingColorMap.get(item.arr.id) ?? { bg: "#3b82f6", text: "#fff" };
+                          const depBarColor = lightenHex(depC.bg, bookingFraction(day, item.dep) * 0.25);
+                          const depBarLeft = isSameDay(day, startOfDay(new Date(item.dep.checkIn))) || dayIndex === 0;
+                          const arrBarRight = isSameDay(addDays(day, 1), startOfDay(new Date(item.arr.checkOut))) || dayIndex === 6;
+                          return (
+                            <div key={`${item.dep.id}-${item.arr.id}`} className="h-5 flex" style={{ marginLeft: depBarLeft ? 2 : 0, marginRight: arrBarRight ? 2 : 0 }}>
+                              <Link href={`/bookings/${item.dep.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                                <div className={cn("h-full transition-opacity hover:opacity-75", depBarLeft ? "rounded-l-full" : "")} style={{ background: depBarColor }} />
+                              </Link>
+                              <Link href={`/bookings/${item.arr.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                                <div className={cn("h-full flex items-center overflow-hidden transition-opacity hover:opacity-75 pl-1", arrBarRight ? "rounded-r-full" : "")} style={{ background: arrC.bg, color: arrC.text }}>
+                                  <span className="truncate text-[9px] font-bold">{item.arr.guestName.split(" ")[0]}</span>
+                                </div>
+                              </Link>
+                            </div>
+                          );
+                        }
+                        const b = item.b;
                         const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
                         const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
                         const isLast  = isSameDay(addDays(day, 1), startOfDay(new Date(b.checkOut))) || dayIndex === 6;
-                        const frac = bookingFraction(day, b);
-                        const barColor = lightenHex(color.bg, frac * 0.25);
-                        const grad = `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})`;
+                        const barColor = lightenHex(color.bg, bookingFraction(day, b) * 0.25);
                         return (
                           <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
-                            <div className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ background: grad, color: color.text }}>
+                            <div className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ background: `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})`, color: color.text }}>
                               {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
                             </div>
                           </Link>
@@ -252,9 +288,11 @@ export function CalendarGrid({
                   <div key={`offset-${i}`} style={{ height: 56, borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)" }} />
                 ))}
                 {days.map((day) => {
-                  const dayBookings = aptBookings.filter((b) => isOccupied(day, b));
+                  const arriving = aptBookings.filter((b) => isOccupied(day, b));
+                  const departing = aptBookings.filter((b) => isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut))));
                   const today = isToday(day);
                   const dayIndex = (getDay(day) + 6) % 7;
+                  const isDreher = departing.length === 1 && arriving.length === 1;
 
                   return (
                     <div
@@ -266,17 +304,36 @@ export function CalendarGrid({
                           {format(day, "d")}
                         </span>
                       </div>
-                      {dayBookings.length > 0 && (
+                      {isDreher ? (() => {
+                        const dep = departing[0], arr = arriving[0];
+                        const depC = bookingColor(dep), arrC = bookingColor(arr);
+                        const depBarColor = lightenHex(depC.bg, bookingFraction(day, dep) * 0.25);
+                        const depBarLeft = isSameDay(day, new Date(dep.checkIn)) || dayIndex === 0;
+                        const arrBarRight = isSameDay(addDays(day, 1), new Date(arr.checkOut)) || dayIndex === 6;
+                        return (
+                          <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4, paddingLeft: 4, paddingRight: 4 }}>
+                            <div style={{ display: "flex", height: 24 }}>
+                              <Link href={`/bookings/${dep.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                                <div className={cn("h-full transition-opacity hover:opacity-75", depBarLeft ? "rounded-l-full" : "")} style={{ background: depBarColor }} />
+                              </Link>
+                              <Link href={`/bookings/${arr.id}`} style={{ flex: 1, textDecoration: "none" }}>
+                                <div className={cn("h-full flex items-center overflow-hidden transition-opacity hover:opacity-75 pl-1", arrBarRight ? "rounded-r-full" : "")} style={{ background: arrC.bg, color: arrC.text }}>
+                                  <span style={{ fontSize: 10, fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1 }}>{arr.guestName.split(" ")[0]}</span>
+                                </div>
+                              </Link>
+                            </div>
+                          </div>
+                        );
+                      })() : arriving.length > 0 && (
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4 }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                            {dayBookings.map((b) => {
+                            {arriving.map((b) => {
                               const color    = bookingColor(b);
                               const isFirstDay = isSameDay(day, new Date(b.checkIn));
                               const isLastDay  = isSameDay(addDays(day, 1), new Date(b.checkOut));
                               const barLeft  = isFirstDay || dayIndex === 0;
                               const barRight = isLastDay  || dayIndex === 6;
-                              const frac = bookingFraction(day, b);
-                              const barColor = lightenHex(color.bg, frac * 0.25);
+                              const barColor = lightenHex(color.bg, bookingFraction(day, b) * 0.25);
                               return (
                                 <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", width: "100%" }}>
                                   <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
