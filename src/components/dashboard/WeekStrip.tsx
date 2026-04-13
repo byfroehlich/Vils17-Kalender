@@ -1,6 +1,6 @@
 "use client";
 
-import { startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, startOfDay, format, addDays, differenceInCalendarDays } from "date-fns";
+import { startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, startOfDay, format } from "date-fns";
 import { de } from "date-fns/locale";
 
 interface Booking {
@@ -15,14 +15,7 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
 function isOccupied(day: Date, b: Booking): boolean {
   const d = startOfDay(day);
-  return d >= startOfDay(new Date(b.checkIn)) && d < startOfDay(new Date(b.checkOut));
-}
-
-function bookingFraction(day: Date, b: Booking): number {
-  const total = differenceInCalendarDays(startOfDay(new Date(b.checkOut)), startOfDay(new Date(b.checkIn)));
-  if (total <= 0) return 0;
-  const elapsed = differenceInCalendarDays(startOfDay(day), startOfDay(new Date(b.checkIn)));
-  return Math.max(0, Math.min(1, elapsed / total));
+  return d >= startOfDay(new Date(b.checkIn)) && d <= startOfDay(new Date(b.checkOut));
 }
 
 function lightenHex(hex: string, factor: number): string {
@@ -104,13 +97,13 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
       {apts.length > 0 ? (
         <div style={{ marginTop: 10, display: "flex", flexDirection: "column", gap: 6 }}>
           {apts.map((apt) => {
-            // Assign alternating shades so consecutive bookings are visually distinct
+            // Assign alternating flat colors to consecutive bookings
             const sorted = [...apt.bookings].sort(
               (a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime()
             );
             const colorMap = new Map<string, string>();
             sorted.forEach((b, i) => {
-              colorMap.set(b.id, i % 2 === 0 ? apt.color : lightenHex(apt.color, 0.30));
+              colorMap.set(b.id, i % 2 === 0 ? apt.color : lightenHex(apt.color, 0.38));
             });
 
             return (
@@ -126,37 +119,36 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                 {/* 7-column bar row */}
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
                   {days.map((day, dayIdx) => {
-                    const arriving = apt.bookings.filter((b) => isOccupied(day, b));
-                    const departing = apt.bookings.filter((b) => isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut))));
-                    const isDreher = departing.length === 1 && arriving.length === 1;
+                    const dayBookings = apt.bookings.filter((b) => isOccupied(day, b));
+                    const dep = dayBookings.find((b) => isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut)))) ?? null;
+                    const arr = dayBookings.find((b) => !isSameDay(startOfDay(day), startOfDay(new Date(b.checkOut)))) ?? null;
+                    const isDreher = dep !== null && arr !== null;
 
-                    if (!isDreher && arriving.length === 0) {
+                    if (!isDreher && dayBookings.length === 0) {
                       return <div key={day.toISOString()} style={{ height: 20 }} />;
                     }
 
                     if (isDreher) {
-                      const dep = departing[0], arr = arriving[0];
-                      const depBase = colorMap.get(dep.id) ?? apt.color;
-                      const arrBase = colorMap.get(arr.id) ?? apt.color;
-                      const depBarColor = lightenHex(depBase, bookingFraction(day, dep) * 0.25);
+                      const depColor = colorMap.get(dep.id) ?? apt.color;
+                      const arrColor = colorMap.get(arr.id) ?? apt.color;
                       const depBarLeft = isSameDay(day, new Date(dep.checkIn)) || dayIdx === 0;
-                      const arrBarRight = isSameDay(addDays(day, 1), new Date(arr.checkOut)) || dayIdx === 6;
+                      const arrBarRight = isSameDay(day, new Date(arr.checkOut)) || dayIdx === 6;
                       return (
                         <div key={day.toISOString()} style={{ height: 20, display: "flex" }}>
                           <div style={{
                             flex: 1,
-                            background: depBarColor,
+                            background: depColor,
                             borderRadius: depBarLeft ? "9999px 0 0 9999px" : 0,
                             marginLeft: depBarLeft ? 1 : 0,
                           }} />
                           <div style={{
                             flex: 1,
-                            background: arrBase,
+                            background: arrColor,
                             borderRadius: arrBarRight ? "0 9999px 9999px 0" : 0,
                             marginRight: arrBarRight ? 1 : 0,
                             display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 2,
                           }}>
-                            <span style={{ fontSize: 8, fontWeight: 700, color: textColorFor(arrBase), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                            <span style={{ fontSize: 8, fontWeight: 700, color: textColorFor(arrColor), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                               {arr.guestName.split(" ")[0]}
                             </span>
                           </div>
@@ -164,17 +156,15 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                       );
                     }
 
-                    const b = arriving[0];
-                    const baseColor = colorMap.get(b.id) ?? apt.color;
-                    const frac = bookingFraction(day, b);
-                    const barColor = lightenHex(baseColor, frac * 0.25);
-                    const textColor = textColorFor(barColor);
+                    // Single bar (arr ?? dep)
+                    const b = arr ?? dep!;
+                    const barColor = colorMap.get(b.id) ?? apt.color;
                     const isFirst = isSameDay(day, new Date(b.checkIn)) || dayIdx === 0;
-                    const isLast  = isSameDay(addDays(day, 1), new Date(b.checkOut)) || dayIdx === 6;
+                    const isLast  = isSameDay(day, new Date(b.checkOut)) || dayIdx === 6;
                     return (
                       <div key={day.toISOString()} style={{
                         height: 20,
-                        background: `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})`,
+                        background: barColor,
                         borderRadius: isFirst && isLast ? 9999
                           : isFirst ? "9999px 0 0 9999px"
                           : isLast  ? "0 9999px 9999px 0"
@@ -186,7 +176,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                         paddingLeft: isFirst ? 5 : 0,
                       }}>
                         {isFirst && (
-                          <span style={{ fontSize: 9, fontWeight: 700, color: textColor, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                          <span style={{ fontSize: 9, fontWeight: 700, color: textColorFor(barColor), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                             {b.guestName.split(" ")[0]}
                           </span>
                         )}
