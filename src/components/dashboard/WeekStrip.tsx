@@ -86,9 +86,8 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
         {/* Date cells */}
         {days.map((day) => {
           const today = isToday(day);
-          const dayBookings = weekBookings.filter(b => isOccupied(day, b));
           return (
-            <div key={day.toISOString()} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3 }}>
+            <div key={day.toISOString()} style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
               {/* Date number */}
               <div style={{
                 width: 26, height: 26,
@@ -100,21 +99,6 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
               }}>
                 {format(day, "d")}
               </div>
-              {/* Dots for active bookings */}
-              {dayBookings.length > 0 && (
-                <div style={{ display: "flex", gap: 2, flexWrap: "wrap", justifyContent: "center" }}>
-                  {dayBookings.map((b) => (
-                    <div
-                      key={b.id}
-                      style={{
-                        width: 5, height: 5, borderRadius: "50%",
-                        backgroundColor: b.apartment.color ?? "#14B8A6",
-                        flexShrink: 0,
-                      }}
-                    />
-                  ))}
-                </div>
-              )}
             </div>
           );
         })}

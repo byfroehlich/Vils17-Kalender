@@ -174,49 +174,18 @@ export function CalendarGrid({
                     <span style={{ fontSize: 11, fontWeight: 600, width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "50%", marginBottom: 2, background: today ? "#0D9488" : "transparent", color: today ? "white" : "rgba(255,255,255,0.5)" }}>
                       {format(day, "d")}
                     </span>
-                    {(() => {
-                      // Split-bar: wenn genau 2 Buchungen derselben Wohnung (Dreher)
-                      const sameApt2 = dayBookings.length === 2 && dayBookings[0].apartmentId === dayBookings[1].apartmentId;
-                      if (sameApt2) {
-                        // Checkout links, Checkin rechts
-                        const sorted = [...dayBookings].sort((a, b) =>
-                          isCheckoutOnly(day, a) ? -1 : isCheckoutOnly(day, b) ? 1 : 0
-                        );
+                    <div className="flex flex-col gap-px">
+                      {dayBookings.map((b) => {
+                        const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
+                        const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
+                        const isLast = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
                         return (
-                          <div style={{ display: "flex", gap: 1, paddingLeft: 2, paddingRight: 2, paddingBottom: 2 }}>
-                            {sorted.map((b, idx) => {
-                              const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
-                              const leftCap  = idx === 0 && (isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0);
-                              const rightCap = idx === 1 && (isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6);
-                              return (
-                                <div key={b.id} style={{
-                                  flex: 1, height: 18, backgroundColor: color.bg,
-                                  borderRadius: leftCap ? "9999px 0 0 9999px" : rightCap ? "0 9999px 9999px 0" : 0,
-                                  display: "flex", alignItems: "center", overflow: "hidden",
-                                  paddingLeft: leftCap ? 5 : 0,
-                                }}>
-                                  {leftCap && <span style={{ fontSize: 9, fontWeight: 700, color: color.text, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{b.guestName.split(" ")[0]}</span>}
-                                </div>
-                              );
-                            })}
+                          <div key={b.id} className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ backgroundColor: color.bg, color: color.text }}>
+                            {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
                           </div>
                         );
-                      }
-                      return (
-                        <div className="flex flex-col gap-px">
-                          {dayBookings.map((b) => {
-                            const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
-                            const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
-                            const isLast = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
-                            return (
-                              <div key={b.id} className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ backgroundColor: color.bg, color: color.text }}>
-                                {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      );
-                    })()}
+                      })}
+                    </div>
                   </div>
                 );
               })}
@@ -290,56 +259,35 @@ export function CalendarGrid({
                       </div>
                       {dayBookings.length > 0 && (
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4 }}>
-                          {dayBookings.length === 2 ? (
-                            // Split-bar: Checkout links, Checkin rechts
-                            <div style={{ display: "flex", gap: 1, marginLeft: 2, marginRight: 2 }}>
-                              {[...dayBookings].sort((a, b) => isCheckoutOnly(day, a) ? -1 : isCheckoutOnly(day, b) ? 1 : 0).map((b, idx) => {
-                                const color = bookingColor(b);
-                                const leftCap  = idx === 0 && (isSameDay(day, new Date(b.checkIn)) || dayIndex === 0);
-                                const rightCap = idx === 1 && (isSameDay(day, new Date(b.checkOut)) || dayIndex === 6);
-                                return (
-                                  <div key={b.id} style={{
-                                    flex: 1, height: 22, backgroundColor: color.bg,
-                                    borderRadius: leftCap ? "9999px 0 0 9999px" : rightCap ? "0 9999px 9999px 0" : 0,
-                                    display: "flex", alignItems: "center", overflow: "hidden",
-                                    paddingLeft: leftCap ? 5 : 0,
-                                  }}>
-                                    {leftCap && <span style={{ fontSize: 10, fontWeight: 700, color: color.text, overflow: "hidden", whiteSpace: "nowrap", textOverflow: "ellipsis" }}>{b.guestName.split(" ")[0]}</span>}
+                          <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                            {dayBookings.map((b) => {
+                              const color = bookingColor(b);
+                              const isFirstDay = isSameDay(day, new Date(b.checkIn));
+                              const isLastDay  = isSameDay(day, new Date(b.checkOut));
+                              const barLeft    = isFirstDay || dayIndex === 0;
+                              const barRight   = isLastDay  || dayIndex === 6;
+                              const tall       = dayBookings.length === 1;
+                              return (
+                                <div key={b.id} style={{ width: "100%", display: "flex", alignItems: "center" }}>
+                                  <div
+                                    className={cn(
+                                      "w-full flex items-center overflow-hidden",
+                                      tall ? "h-6" : "h-[9px]",
+                                      barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
+                                      barRight ? "mr-1 rounded-r-full" : "mr-0"
+                                    )}
+                                    style={{ backgroundColor: color.bg }}
+                                  >
+                                    {(isFirstDay || dayIndex === 0) && tall && (
+                                      <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
+                                        {b.guestName.split(" ")[0]}
+                                      </span>
+                                    )}
                                   </div>
-                                );
-                              })}
-                            </div>
-                          ) : (
-                            <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                              {dayBookings.map((b) => {
-                                const color = bookingColor(b);
-                                const isFirstDay = isSameDay(day, new Date(b.checkIn));
-                                const isLastDay  = isSameDay(day, new Date(b.checkOut));
-                                const barLeft    = isFirstDay || dayIndex === 0;
-                                const barRight   = isLastDay  || dayIndex === 6;
-                                const tall       = dayBookings.length === 1;
-                                return (
-                                  <div key={b.id} style={{ width: "100%", display: "flex", alignItems: "center" }}>
-                                    <div
-                                      className={cn(
-                                        "w-full flex items-center overflow-hidden",
-                                        tall ? "h-6" : "h-[9px]",
-                                        barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
-                                        barRight ? "mr-1 rounded-r-full" : "mr-0"
-                                      )}
-                                      style={{ backgroundColor: color.bg }}
-                                    >
-                                      {(isFirstDay || dayIndex === 0) && tall && (
-                                        <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
-                                          {b.guestName.split(" ")[0]}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
+                                </div>
+                              );
+                            })}
+                          </div>
                         </div>
                       )}
                     </div>

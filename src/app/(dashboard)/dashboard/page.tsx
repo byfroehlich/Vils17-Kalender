@@ -27,8 +27,8 @@ export default async function DashboardPage() {
 
   const [
     activeNow,
-    checkoutsWeek,
-    checkinsWeek,
+    checkoutsToday,
+    checkinsToday,
     nextBookings,
     problemBookingsRaw,
     weekBookings,
@@ -41,13 +41,13 @@ export default async function DashboardPage() {
         checkIn: { lte: now }, checkOut: { gte: now },
       },
     }),
-    // Checkouts this week
+    // Checkouts today
     prisma.booking.count({
-      where: { organizationId: orgId, status: "confirmed", checkOut: { gte: now, lte: in7Days } },
+      where: { organizationId: orgId, status: "confirmed", checkOut: { gte: startOfDay(now), lte: endOfDay(now) } },
     }),
-    // Checkins this week
+    // Checkins today
     prisma.booking.count({
-      where: { organizationId: orgId, status: "confirmed", checkIn: { gte: now, lte: in7Days } },
+      where: { organizationId: orgId, status: "confirmed", checkIn: { gte: startOfDay(now), lte: endOfDay(now) } },
     }),
     // Bookings checking out in the next 7 days
     prisma.booking.findMany({
@@ -169,8 +169,8 @@ export default async function DashboardPage() {
           <div style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: "0.05s", opacity: 0 }}>
             <StatsCards
               activeNow={activeNow}
-              checkoutsWeek={checkoutsWeek}
-              checkinsWeek={checkinsWeek}
+              checkoutsToday={checkoutsToday}
+              checkinsToday={checkinsToday}
             />
           </div>
 

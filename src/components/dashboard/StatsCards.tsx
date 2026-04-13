@@ -10,15 +10,15 @@ const glass = {
 
 interface Props {
   activeNow: number;
-  checkoutsWeek: number;
-  checkinsWeek: number;
+  checkoutsToday: number;
+  checkinsToday: number;
 }
 
-export function StatsCards({ activeNow, checkoutsWeek, checkinsWeek }: Props) {
+export function StatsCards({ activeNow, checkoutsToday, checkinsToday }: Props) {
   const cards = [
-    { label: "Aktiv",     value: activeNow,     dot: "#22c55e" },
-    { label: "Abreisen",  value: checkoutsWeek, dot: "#F59E0B" },
-    { label: "Anreisen",  value: checkinsWeek,  dot: "#3b82f6" },
+    { label: "Aktiv",     value: activeNow,      dot: "#22c55e" },
+    { label: "Abreisen",  value: checkoutsToday, dot: "#F59E0B" },
+    { label: "Anreisen",  value: checkinsToday,  dot: "#3b82f6" },
   ];
 
   return (
