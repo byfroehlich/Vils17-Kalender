@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { addDays, startOfWeek, endOfWeek, startOfDay, endOfDay } from "date-fns";
+import { addDays, startOfDay, endOfDay } from "date-fns";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { UpcomingBookings } from "@/components/dashboard/UpcomingBookings";
 import { WarningBanner } from "@/components/dashboard/WarningBanner";
@@ -24,9 +24,6 @@ export default async function DashboardPage() {
   const in7Days = addDays(now, 7);
   const in14Days = addDays(now, 14);
   const tomorrow = addDays(now, 1);
-
-  const weekStart = startOfWeek(now, { weekStartsOn: 1 });
-  const weekEnd   = endOfWeek(now, { weekStartsOn: 1 });
 
   const [
     activeNow,
@@ -52,11 +49,10 @@ export default async function DashboardPage() {
     prisma.booking.count({
       where: { organizationId: orgId, status: "confirmed", checkIn: { gte: now, lte: in7Days } },
     }),
-    // Next 8 bookings (by checkout)
+    // Bookings checking out in the next 7 days
     prisma.booking.findMany({
-      where: { organizationId: orgId, status: "confirmed", checkOut: { gte: now } },
+      where: { organizationId: orgId, status: "confirmed", checkOut: { gte: now, lte: in7Days } },
       orderBy: { checkOut: "asc" },
-      take: 8,
       include: { apartment: true, cleaningAssignment: { include: { cleaner: true } } },
     }),
     // Problem bookings (upcoming with open cleaning or laundry)
@@ -75,11 +71,11 @@ export default async function DashboardPage() {
         cleaningAssignment: { select: { status: true, laundryStatus: true } },
       },
     }),
-    // Bookings this week (for WeekStrip)
+    // Bookings for WeekStrip — broad 14-day window so client-side week calc works across timezones
     prisma.booking.findMany({
       where: {
         organizationId: orgId, status: "confirmed",
-        checkIn: { lte: weekEnd }, checkOut: { gte: weekStart },
+        checkIn: { lte: addDays(now, 14) }, checkOut: { gte: addDays(now, -7) },
       },
       include: { apartment: { select: { name: true, color: true } } },
     }),

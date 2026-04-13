@@ -16,9 +16,9 @@ interface Props {
 
 export function StatsCards({ activeNow, checkoutsWeek, checkinsWeek }: Props) {
   const cards = [
-    { label: "Aktiv",        value: activeNow,     dot: "#22c55e" },
-    { label: "Checkout",     value: checkoutsWeek, dot: "#F59E0B" },
-    { label: "Diese Woche",  value: checkinsWeek,  dot: "#3b82f6" },
+    { label: "Aktiv",     value: activeNow,     dot: "#22c55e" },
+    { label: "Abreisen",  value: checkoutsWeek, dot: "#F59E0B" },
+    { label: "Anreisen",  value: checkinsWeek,  dot: "#3b82f6" },
   ];
 
   return (
