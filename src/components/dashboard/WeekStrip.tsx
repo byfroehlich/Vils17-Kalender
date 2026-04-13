@@ -125,20 +125,21 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                       return <div key={day.toISOString()} style={{ height: 20 }} />;
                     }
 
-                    // Dreher: two bookings on same day → horizontal split (top = checkout, bottom = checkin)
+                    // Mehrere Buchungen (z.B. Dreher): übereinander gestapelt, je halb-hoch
                     if (dayBks.length >= 2) {
-                      const sortedDay = [...dayBks].sort((a, _b) =>
-                        isSameDay(day, new Date(a.checkOut)) ? -1 : 1
-                      );
                       return (
-                        <div key={day.toISOString()} style={{ height: 20, display: "flex", flexDirection: "column", gap: 1 }}>
-                          {sortedDay.map((b, idx) => {
-                            const color = colorMap.get(b.id) ?? apt.color;
+                        <div key={day.toISOString()} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
+                          {[...dayBks].sort((a, _b) => isSameDay(day, new Date(a.checkOut)) ? -1 : 1).map((b) => {
+                            const color   = colorMap.get(b.id) ?? apt.color;
+                            const isFirst = isSameDay(day, new Date(b.checkIn)) || dayIdx === 0;
+                            const isLast  = isSameDay(day, new Date(b.checkOut)) || dayIdx === 6;
                             return (
                               <div key={b.id} style={{
-                                flex: 1,
+                                height: 9,
                                 backgroundColor: color,
-                                borderRadius: idx === 0 ? "9999px 9999px 0 0" : "0 0 9999px 9999px",
+                                borderRadius: isFirst && isLast ? 9999 : isFirst ? "9999px 0 0 9999px" : isLast ? "0 9999px 9999px 0" : 0,
+                                marginLeft:  isFirst ? 1 : 0,
+                                marginRight: isLast  ? 1 : 0,
                               }} />
                             );
                           })}

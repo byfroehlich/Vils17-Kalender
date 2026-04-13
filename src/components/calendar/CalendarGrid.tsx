@@ -264,12 +264,12 @@ export function CalendarGrid({
                         <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4 }}>
                           <div style={{ display: "flex", flexDirection: "column", gap: 1 }}>
                             {dayBookings.map((b) => {
-                              const color = bookingColor(b);
+                              const color    = bookingColor(b);
                               const isFirstDay = isSameDay(day, new Date(b.checkIn));
                               const isLastDay  = isSameDay(day, new Date(b.checkOut));
-                              const barLeft    = isFirstDay || dayIndex === 0;
-                              const barRight   = isLastDay  || dayIndex === 6;
-                              const tall       = dayBookings.length === 1;
+                              const barLeft  = isFirstDay || dayIndex === 0;
+                              const barRight = isLastDay  || dayIndex === 6;
+                              const tall     = dayBookings.length === 1;
                               return (
                                 <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", width: "100%" }}>
                                   <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
