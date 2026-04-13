@@ -125,20 +125,20 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                       return <div key={day.toISOString()} style={{ height: 20 }} />;
                     }
 
-                    // Dreher: two bookings on same day → split bar
+                    // Dreher: two bookings on same day → horizontal split (top = checkout, bottom = checkin)
                     if (dayBks.length >= 2) {
                       const sortedDay = [...dayBks].sort((a, _b) =>
                         isSameDay(day, new Date(a.checkOut)) ? -1 : 1
                       );
                       return (
-                        <div key={day.toISOString()} style={{ height: 20, display: "flex", gap: 1 }}>
+                        <div key={day.toISOString()} style={{ height: 20, display: "flex", flexDirection: "column", gap: 1 }}>
                           {sortedDay.map((b, idx) => {
                             const color = colorMap.get(b.id) ?? apt.color;
                             return (
                               <div key={b.id} style={{
                                 flex: 1,
                                 backgroundColor: color,
-                                borderRadius: idx === 0 ? "9999px 0 0 9999px" : "0 9999px 9999px 0",
+                                borderRadius: idx === 0 ? "9999px 9999px 0 0" : "0 0 9999px 9999px",
                               }} />
                             );
                           })}
