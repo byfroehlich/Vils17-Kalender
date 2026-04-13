@@ -176,18 +176,22 @@ export function CalendarGrid({
                       {format(day, "d")}
                     </span>
                     <div className="flex flex-col gap-px">
-                      {dayBookings.map((b) => {
-                        const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
-                        const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
-                        const isLast = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
-                        return (
-                          <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
-                            <div className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ backgroundColor: color.bg, color: color.text }}>
-                              {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
-                            </div>
-                          </Link>
-                        );
-                      })}
+                      {(() => {
+                        const tall = dayBookings.length === 1;
+                        return dayBookings.map((b) => {
+                          const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
+                          const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
+                          const isLast  = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
+                          const grad = `linear-gradient(90deg, ${color.bg}, ${lightenHex(color.bg, 0.18)})`;
+                          return (
+                            <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
+                              <div className={cn("flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", tall ? "h-5" : "h-[9px]", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ background: grad, color: color.text }}>
+                                {isFirst && tall && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
+                              </div>
+                            </Link>
+                          );
+                        });
+                      })()}
                     </div>
                   </div>
                 );
@@ -280,7 +284,7 @@ export function CalendarGrid({
                                         barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
                                         barRight ? "mr-1 rounded-r-full" : "mr-0"
                                       )}
-                                      style={{ backgroundColor: color.bg }}
+                                      style={{ background: `linear-gradient(90deg, ${color.bg}, ${lightenHex(color.bg, 0.18)})` }}
                                     >
                                       {(isFirstDay || dayIndex === 0) && tall && (
                                         <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>

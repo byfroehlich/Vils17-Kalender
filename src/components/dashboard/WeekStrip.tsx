@@ -136,7 +136,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                             return (
                               <div key={b.id} style={{
                                 height: 9,
-                                backgroundColor: color,
+                                background: `linear-gradient(90deg, ${color}, ${lightenHex(color, 0.18)})`,
                                 borderRadius: isFirst && isLast ? 9999 : isFirst ? "9999px 0 0 9999px" : isLast ? "0 9999px 9999px 0" : 0,
                                 marginLeft:  isFirst ? 1 : 0,
                                 marginRight: isLast  ? 1 : 0,
@@ -156,7 +156,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                     return (
                       <div key={day.toISOString()} style={{
                         height: 20,
-                        backgroundColor: color,
+                        background: `linear-gradient(90deg, ${color}, ${lightenHex(color, 0.18)})`,
                         borderRadius: isFirst && isLast ? 9999
                           : isFirst ? "9999px 0 0 9999px"
                           : isLast  ? "0 9999px 9999px 0"
