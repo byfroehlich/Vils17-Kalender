@@ -1,6 +1,6 @@
 "use client";
 
-import { startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, startOfDay, format } from "date-fns";
+import { startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, startOfDay, format, addDays, differenceInCalendarDays } from "date-fns";
 import { de } from "date-fns/locale";
 
 interface Booking {
@@ -15,7 +15,14 @@ const WEEKDAYS = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
 function isOccupied(day: Date, b: Booking): boolean {
   const d = startOfDay(day);
-  return d >= startOfDay(new Date(b.checkIn)) && d <= startOfDay(new Date(b.checkOut));
+  return d >= startOfDay(new Date(b.checkIn)) && d < startOfDay(new Date(b.checkOut));
+}
+
+function bookingFraction(day: Date, b: Booking): number {
+  const total = differenceInCalendarDays(startOfDay(new Date(b.checkOut)), startOfDay(new Date(b.checkIn)));
+  if (total <= 0) return 0;
+  const elapsed = differenceInCalendarDays(startOfDay(day), startOfDay(new Date(b.checkIn)));
+  return Math.max(0, Math.min(1, elapsed / total));
 }
 
 function lightenHex(hex: string, factor: number): string {
@@ -125,38 +132,17 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                       return <div key={day.toISOString()} style={{ height: 20 }} />;
                     }
 
-                    // Mehrere Buchungen (z.B. Dreher): übereinander gestapelt, je halb-hoch
-                    if (dayBks.length >= 2) {
-                      return (
-                        <div key={day.toISOString()} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                          {[...dayBks].sort((a, _b) => isSameDay(day, new Date(a.checkOut)) ? -1 : 1).map((b) => {
-                            const color   = colorMap.get(b.id) ?? apt.color;
-                            const isFirst = isSameDay(day, new Date(b.checkIn)) || dayIdx === 0;
-                            const isLast  = isSameDay(day, new Date(b.checkOut)) || dayIdx === 6;
-                            return (
-                              <div key={b.id} style={{
-                                height: 9,
-                                background: `linear-gradient(90deg, ${color}, ${lightenHex(color, 0.18)})`,
-                                borderRadius: isFirst && isLast ? 9999 : isFirst ? "9999px 0 0 9999px" : isLast ? "0 9999px 9999px 0" : 0,
-                                marginLeft:  isFirst ? 1 : 0,
-                                marginRight: isLast  ? 1 : 0,
-                              }} />
-                            );
-                          })}
-                        </div>
-                      );
-                    }
-
-                    // Single booking
                     const b = dayBks[0];
-                    const color = colorMap.get(b.id) ?? apt.color;
-                    const textColor = textColorFor(color);
+                    const baseColor = colorMap.get(b.id) ?? apt.color;
+                    const frac = bookingFraction(day, b);
+                    const barColor = lightenHex(baseColor, frac * 0.25);
+                    const textColor = textColorFor(barColor);
                     const isFirst = isSameDay(day, new Date(b.checkIn)) || dayIdx === 0;
-                    const isLast  = isSameDay(day, new Date(b.checkOut)) || dayIdx === 6;
+                    const isLast  = isSameDay(addDays(day, 1), new Date(b.checkOut)) || dayIdx === 6;
                     return (
                       <div key={day.toISOString()} style={{
                         height: 20,
-                        background: `linear-gradient(90deg, ${color}, ${lightenHex(color, 0.18)})`,
+                        background: `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})`,
                         borderRadius: isFirst && isLast ? 9999
                           : isFirst ? "9999px 0 0 9999px"
                           : isLast  ? "0 9999px 9999px 0"

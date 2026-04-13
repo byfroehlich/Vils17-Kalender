@@ -3,7 +3,8 @@
 import { useState, useEffect } from "react";
 import {
   format, startOfMonth, endOfMonth, eachDayOfInterval,
-  getDay, addMonths, subMonths, isSameDay, isToday, startOfDay
+  getDay, addMonths, subMonths, isSameDay, isToday, startOfDay,
+  addDays, differenceInCalendarDays
 } from "date-fns";
 import type { CalendarViewMode } from "@/components/settings/CalendarViewSettings";
 import { de } from "date-fns/locale";
@@ -57,12 +58,16 @@ function getAptPair(baseColor: string): [string, string] {
 
 function isOccupied(day: Date, booking: Booking): boolean {
   const d = startOfDay(day);
-  return d >= startOfDay(new Date(booking.checkIn)) && d <= startOfDay(new Date(booking.checkOut));
+  return d >= startOfDay(new Date(booking.checkIn)) && d < startOfDay(new Date(booking.checkOut));
 }
 
-function isCheckoutOnly(day: Date, booking: Booking): boolean {
-  return isSameDay(day, new Date(booking.checkOut));
+function bookingFraction(day: Date, booking: Booking): number {
+  const total = differenceInCalendarDays(startOfDay(new Date(booking.checkOut)), startOfDay(new Date(booking.checkIn)));
+  if (total <= 0) return 0;
+  const elapsed = differenceInCalendarDays(startOfDay(day), startOfDay(new Date(booking.checkIn)));
+  return Math.max(0, Math.min(1, elapsed / total));
 }
+
 
 export function CalendarGrid({
   apartments,
@@ -166,9 +171,7 @@ export function CalendarGrid({
               ))}
               {days.map((day) => {
                 const today = isToday(day);
-                const dayBookings = allBookingsSorted
-                  .filter((b) => isOccupied(day, b))
-                  .sort((a, b) => isCheckoutOnly(day, a) ? 1 : isCheckoutOnly(day, b) ? -1 : 0);
+                const dayBookings = allBookingsSorted.filter((b) => isOccupied(day, b));
                 const dayIndex = (getDay(day) + 6) % 7;
                 return (
                   <div key={day.toISOString()} style={{ borderBottom: "1px solid rgba(255,255,255,0.04)", borderRight: "1px solid rgba(255,255,255,0.04)", minHeight: 60, display: "flex", flexDirection: "column", padding: 4, background: today ? "rgba(13,148,136,0.08)" : "transparent" }}>
@@ -176,22 +179,21 @@ export function CalendarGrid({
                       {format(day, "d")}
                     </span>
                     <div className="flex flex-col gap-px">
-                      {(() => {
-                        const tall = dayBookings.length === 1;
-                        return dayBookings.map((b) => {
-                          const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
-                          const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
-                          const isLast  = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
-                          const grad = `linear-gradient(90deg, ${color.bg}, ${lightenHex(color.bg, 0.18)})`;
-                          return (
-                            <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
-                              <div className={cn("flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", tall ? "h-5" : "h-[9px]", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ background: grad, color: color.text }}>
-                                {isFirst && tall && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
-                              </div>
-                            </Link>
-                          );
-                        });
-                      })()}
+                      {dayBookings.map((b) => {
+                        const color = bookingColorMap.get(b.id) ?? { bg: "#3b82f6", text: "#fff" };
+                        const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
+                        const isLast  = isSameDay(addDays(day, 1), startOfDay(new Date(b.checkOut))) || dayIndex === 6;
+                        const frac = bookingFraction(day, b);
+                        const barColor = lightenHex(color.bg, frac * 0.25);
+                        const grad = `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})`;
+                        return (
+                          <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
+                            <div className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ background: grad, color: color.text }}>
+                              {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
+                            </div>
+                          </Link>
+                        );
+                      })}
                     </div>
                   </div>
                 );
@@ -270,23 +272,23 @@ export function CalendarGrid({
                             {dayBookings.map((b) => {
                               const color    = bookingColor(b);
                               const isFirstDay = isSameDay(day, new Date(b.checkIn));
-                              const isLastDay  = isSameDay(day, new Date(b.checkOut));
+                              const isLastDay  = isSameDay(addDays(day, 1), new Date(b.checkOut));
                               const barLeft  = isFirstDay || dayIndex === 0;
                               const barRight = isLastDay  || dayIndex === 6;
-                              const tall     = dayBookings.length === 1;
+                              const frac = bookingFraction(day, b);
+                              const barColor = lightenHex(color.bg, frac * 0.25);
                               return (
                                 <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", width: "100%" }}>
                                   <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
                                     <div
                                       className={cn(
-                                        "w-full flex items-center overflow-hidden transition-opacity hover:opacity-75",
-                                        tall ? "h-6" : "h-[9px]",
+                                        "w-full h-6 flex items-center overflow-hidden transition-opacity hover:opacity-75",
                                         barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
                                         barRight ? "mr-1 rounded-r-full" : "mr-0"
                                       )}
-                                      style={{ background: `linear-gradient(90deg, ${color.bg}, ${lightenHex(color.bg, 0.18)})` }}
+                                      style={{ background: `linear-gradient(90deg, ${barColor}, ${lightenHex(barColor, 0.1)})` }}
                                     >
-                                      {(isFirstDay || dayIndex === 0) && tall && (
+                                      {(isFirstDay || dayIndex === 0) && (
                                         <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
                                           {b.guestName.split(" ")[0]}
                                         </span>
