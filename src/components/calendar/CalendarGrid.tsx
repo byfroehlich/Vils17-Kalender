@@ -9,6 +9,7 @@ import type { CalendarViewMode } from "@/components/settings/CalendarViewSetting
 import { de } from "date-fns/locale";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 interface Apartment {
   id: string;
@@ -180,9 +181,11 @@ export function CalendarGrid({
                         const isFirst = isSameDay(day, startOfDay(new Date(b.checkIn))) || dayIndex === 0;
                         const isLast = isSameDay(day, startOfDay(new Date(b.checkOut))) || dayIndex === 6;
                         return (
-                          <div key={b.id} className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ backgroundColor: color.bg, color: color.text }}>
-                            {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
-                          </div>
+                          <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none" }}>
+                            <div className={cn("h-5 flex items-center overflow-hidden text-xs font-semibold transition-opacity hover:opacity-75", isFirst ? "rounded-l-full pl-1.5 ml-0.5" : "pl-0 ml-0", isLast ? "rounded-r-full mr-0.5" : "mr-0")} style={{ backgroundColor: color.bg, color: color.text }}>
+                              {isFirst && <span className="truncate">{b.guestName.split(" ")[0]}</span>}
+                            </div>
+                          </Link>
                         );
                       })}
                     </div>
@@ -268,23 +271,25 @@ export function CalendarGrid({
                               const barRight   = isLastDay  || dayIndex === 6;
                               const tall       = dayBookings.length === 1;
                               return (
-                                <div key={b.id} style={{ width: "100%", display: "flex", alignItems: "center" }}>
-                                  <div
-                                    className={cn(
-                                      "w-full flex items-center overflow-hidden",
-                                      tall ? "h-6" : "h-[9px]",
-                                      barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
-                                      barRight ? "mr-1 rounded-r-full" : "mr-0"
-                                    )}
-                                    style={{ backgroundColor: color.bg }}
-                                  >
-                                    {(isFirstDay || dayIndex === 0) && tall && (
-                                      <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
-                                        {b.guestName.split(" ")[0]}
-                                      </span>
-                                    )}
+                                <Link key={b.id} href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", width: "100%" }}>
+                                  <div style={{ width: "100%", display: "flex", alignItems: "center" }}>
+                                    <div
+                                      className={cn(
+                                        "w-full flex items-center overflow-hidden transition-opacity hover:opacity-75",
+                                        tall ? "h-6" : "h-[9px]",
+                                        barLeft  ? "ml-1 rounded-l-full pl-1.5" : "ml-0 pl-0",
+                                        barRight ? "mr-1 rounded-r-full" : "mr-0"
+                                      )}
+                                      style={{ backgroundColor: color.bg }}
+                                    >
+                                      {(isFirstDay || dayIndex === 0) && tall && (
+                                        <span style={{ fontSize: 11, fontWeight: 600, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", lineHeight: 1, color: color.text }}>
+                                          {b.guestName.split(" ")[0]}
+                                        </span>
+                                      )}
+                                    </div>
                                   </div>
-                                </div>
+                                </Link>
                               );
                             })}
                           </div>
