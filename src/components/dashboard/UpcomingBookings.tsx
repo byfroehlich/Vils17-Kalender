@@ -9,6 +9,7 @@ interface Booking {
   checkOut: Date;
   arrivalTime?: string | null;
   departureTime?: string | null;
+  channelName?: string | null;
   apartment: { name: string; color?: string | null };
   cleaningAssignment?: {
     status: string;
@@ -72,6 +73,26 @@ function SmallBadge({ bg, text, label }: BadgeInfo) {
       fontSize: 11, fontWeight: 600, whiteSpace: "nowrap" as const,
     }}>
       {label}
+    </span>
+  );
+}
+
+function ChannelIcon({ name }: { name?: string | null }) {
+  if (!name) return null;
+  const n = name.toLowerCase();
+  const isAirbnb  = n.includes("airbnb");
+  const isBooking = n.includes("booking");
+  const abbrev = isAirbnb ? "A" : isBooking ? "B" : name.slice(0, 1).toUpperCase();
+  const bg    = isAirbnb ? "rgba(255,90,95,0.22)"  : isBooking ? "rgba(0,99,247,0.22)"  : "rgba(255,255,255,0.1)";
+  const color = isAirbnb ? "#FF5A5F"               : isBooking ? "#4D9EF5"              : "rgba(255,255,255,0.45)";
+  return (
+    <span title={name} style={{
+      display: "inline-flex", alignItems: "center", justifyContent: "center",
+      width: 18, height: 18, borderRadius: 5,
+      background: bg, color,
+      fontSize: 10, fontWeight: 800, flexShrink: 0,
+    }}>
+      {abbrev}
     </span>
   );
 }
@@ -152,13 +173,22 @@ export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[];
                   {bookingDateLabel(booking.checkIn, booking.checkOut)}
                 </p>
 
-                {/* Row 3: Apartment name */}
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginBottom: 8 }}>
-                  {booking.apartment.name}
-                  {booking.departureTime && (
-                    <span style={{ color: "rgba(255,255,255,0.25)" }}> · bis {booking.departureTime} Uhr</span>
-                  )}
-                </p>
+                {/* Row 3: Apartment + departure time + channel icon + guest count */}
+                <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", flex: 1, minWidth: 0 }}>
+                    {booking.apartment.name}
+                    {booking.departureTime && (
+                      <span style={{ color: "rgba(255,255,255,0.22)" }}> · bis {booking.departureTime} Uhr</span>
+                    )}
+                  </span>
+                  <ChannelIcon name={booking.channelName} />
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
+                      <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                    </svg>
+                    {booking.guestCount}
+                  </span>
+                </div>
 
                 {/* Row 4: Status badges */}
                 <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 5 }}>
