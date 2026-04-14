@@ -38,22 +38,33 @@ interface Cleaner {
   _count: { assignments: number };
 }
 
-const cleaningColors: Record<string, string> = {
-  UNASSIGNED: "bg-orange-100 text-orange-800 border-orange-200",
-  SELF_CLEAN: "bg-sky-100 text-sky-800 border-sky-200",
-  ASSIGNED:   "bg-blue-100 text-blue-800 border-blue-200",
-  COMPLETED:  "bg-green-100 text-green-800 border-green-200",
+const cleaningBadge: Record<string, { bg: string; color: string }> = {
+  UNASSIGNED: { bg: "rgba(239,68,68,0.18)",  color: "#FCA5A5" },
+  SELF_CLEAN: { bg: "rgba(14,165,233,0.18)", color: "#7DD3FC" },
+  ASSIGNED:   { bg: "rgba(13,148,136,0.18)", color: "#5EEAD4" },
+  COMPLETED:  { bg: "rgba(34,197,94,0.18)",  color: "#86EFAC" },
 };
 const cleaningLabels: Record<string, string> = {
   UNASSIGNED: "Offen", SELF_CLEAN: "Selbstreinigung", ASSIGNED: "Zugewiesen", COMPLETED: "Erledigt",
 };
-const laundryColors: Record<string, string> = {
-  OPEN:      "bg-red-100 text-red-800 border-red-200",
-  ORDERED:   "bg-amber-100 text-amber-800 border-amber-200",
-  AVAILABLE: "bg-green-100 text-green-800 border-green-200",
+const laundryBadge: Record<string, { bg: string; color: string }> = {
+  OPEN:      { bg: "rgba(239,68,68,0.18)",  color: "#FCA5A5" },
+  ORDERED:   { bg: "rgba(245,158,11,0.18)", color: "#FCD34D" },
+  AVAILABLE: { bg: "rgba(34,197,94,0.18)",  color: "#86EFAC" },
 };
 const laundryLabels: Record<string, string> = {
   OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
+};
+
+const rowGlass: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 12,
+  background: "rgba(255,255,255,0.10)",
+  backdropFilter: "blur(16px)",
+  WebkitBackdropFilter: "blur(16px)",
+  border: "1px solid rgba(255,255,255,0.16)",
+  borderRadius: 14,
+  padding: "12px 16px",
+  textDecoration: "none",
 };
 
 function calcLaundry(guestCount: number, apt: Assignment["booking"]["apartment"]) {
@@ -66,30 +77,27 @@ function calcLaundry(guestCount: number, apt: Assignment["booking"]["apartment"]
 
 function AssignmentRow({ a }: { a: Assignment }) {
   const effectiveStatus = a.isSelfClean && a.status === "UNASSIGNED" ? "SELF_CLEAN" : a.status;
+  const badge = cleaningBadge[effectiveStatus] ?? { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" };
   return (
-    <Link
-      href={`/bookings/${a.booking.id}`}
-      className="flex items-center gap-3 bg-white rounded-xl border border-zinc-200 px-4 py-3 hover:border-zinc-300 transition-colors"
-    >
-      <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: a.booking.apartment.color ?? "#18181b" }} />
-      <div className="w-20 flex-shrink-0">
-        <p className="text-xs font-semibold text-zinc-900">{formatDate(a.booking.checkOut)}</p>
-        <p className="text-xs text-zinc-400">Abreise</p>
+    <Link href={`/bookings/${a.booking.id}`} style={rowGlass}>
+      <div style={{ width: 3, alignSelf: "stretch", borderRadius: 4, flexShrink: 0, backgroundColor: a.booking.apartment.color ?? "#14B8A6" }} />
+      <div style={{ width: 72, flexShrink: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{formatDate(a.booking.checkOut)}</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Abreise</p>
       </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-zinc-900 truncate">{a.booking.guestName}</p>
-        <p className="text-xs text-zinc-400">{a.booking.apartment.name} · {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}</p>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.booking.guestName}</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{a.booking.apartment.name} · {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}</p>
       </div>
-      <div className="hidden sm:block w-28 flex-shrink-0 text-right">
-        {a.isSelfClean ? (
-          <p className="text-xs text-zinc-500">Selbstreinigung</p>
-        ) : a.cleaner ? (
-          <p className="text-xs font-medium text-zinc-700">{a.cleaner.name}</p>
-        ) : (
-          <p className="text-xs text-orange-600 font-medium">Nicht zugewiesen</p>
-        )}
+      <div style={{ display: "none" }} className="sm:block" >
+        {a.isSelfClean
+          ? <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "right" }}>Selbstreinigung</p>
+          : a.cleaner
+            ? <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textAlign: "right" }}>{a.cleaner.name}</p>
+            : <p style={{ fontSize: 11, fontWeight: 600, color: "#FCA5A5", textAlign: "right" }}>Nicht zugewiesen</p>
+        }
       </div>
-      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${cleaningColors[effectiveStatus] ?? "bg-zinc-100 text-zinc-600 border-zinc-200"}`}>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0, whiteSpace: "nowrap" }}>
         {cleaningLabels[effectiveStatus] ?? effectiveStatus}
       </span>
     </Link>
@@ -98,22 +106,20 @@ function AssignmentRow({ a }: { a: Assignment }) {
 
 function LaundryRow({ a }: { a: Assignment }) {
   const qty = calcLaundry(a.booking.guestCount, a.booking.apartment);
+  const badge = laundryBadge[a.laundryStatus] ?? { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" };
   return (
-    <Link
-      href={`/bookings/${a.booking.id}`}
-      className="flex items-center gap-3 bg-white rounded-xl border border-zinc-200 px-4 py-3 hover:border-zinc-300 transition-colors"
-    >
-      <div className="w-1 self-stretch rounded-full flex-shrink-0" style={{ backgroundColor: a.booking.apartment.color ?? "#18181b" }} />
-      <div className="w-20 flex-shrink-0">
-        <p className="text-xs font-semibold text-zinc-900">{formatDate(a.booking.checkOut)}</p>
-        <p className="text-xs text-zinc-400">{a.booking.apartment.name}</p>
+    <Link href={`/bookings/${a.booking.id}`} style={rowGlass}>
+      <div style={{ width: 3, alignSelf: "stretch", borderRadius: 4, flexShrink: 0, backgroundColor: a.booking.apartment.color ?? "#14B8A6" }} />
+      <div style={{ width: 72, flexShrink: 0 }}>
+        <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{formatDate(a.booking.checkOut)}</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{a.booking.apartment.name}</p>
       </div>
-      <div className="flex-1 flex items-center gap-1.5 flex-wrap">
-        <span className="text-xs bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-md font-medium">🛏 {qty.beds}</span>
-        <span className="text-xs bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-md font-medium">🛁 {qty.towels}</span>
-        <span className="text-xs bg-zinc-100 text-zinc-700 px-2 py-0.5 rounded-md font-medium">🍽 {qty.kitchen}</span>
+      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
+        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛏 {qty.beds}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛁 {qty.towels}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🍽 {qty.kitchen}</span>
       </div>
-      <span className={`text-xs px-2 py-0.5 rounded-full border font-medium flex-shrink-0 ${laundryColors[a.laundryStatus] ?? ""}`}>
+      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0, whiteSpace: "nowrap" }}>
         {laundryLabels[a.laundryStatus] ?? a.laundryStatus}
       </span>
     </Link>
