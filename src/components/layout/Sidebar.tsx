@@ -17,10 +17,10 @@ const navItems = [
 ];
 
 const sidebarGlass = {
-  background: "rgba(2,15,14,0.75)",
+  background: "rgba(10,50,45,0.75)",
   backdropFilter: "blur(24px)",
   WebkitBackdropFilter: "blur(24px)",
-  borderRight: "1px solid rgba(255,255,255,0.08)",
+  borderRight: "1px solid rgba(255,255,255,0.14)",
 } as React.CSSProperties;
 
 export function Sidebar({ role }: { role: string }) {
@@ -48,7 +48,7 @@ export function Sidebar({ role }: { role: string }) {
       {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
       <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 z-30" style={sidebarGlass}>
         {/* Logo */}
-        <div className="flex items-center gap-3 px-5 h-16" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="flex items-center gap-3 px-5 h-16" style={{ borderBottom: "1px solid rgba(255,255,255,0.14)" }}>
           <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #0D9488, #0F766E)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 18L9 6l4 8 3-5 5 9H3z"/>
@@ -83,7 +83,7 @@ export function Sidebar({ role }: { role: string }) {
         </nav>
 
         {/* Logout */}
-        <div className="px-2 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+        <div className="px-2 py-4" style={{ borderTop: "1px solid rgba(255,255,255,0.14)" }}>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="flex items-center gap-3 px-3 py-2.5 w-full rounded-xl text-sm font-medium transition-colors"
@@ -101,10 +101,10 @@ export function Sidebar({ role }: { role: string }) {
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex"
         style={{
-          background: "rgba(2,15,14,0.85)",
+          background: "rgba(10,50,45,0.88)",
           backdropFilter: "blur(30px)",
           WebkitBackdropFilter: "blur(30px)",
-          borderTop: "1px solid rgba(255,255,255,0.1)",
+          borderTop: "1px solid rgba(255,255,255,0.16)",
           paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
         }}
       >

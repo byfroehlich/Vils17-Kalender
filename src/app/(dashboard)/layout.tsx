@@ -22,10 +22,10 @@ export default async function DashboardLayout({
           inset: 0,
           zIndex: 0,
           background: [
-            "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(13,148,136,0.4) 0%, transparent 60%)",
-            "radial-gradient(ellipse 60% 50% at 80% 20%, rgba(15,118,110,0.3) 0%, transparent 55%)",
-            "radial-gradient(ellipse 70% 60% at 50% 80%, rgba(20,184,166,0.2) 0%, transparent 60%)",
-            "linear-gradient(160deg, #020f0e 0%, #041f1c 40%, #051a18 100%)",
+            "radial-gradient(ellipse 100% 70% at 10% 0%,  rgba(20,184,166,0.60) 0%, transparent 55%)",
+            "radial-gradient(ellipse  75% 55% at 90% 10%, rgba(16,185,129,0.45) 0%, transparent 50%)",
+            "radial-gradient(ellipse  85% 65% at 45% 90%, rgba(13,148,136,0.40) 0%, transparent 55%)",
+            "linear-gradient(160deg, #0c3d38 0%, #1a6e63 40%, #104e48 100%)",
           ].join(", "),
         }}
       />
