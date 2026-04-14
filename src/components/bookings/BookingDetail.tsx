@@ -27,6 +27,7 @@ interface Booking {
   guestEmail?: string | null;
   guestPhone?: string | null;
   guestCount: number;
+  petCount?: number | null;
   checkIn: Date;
   checkOut: Date;
   arrivalTime?: string | null;
@@ -79,6 +80,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
   const [isSelfClean, setIsSelfClean] = useState(assignment?.isSelfClean ?? false);
   const [cleaningNotes, setCleaningNotes] = useState(assignment?.notes ?? "");
   const [laundryNotes, setLaundryNotes] = useState(assignment?.laundryNotes ?? "");
+  const [petCount, setPetCount] = useState<number | null>(booking.petCount ?? null);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -194,6 +196,37 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
               <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
                 {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
               </span>
+            </InfoRow>
+            <InfoRow icon={<span style={{ fontSize: 13 }}>🐕</span>} label="Haustiere">
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <input
+                  type="number"
+                  min={0}
+                  max={9}
+                  value={petCount ?? ""}
+                  placeholder="0"
+                  onChange={(e) => setPetCount(e.target.value === "" ? null : parseInt(e.target.value, 10))}
+                  onBlur={async () => {
+                    const res = await fetch(`/api/bookings/${booking.id}`, {
+                      method: "PATCH",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ petCount: petCount ?? null }),
+                    });
+                    if (res.ok) { setMessage("✓ Haustiere gespeichert"); setTimeout(() => setMessage(""), 2000); }
+                  }}
+                  style={{
+                    width: 56, padding: "4px 8px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 600,
+                    textAlign: "center",
+                  }}
+                />
+                {petCount != null && petCount > 0 && (
+                  <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                    {petCount === 1 ? "Hund" : "Hunde"}
+                  </span>
+                )}
+              </div>
             </InfoRow>
             {booking.guestPhone && (
               <InfoRow icon={<Phone style={{ width: 14, height: 14 }} />} label="Telefon">

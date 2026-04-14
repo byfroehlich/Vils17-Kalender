@@ -5,6 +5,7 @@ interface Booking {
   id: string;
   guestName: string;
   guestCount: number;
+  petCount?: number | null;
   checkIn: Date;
   checkOut: Date;
   arrivalTime?: string | null;
@@ -188,6 +189,12 @@ export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[];
                     </svg>
                     {booking.guestCount}
                   </span>
+                  {booking.petCount != null && booking.petCount > 0 && (
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
+                      <span style={{ fontSize: 12, lineHeight: 1 }}>🐕</span>
+                      {booking.petCount}
+                    </span>
+                  )}
                 </div>
 
                 {/* Row 4: Status badges */}

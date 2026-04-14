@@ -120,6 +120,7 @@ model Booking {
   guestEmail String?
   guestPhone String?
   guestCount Int     @default(1)
+  petCount   Int?    // Haustiere (manuell gepflegt, Smoobu liefert keine Daten)
 
   checkIn       DateTime
   checkOut      DateTime
