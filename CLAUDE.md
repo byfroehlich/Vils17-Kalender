@@ -196,15 +196,19 @@ interface LaundryAdapter {
 
 ## Rollen & Berechtigungen
 
-| Route | ADMIN | CLEANER |
-|---|---|---|
-| `/dashboard` | ✅ | ❌ → `/my-jobs` |
-| `/calendar` | ✅ | ❌ |
-| `/bookings` | ✅ | ❌ |
-| `/cleaners` | ✅ | ❌ |
-| `/my-jobs` | ✅ | ✅ |
-| `/api/bookings/sync` | ✅ | ❌ |
-| `/api/bookings/[id]/assign` | ✅ | ❌ |
+| Route | ADMIN | MANAGER | CLEANER |
+|---|---|---|---|
+| `/dashboard` | ✅ | ✅ | ❌ → `/my-jobs` |
+| `/calendar` | ✅ | ✅ | ❌ |
+| `/bookings` | ✅ | ✅ | ❌ |
+| `/cleaners` | ✅ | ✅ | ❌ |
+| `/settings` | ✅ | ❌ | ❌ |
+| `/my-jobs` | ✅ | ✅ | ✅ |
+| `/api/bookings/sync` | ✅ | ✅ | ❌ |
+| `/api/bookings/[id]/assign` | ✅ | ✅ | ❌ |
+| `/api/bookings/[id]/laundry` | ✅ | ✅ | ❌ |
+| `/api/bookings/[id]/cleaning-status` | ✅ | ✅ | ❌ |
+| `/api/users` (Benutzerverwaltung) | ✅ | ❌ | ❌ |
 
 ---
 
@@ -306,31 +310,44 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 
 **Philosophie:** Reiniger sind die knappe Ressource. Gute Reiniger müssen faire Vermieter finden können. Deshalb bewerten beide Seiten.
 
-## Aktueller Stand (Stand: 06.04.2026)
+## Aktueller Stand (Stand: 15.04.2026)
 
 ### Erledigt ✅
-- Smoobu Sync funktioniert (63 Buchungen importiert, Apartments automatisch importiert)
+- Smoobu Sync funktioniert (Buchungen + Apartments automatisch importiert)
 - Smoobu Webhook eingerichtet (Echtzeit-Updates bei neuer Buchung)
 - Cron-Job alle 15 Min (render.yaml)
 - Channel Manager Adapter Pattern (`src/lib/channel-manager/`)
-- Dashboard: Stats-Karten, Buchungsliste, 14-Tage-Warnbanner
-- Status-Badges prominent (orange/rot für offen, grün für erledigt)
-- Kalender: durchgehende Buchungsbalken mit Farbwechsel
-- Kalender: getrennte oder gemeinsame Ansicht (Einstellungen)
-- Einstellungen-Seite: Apartment-Name, Farbe, löschen
+- Dashboard: Stats-Karten, Buchungsliste, 14-Tage-Warnbanner, Dreher-Warnung
+- Kalender: durchgehende Buchungsbalken mit Farbwechsel, getrennte/gemeinsame Ansicht
+- Einstellungen-Seite: Apartment-Name, Farbe, löschen; Kalenderansicht konfigurieren
 - CleaningAssignment wird automatisch bei jedem neuen Import erstellt
+- **Buchungsdetail** vollständig gebaut:
+  - Gast-Info (Name, Kontakt, Check-in/out, Zeiten, Kanal)
+  - Haustiere (`petCount`) manuell pflegbar
+  - Reinigung: Reiniger zuweisen (Dialog), Selbstreinigung, Notizen, Als erledigt markieren
+  - Wäsche: Mengenberechnung (Betten/Handtücher/Küche), Status-Toggle, Bestellung, Notizen
+- **E-Mail-Benachrichtigungen** implementiert (`src/lib/mail.ts`):
+  - Nodemailer/SMTP, DE + EN Vorlagen
+  - Wird ausgelöst beim Zuweisen eines Reinigers (`/api/bookings/[id]/assign`)
+- **WhatsApp-Benachrichtigungen** implementiert (`src/lib/whatsapp.ts`):
+  - Twilio, aktivierbar per `TWILIO_ENABLED=true`
+  - Wird ausgelöst beim Zuweisen eines Reinigers
+- **MANAGER-Rolle** vollständig implementiert:
+  - Middleware blockiert `/settings`
+  - Alle relevanten API-Endpunkte erlauben ADMIN + MANAGER
+  - Topbar zeigt "Verwaltung"-Badge
+- **Passwort ändern**: User kann eigenes Passwort in Einstellungen ändern
+- **Benutzerverwaltung**: Admin legt User an (ADMIN / MANAGER / CLEANER), bearbeiten, löschen
+- Buchungsübersicht nach Monat segmentiert
+- Portal-Icon (Airbnb/Booking.com) und Gästezahl in Buchungskarten
+- Helles, freundliches Theme mit Glass-Morphism-Design
 
 ### Bekannte offene Punkte
 - Zweite Wohnung kommt im Mai → wird beim nächsten Sync automatisch importiert
-- "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen löschen
-- Buchungsdetail-Seite: Reinigung zuweisen, Wäsche bestellen (noch nicht gebaut)
-- "First Accept Wins" Reinigungsanfrage noch nicht implementiert
-- E-Mail / WhatsApp Benachrichtigungen noch nicht konfiguriert
-- **Passwort ändern**: Einstellungen → eigenes Passwort ändern
-- **Neue Rolle MANAGER (Verwalterin)**:
-  - Kann: Dashboard, Kalender, Buchungen, Reinigung anfragen, Wäsche bestellen
-  - Kann NICHT: Einstellungen, Reinigungskräfte verwalten, Apartments verwalten, Sync
-  - Benutzerverwaltung in Einstellungen: Admin legt User an (ADMIN / MANAGER / CLEANER)
+- "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen manuell löschen
+- "First Accept Wins" Reinigungsanfrage (Push an alle Reiniger) noch nicht implementiert
+- E-Mail/WhatsApp: SMTP + Twilio Credentials noch nicht in Render konfiguriert
+- Benutzer deaktivieren (ohne löschen): Backend-Feld `active` vorhanden, UI-Toggle fehlt noch
 
 ## Geplante Features (später)
 
