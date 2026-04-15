@@ -29,7 +29,7 @@ export function StatsCards({ activeNow, checkoutsToday, checkinsToday }: Props) 
           <p style={{ fontSize: 28, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1, marginBottom: 6 }}>
             {card.value}
           </p>
-          <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.45)", letterSpacing: "0.5px", textTransform: "uppercase", lineHeight: 1.3 }}>
+          <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.72)", letterSpacing: "0.5px", textTransform: "uppercase", lineHeight: 1.3 }}>
             {card.label}
           </p>
         </div>

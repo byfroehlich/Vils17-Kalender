@@ -146,7 +146,7 @@ export default async function DashboardPage() {
             <h1 style={{ fontSize: 34, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1.1, color: "rgba(255,255,255,0.95)" }}>
               Vils17
             </h1>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 3 }}>{dateStr}</p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", marginTop: 3 }}>{dateStr}</p>
           </div>
           <div className="flex items-center gap-3 mt-1">
             <SyncButton />
@@ -191,7 +191,7 @@ export default async function DashboardPage() {
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
               <p style={{
                 fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-                letterSpacing: "0.8px", color: "rgba(255,255,255,0.35)",
+                letterSpacing: "0.8px", color: "rgba(255,255,255,0.65)",
               }}>
                 Buchungen
               </p>

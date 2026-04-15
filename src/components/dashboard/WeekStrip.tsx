@@ -54,23 +54,23 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
 
   return (
     <div style={{
-      background: "rgba(255,255,255,0.08)",
+      background: "rgba(255,255,255,0.15)",
       backdropFilter: "blur(20px)",
       WebkitBackdropFilter: "blur(20px)",
-      border: "1px solid rgba(255,255,255,0.12)",
+      border: "1px solid rgba(255,255,255,0.24)",
       borderRadius: 20,
       padding: "14px 16px",
       overflow: "hidden",
     }}>
       {/* Month label */}
-      <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.35)", letterSpacing: "0.8px", marginBottom: 10 }}>
+      <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.70)", letterSpacing: "0.8px", marginBottom: 10 }}>
         {monthLabel}
       </p>
 
       {/* Weekday headers + date numbers */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
         {WEEKDAYS.map((d) => (
-          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.3)", paddingBottom: 5 }}>
+          <div key={d} style={{ textAlign: "center", fontSize: 10, fontWeight: 600, color: "rgba(255,255,255,0.62)", paddingBottom: 5 }}>
             {d}
           </div>
         ))}
@@ -111,7 +111,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                 {/* Apartment label */}
                 <div style={{ display: "flex", alignItems: "center", gap: 5, marginBottom: 4, paddingLeft: 1 }}>
                   <div style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: apt.color, flexShrink: 0 }} />
-                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.28)", letterSpacing: "0.6px", textTransform: "uppercase" as const }}>
+                  <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.62)", letterSpacing: "0.6px", textTransform: "uppercase" as const }}>
                     {apt.name}
                   </span>
                 </div>
