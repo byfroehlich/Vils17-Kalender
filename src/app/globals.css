@@ -60,12 +60,12 @@
     @apply w-full px-4 py-3.5 text-base rounded-xl
            focus:outline-none transition-all;
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.28);
     color: rgba(255,255,255,0.95);
   }
-  .form-input::placeholder { color: rgba(255,255,255,0.3); }
-  .form-input:focus { border-color: rgba(13,148,136,0.7); background: rgba(255,255,255,0.12); }
+  .form-input::placeholder { color: rgba(255,255,255,0.4); }
+  .form-input:focus { border-color: rgba(13,148,136,0.8); background: rgba(255,255,255,0.16); }
   .form-input:disabled { opacity: 0.4; cursor: not-allowed; }
 
   /* selects need explicit option styling */
@@ -86,18 +86,18 @@
            font-semibold rounded-xl
            px-5 py-3 transition-colors
            disabled:opacity-40 disabled:cursor-not-allowed;
-    background: rgba(255,255,255,0.1);
-    border: 1px solid rgba(255,255,255,0.2);
-    color: rgba(255,255,255,0.85);
+    background: rgba(255,255,255,0.14);
+    border: 1px solid rgba(255,255,255,0.28);
+    color: rgba(255,255,255,0.90);
   }
-  .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.15); }
+  .btn-secondary:hover:not(:disabled) { background: rgba(255,255,255,0.20); }
 
   .card {
-    background: rgba(255,255,255,0.18);
+    background: rgba(255,255,255,0.20);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255,255,255,0.28);
+    border: 1px solid rgba(255,255,255,0.32);
     border-radius: 20px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.22);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.25);
   }
 }

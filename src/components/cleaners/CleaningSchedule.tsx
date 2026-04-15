@@ -58,10 +58,10 @@ const laundryLabels: Record<string, string> = {
 
 const rowGlass: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 12,
-  background: "rgba(255,255,255,0.10)",
+  background: "rgba(255,255,255,0.15)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.16)",
+  border: "1px solid rgba(255,255,255,0.24)",
   borderRadius: 14,
   padding: "12px 16px",
   textDecoration: "none",
@@ -166,15 +166,15 @@ export function CleaningSchedule({
   return (
     <div className="space-y-3">
       {/* Tabs */}
-      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)" }}>
+      <div className="flex gap-1 p-1 rounded-xl" style={{ background: "rgba(255,255,255,0.12)", border: "1px solid rgba(255,255,255,0.20)" }}>
         {tabs.map((t) => (
           <button
             key={t.key}
             onClick={() => setTab(t.key)}
             className="flex-1 flex items-center justify-center gap-1 py-2 px-1 rounded-lg text-xs font-semibold transition-colors"
             style={{
-              background: tab === t.key ? "rgba(255,255,255,0.12)" : "transparent",
-              color: tab === t.key ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.4)",
+              background: tab === t.key ? "rgba(255,255,255,0.20)" : "transparent",
+              color: tab === t.key ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.65)",
               boxShadow: tab === t.key ? "0 1px 4px rgba(0,0,0,0.2)" : "none",
             }}
           >

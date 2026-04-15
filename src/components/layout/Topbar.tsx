@@ -5,10 +5,10 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
     <header
       className="px-5 h-14 flex items-center justify-between lg:hidden"
       style={{
-        background: "rgba(2,15,14,0.6)",
+        background: "rgba(10,50,45,0.75)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
-        borderBottom: "1px solid rgba(255,255,255,0.08)",
+        borderBottom: "1px solid rgba(255,255,255,0.16)",
         position: "relative",
         zIndex: 10,
       }}
@@ -31,7 +31,7 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
 
       {/* Rolle */}
       <div className="flex items-center gap-2">
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>{userName}</span>
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{userName}</span>
         {role === "ADMIN" && (
           <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}>
             Admin

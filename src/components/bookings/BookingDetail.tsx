@@ -48,10 +48,10 @@ interface Booking {
 }
 
 const glass = {
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.15)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.14)",
+  border: "1px solid rgba(255,255,255,0.26)",
   borderRadius: 20,
 } as React.CSSProperties;
 
@@ -169,13 +169,13 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
         <div style={{ height: 4, backgroundColor: booking.apartment.color ?? "#0D9488" }} />
         <div style={{ padding: "20px 24px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.4)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.60)", textTransform: "uppercase", letterSpacing: "0.5px" }}>
               {booking.apartment.name}
             </span>
             {booking.channelName && (
               <>
                 <span style={{ color: "rgba(255,255,255,0.2)" }}>·</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{booking.channelName}</span>
+                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.55)" }}>{booking.channelName}</span>
               </>
             )}
           </div>
@@ -186,11 +186,11 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
           <div className="grid grid-cols-2 gap-x-8 gap-y-5">
             <InfoRow icon={<Calendar style={{ width: 14, height: 14 }} />} label="Anreise">
               <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{formatDateLong(booking.checkIn)}</span>
-              {booking.arrivalTime && <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginLeft: 4 }}>ab {booking.arrivalTime} Uhr</span>}
+              {booking.arrivalTime && <span style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, marginLeft: 4 }}>ab {booking.arrivalTime} Uhr</span>}
             </InfoRow>
             <InfoRow icon={<Calendar style={{ width: 14, height: 14 }} />} label="Abreise">
               <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{formatDateLong(booking.checkOut)}</span>
-              {booking.departureTime && <span style={{ color: "rgba(255,255,255,0.4)", fontSize: 13, marginLeft: 4 }}>bis {booking.departureTime} Uhr</span>}
+              {booking.departureTime && <span style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, marginLeft: 4 }}>bis {booking.departureTime} Uhr</span>}
             </InfoRow>
             <InfoRow icon={<Users style={{ width: 14, height: 14 }} />} label="Gäste">
               <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
@@ -384,7 +384,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
                 <input type="radio" name="cleaner" checked={isSelfClean} onChange={() => { setIsSelfClean(true); setSelectedCleaner(""); }} style={{ accentColor: "#14B8A6" }} />
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>Selbst reinigen</p>
-                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>Keine Benachrichtigung</p>
+                  <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>Keine Benachrichtigung</p>
                 </div>
               </label>
               {cleaners.map((cleaner) => (
@@ -392,7 +392,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
                   <input type="radio" name="cleaner" checked={!isSelfClean && selectedCleaner === cleaner.id} onChange={() => { setIsSelfClean(false); setSelectedCleaner(cleaner.id); }} style={{ accentColor: "#14B8A6" }} />
                   <div>
                     <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{cleaner.name}</p>
-                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>{cleaner.email}{cleaner.phone ? ` · ${cleaner.phone}` : ""}</p>
+                    <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{cleaner.email}{cleaner.phone ? ` · ${cleaner.phone}` : ""}</p>
                   </div>
                 </label>
               ))}
@@ -427,7 +427,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
         <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
           <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 400, padding: 24 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 4 }}>Wäsche bestellen</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
             <div style={{ ...glassAmber, display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 20 }}>
               <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
               <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
@@ -455,7 +455,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
 function InfoRow({ icon, label, children }: { icon: React.ReactNode; label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.35)", fontWeight: 500, marginBottom: 3 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "rgba(255,255,255,0.55)", fontWeight: 500, marginBottom: 3 }}>
         {icon}
         {label}
       </div>

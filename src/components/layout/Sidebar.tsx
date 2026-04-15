@@ -71,7 +71,7 @@ export function Sidebar({ role }: { role: string }) {
                 className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors"
                 style={{
                   background: active ? "rgba(13,148,136,0.2)" : "transparent",
-                  color: active ? "#14B8A6" : "rgba(255,255,255,0.5)",
+                  color: active ? "#14B8A6" : "rgba(255,255,255,0.70)",
                   border: active ? "1px solid rgba(13,148,136,0.3)" : "1px solid transparent",
                 }}
               >
@@ -123,7 +123,7 @@ export function Sidebar({ role }: { role: string }) {
               key={item.href}
               href={item.href}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors"
-              style={{ color: active ? "#0D9488" : "rgba(255,255,255,0.35)" }}
+              style={{ color: active ? "#0D9488" : "rgba(255,255,255,0.60)" }}
             >
               <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">

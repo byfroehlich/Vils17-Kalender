@@ -39,10 +39,10 @@ function monthKey(d: Date)   { return `${new Date(d).getFullYear()}-${new Date(d
 function monthLabel(d: Date) { const dd = new Date(d); return `${MONTHS_DE[dd.getMonth()]} ${dd.getFullYear()}`; }
 
 const glass = {
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.15)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  border: "1px solid rgba(255,255,255,0.24)",
   borderRadius: 16,
 } as React.CSSProperties;
 
@@ -101,9 +101,9 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                       <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.95)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                         {booking.guestName}
                       </span>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.4)", flexShrink: 0 }}>{booking.apartment.name}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", flexShrink: 0 }}>{booking.apartment.name}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.4)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.60)" }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Users style={{ width: 12, height: 12 }} />
                         {booking.guestCount}
@@ -118,11 +118,11 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                   </div>
 
                   <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
-                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: cleaningDot[cleaningStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
                       <span className="hidden sm:inline">{cleaningLabel[cleaningStatus]}</span>
                     </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: laundryDot[laundryStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
                       <span className="hidden sm:inline">{laundryLabel[laundryStatus]}</span>
                     </span>

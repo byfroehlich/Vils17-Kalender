@@ -99,19 +99,19 @@ function ChannelIcon({ name }: { name?: string | null }) {
 }
 
 const glass = {
-  background: "rgba(255,255,255,0.1)",
+  background: "rgba(255,255,255,0.16)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.16)",
+  border: "1px solid rgba(255,255,255,0.26)",
   borderRadius: 18,
-  boxShadow: "0 4px 20px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.12)",
+  boxShadow: "0 4px 20px rgba(0,0,0,0.10), inset 0 1px 0 rgba(255,255,255,0.18)",
 } as React.CSSProperties;
 
 export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[]; dreherIds: Set<string> }) {
   if (bookings.length === 0) {
     return (
       <div style={{ ...glass, padding: "36px 24px", textAlign: "center" }}>
-        <p style={{ color: "rgba(255,255,255,0.35)", fontSize: 14 }}>Keine Buchungen in den nächsten Tagen</p>
+        <p style={{ color: "rgba(255,255,255,0.55)", fontSize: 14 }}>Keine Buchungen in den nächsten Tagen</p>
       </div>
     );
   }
@@ -170,27 +170,27 @@ export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[];
                 </div>
 
                 {/* Row 2: Date range + nights */}
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.5)", marginBottom: 2 }}>
+                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)", marginBottom: 2 }}>
                   {bookingDateLabel(booking.checkIn, booking.checkOut)}
                 </p>
 
                 {/* Row 3: Apartment + departure time + channel icon + guest count */}
                 <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 8 }}>
-                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", flex: 1, minWidth: 0 }}>
+                  <span style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", flex: 1, minWidth: 0 }}>
                     {booking.apartment.name}
                     {booking.departureTime && (
                       <span style={{ color: "rgba(255,255,255,0.22)" }}> · bis {booking.departureTime} Uhr</span>
                     )}
                   </span>
                   <ChannelIcon name={booking.channelName} />
-                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
+                  <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.55)", flexShrink: 0 }}>
                     <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" style={{ flexShrink: 0 }}>
                       <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
                     </svg>
                     {booking.guestCount}
                   </span>
                   {booking.petCount != null && booking.petCount > 0 && (
-                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.35)", flexShrink: 0 }}>
+                    <span style={{ display: "inline-flex", alignItems: "center", gap: 3, fontSize: 11, color: "rgba(255,255,255,0.55)", flexShrink: 0 }}>
                       <span style={{ fontSize: 12, lineHeight: 1 }}>🐕</span>
                       {booking.petCount}
                     </span>
