@@ -41,9 +41,10 @@ export default function LoginPage() {
         inset: 0,
         zIndex: 0,
         background: [
-          "radial-gradient(ellipse 80% 60% at 20% 10%, rgba(13,148,136,0.35) 0%, transparent 60%)",
-          "radial-gradient(ellipse 60% 50% at 80% 80%, rgba(8,108,100,0.25) 0%, transparent 55%)",
-          "linear-gradient(160deg, #020f0e 0%, #041f1c 40%, #051a18 100%)"
+          "radial-gradient(ellipse 100% 70% at 10% 0%,  rgba(20,184,166,0.60) 0%, transparent 55%)",
+          "radial-gradient(ellipse  75% 55% at 90% 10%, rgba(16,185,129,0.45) 0%, transparent 50%)",
+          "radial-gradient(ellipse  85% 65% at 45% 90%, rgba(13,148,136,0.40) 0%, transparent 55%)",
+          "linear-gradient(160deg, #0c3d38 0%, #1a6e63 40%, #104e48 100%)",
         ].join(", "),
       }} />
 
@@ -61,18 +62,18 @@ export default function LoginPage() {
             </svg>
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.03em" }}>Vils17</h1>
-          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 4 }}>Ferienwohnungen</p>
+          <p style={{ fontSize: 13, color: "rgba(255,255,255,0.68)", marginTop: 4 }}>Ferienwohnungen</p>
         </div>
 
         {/* Glasskarte */}
         <div style={{
-          background: "rgba(255,255,255,0.09)",
+          background: "rgba(255,255,255,0.16)",
           backdropFilter: "blur(24px)",
           WebkitBackdropFilter: "blur(24px)",
-          border: "1px solid rgba(255,255,255,0.14)",
+          border: "1px solid rgba(255,255,255,0.28)",
           borderRadius: 24,
           padding: 28,
-          boxShadow: "0 24px 48px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.1)",
+          boxShadow: "0 24px 48px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.20)",
         }}>
           <h2 style={{ fontSize: 17, fontWeight: 600, color: "rgba(255,255,255,0.9)", marginBottom: 22 }}>Anmelden</h2>
 
@@ -88,7 +89,7 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="email" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
+              <label htmlFor="email" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.72)", marginBottom: 6 }}>
                 E-Mail
               </label>
               <input
@@ -104,7 +105,7 @@ export default function LoginPage() {
             </div>
 
             <div>
-              <label htmlFor="password" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.5)", marginBottom: 6 }}>
+              <label htmlFor="password" style={{ display: "block", fontSize: 12, fontWeight: 500, color: "rgba(255,255,255,0.72)", marginBottom: 6 }}>
                 Passwort
               </label>
               <input
