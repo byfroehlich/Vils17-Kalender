@@ -12,8 +12,8 @@ const navItems = [
   { href: "/cleaners",    label: "Reinigung",      icon: Users,           noClean: true,  mobileOrder: 3 },
   { href: "/calendar",    label: "Kalender",       icon: Calendar,        noClean: true,  mobileOrder: 4 },
   { href: "/my-jobs",     label: "Aufträge",       icon: Briefcase,       cleanerOnly: true, mobileOrder: 1 },
-  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 5, adminMobileHide: true },
-  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5 },
+  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 5 },
+  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5, adminMobileHide: true },
 ];
 
 const sidebarGlass = {

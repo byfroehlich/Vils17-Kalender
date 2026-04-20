@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { startOfWeek, endOfWeek, eachDayOfInterval, isToday, isSameDay, startOfDay, format } from "date-fns";
 import { de } from "date-fns/locale";
 
@@ -135,23 +136,22 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                       const arrBarRight = isSameDay(day, new Date(arr.checkOut)) || dayIdx === 6;
                       return (
                         <div key={day.toISOString()} style={{ height: 20, display: "flex" }}>
-                          <div style={{
-                            flex: 1,
+                          <Link href={`/bookings/${dep.id}`} style={{
+                            flex: 1, display: "block",
                             background: depColor,
                             borderRadius: depBarLeft ? "9999px 0 0 9999px" : 0,
                             marginLeft: depBarLeft ? 1 : 0,
                           }} />
-                          <div style={{
-                            flex: 1,
+                          <Link href={`/bookings/${arr.id}`} style={{
+                            flex: 1, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 2,
                             background: arrColor,
                             borderRadius: arrBarRight ? "0 9999px 9999px 0" : 0,
                             marginRight: arrBarRight ? 1 : 0,
-                            display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 2,
                           }}>
                             <span style={{ fontSize: 8, fontWeight: 700, color: textColorFor(arrColor), whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                               {arr.guestName.split(" ")[0]}
                             </span>
-                          </div>
+                          </Link>
                         </div>
                       );
                     }
@@ -162,8 +162,8 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                     const isFirst = isSameDay(day, new Date(b.checkIn)) || dayIdx === 0;
                     const isLast  = isSameDay(day, new Date(b.checkOut)) || dayIdx === 6;
                     return (
-                      <div key={day.toISOString()} style={{
-                        height: 20,
+                      <Link key={day.toISOString()} href={`/bookings/${b.id}`} style={{
+                        height: 20, display: "flex",
                         background: barColor,
                         borderRadius: isFirst && isLast ? 9999
                           : isFirst ? "9999px 0 0 9999px"
@@ -171,7 +171,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                           : 0,
                         marginLeft:  isFirst ? 1 : 0,
                         marginRight: isLast  ? 1 : 0,
-                        display: "flex", alignItems: "center",
+                        alignItems: "center",
                         overflow: "hidden",
                         paddingLeft: isFirst ? 5 : 0,
                       }}>
@@ -180,7 +180,7 @@ export function WeekStrip({ bookings }: { bookings: Booking[] }) {
                             {b.guestName.split(" ")[0]}
                           </span>
                         )}
-                      </div>
+                      </Link>
                     );
                   })}
                 </div>
