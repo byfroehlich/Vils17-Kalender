@@ -35,10 +35,10 @@ function nights(b: Booking): number {
 }
 
 const glassCard: React.CSSProperties = {
-  background: "rgba(255,255,255,0.08)",
+  background: "rgba(255,255,255,0.15)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.12)",
+  border: "1px solid rgba(255,255,255,0.24)",
   borderRadius: 20,
   overflow: "hidden",
 };
@@ -150,8 +150,8 @@ export function StatisticsView({
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <SummaryCard label="Umsatz brutto" value={hasAnyPrice ? `€ ${fmt(yearTotals.gross)}` : "–"} sub="inkl. Portalgebühren" accent="#14B8A6" />
         <SummaryCard label="Auszahlung netto" value={hasAnyPrice ? `€ ${fmt(yearTotals.payout)}` : "–"} sub="nach Provision" accent="#10b981" />
-        <SummaryCard label="Buchungen" value={String(yearTotals.bookings)} sub={yearTotals.noPriceCount > 0 ? `${yearTotals.noPriceCount} ohne Preis` : "alle mit Preis"} accent="#3b82f6" />
-        <SummaryCard label="Nächte" value={String(yearTotals.nights)} sub="Belegungsnächte" accent="#8b5cf6" />
+        <SummaryCard label="Buchungen" value={String(yearTotals.bookings)} sub={yearTotals.noPriceCount > 0 ? `${yearTotals.noPriceCount} ohne Preis` : "alle mit Preis"} accent="rgba(255,255,255,0.95)" />
+        <SummaryCard label="Nächte" value={String(yearTotals.nights)} sub="Belegungsnächte" accent="rgba(255,255,255,0.95)" />
       </div>
 
       {/* Monatsübersicht */}
@@ -209,30 +209,37 @@ export function StatisticsView({
 
         {/* Mobile-Karten */}
         <div className="sm:hidden">
-          {monthlyData.filter((m) => m.bookings.length > 0).map((m) => (
-            <div key={m.monthIdx} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 6 }}>
-                <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)", fontSize: 14 }}>{m.label}</span>
-                <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{m.bookings.length} Buchung{m.bookings.length !== 1 ? "en" : ""} · {m.nightsTotal} Nächte</span>
-              </div>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-                <div>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Umsatz</p>
-                  <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)" }}>€ {fmt(m.grossTotal)}</p>
+          {monthlyData.map((m) => {
+            const hasData = m.bookings.length > 0;
+            return (
+              <div key={m.monthIdx} style={{ padding: "12px 16px", borderBottom: "1px solid rgba(255,255,255,0.06)" }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: hasData ? 6 : 0 }}>
+                  <span style={{ fontWeight: 600, color: hasData ? "rgba(255,255,255,0.85)" : "rgba(255,255,255,0.30)", fontSize: 14 }}>{m.label}</span>
+                  <span style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
+                    {hasData ? `${m.bookings.length} Buchung${m.bookings.length !== 1 ? "en" : ""} · ${m.nightsTotal} Nächte` : "–"}
+                  </span>
                 </div>
-                {m.commissionTotal > 0 && (
-                  <div style={{ textAlign: "right" }}>
-                    <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Provision</p>
-                    <p style={{ fontSize: 13, color: "#fca5a5" }}>–€ {fmt(m.commissionTotal)}</p>
+                {hasData && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    <div>
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Umsatz</p>
+                      <p style={{ fontSize: 13, fontWeight: 500, color: "rgba(255,255,255,0.7)" }}>€ {fmt(m.grossTotal)}</p>
+                    </div>
+                    {m.commissionTotal > 0 && (
+                      <div style={{ textAlign: "right" }}>
+                        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Provision</p>
+                        <p style={{ fontSize: 13, color: "#fca5a5" }}>–€ {fmt(m.commissionTotal)}</p>
+                      </div>
+                    )}
+                    <div style={{ textAlign: "right" }}>
+                      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Auszahlung</p>
+                      <p style={{ fontSize: 15, fontWeight: 700, color: "#6ee7b7" }}>€ {fmt(m.payoutTotal)}</p>
+                    </div>
                   </div>
                 )}
-                <div style={{ textAlign: "right" }}>
-                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Auszahlung</p>
-                  <p style={{ fontSize: 15, fontWeight: 700, color: "#6ee7b7" }}>€ {fmt(m.payoutTotal)}</p>
-                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
           {hasAnyPrice && (
             <div style={{ padding: "12px 16px", background: "rgba(255,255,255,0.04)", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.85)", fontSize: 14 }}>Gesamt {selectedYear}</span>
@@ -297,16 +304,16 @@ export function StatisticsView({
 function SummaryCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.08)",
+      background: "rgba(255,255,255,0.15)",
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid rgba(255,255,255,0.12)",
+      border: "1px solid rgba(255,255,255,0.24)",
       borderRadius: 16,
       padding: 16,
     }}>
-      <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.4)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
+      <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.65)", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</p>
       <p style={{ fontSize: 20, fontWeight: 700, color: accent, lineHeight: 1.1 }}>{value}</p>
-      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.3)", marginTop: 4 }}>{sub}</p>
+      <p style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4 }}>{sub}</p>
     </div>
   );
 }
