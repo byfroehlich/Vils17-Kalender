@@ -375,7 +375,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
 
       {/* Dialog: Reiniger zuweisen */}
       {showAssignDialog && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
           <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 16 }}>Reiniger zuweisen</h3>
 
@@ -424,7 +424,7 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
 
       {/* Dialog: Wäsche bestellen */}
       {showLaundryDialog && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: 16 }}>
+        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
           <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 400, padding: 24 }}>
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 4 }}>Wäsche bestellen</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
