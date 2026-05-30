@@ -162,6 +162,11 @@ model CleaningAssignment {
   assignedAt DateTime?
   notifiedAt DateTime?
 
+  // Reiniger-Absage
+  cleanerUnavailable     Boolean  @default(false)
+  cleanerUnavailableNote String?
+  cleanerUnavailableAt   DateTime?
+
   // Wäsche
   laundryStatus      LaundryStatus @default(OPEN)
   laundryNotes       String?

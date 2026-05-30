@@ -8,25 +8,35 @@ export default async function MyJobsPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
+  const isCleaner = session.user.role === "CLEANER";
+
   const assignments = await prisma.cleaningAssignment.findMany({
     where: {
-      cleanerId: session.user.id,
+      organizationId: session.user.organizationId,
+      ...(isCleaner ? { cleanerId: session.user.id } : {}),
       status: { in: ["ASSIGNED", "COMPLETED"] },
       booking: { status: "confirmed" },
     },
     orderBy: { booking: { checkOut: "asc" } },
     include: {
-      booking: { include: { apartment: true } },
+      booking: {
+        include: { apartment: true },
+      },
+      cleaner: { select: { name: true } },
     },
   });
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div>
-        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Meine Aufträge</h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Ihre zugewiesenen Reinigungsaufträge</p>
+        <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>
+          {isCleaner ? "Meine Aufträge" : "Alle Aufträge"}
+        </h1>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginTop: 2 }}>
+          {isCleaner ? "Deine zugewiesenen Reinigungsaufträge" : "Übersicht aller Reinigungsaufträge"}
+        </p>
       </div>
-      <MyJobsList assignments={assignments} />
+      <MyJobsList assignments={assignments} isCleaner={isCleaner} />
     </div>
   );
 }
