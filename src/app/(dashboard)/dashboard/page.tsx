@@ -6,6 +6,7 @@ import { addDays, startOfDay, endOfDay } from "date-fns";
 import { StatsCards } from "@/components/dashboard/StatsCards";
 import { UpcomingBookings } from "@/components/dashboard/UpcomingBookings";
 import { WarningBanner } from "@/components/dashboard/WarningBanner";
+import { AbsagenBanner } from "@/components/dashboard/AbsagenBanner";
 import { SyncButton } from "@/components/dashboard/SyncButton";
 import { WeekStrip } from "@/components/dashboard/WeekStrip";
 import { CleaningToday } from "@/components/dashboard/CleaningToday";
@@ -33,6 +34,7 @@ export default async function DashboardPage() {
     problemBookingsRaw,
     weekBookings,
     cleaningAssignments,
+    declinedAssignments,
   ] = await Promise.all([
     // Currently staying guests
     prisma.booking.count({
@@ -96,6 +98,25 @@ export default async function DashboardPage() {
             guestName: true,
             departureTime: true,
             apartment: { select: { name: true, color: true } },
+          },
+        },
+      },
+    }),
+    // Abgesagte Reinigungen (cleanerUnavailable) für zukünftige Buchungen
+    prisma.cleaningAssignment.findMany({
+      where: {
+        organizationId: orgId,
+        cleanerUnavailable: true,
+        booking: { status: "confirmed", checkOut: { gte: startOfDay(now) } },
+      },
+      orderBy: { booking: { checkOut: "asc" } },
+      include: {
+        cleaner: { select: { name: true } },
+        booking: {
+          select: {
+            id: true,
+            checkOut: true,
+            apartment: { select: { name: true } },
           },
         },
       },
@@ -173,6 +194,13 @@ export default async function DashboardPage() {
               checkinsToday={checkinsToday}
             />
           </div>
+
+          {/* Absagen-Warnung */}
+          {declinedAssignments.length > 0 && (
+            <div style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: "0.07s", opacity: 0 }}>
+              <AbsagenBanner assignments={declinedAssignments} />
+            </div>
+          )}
 
           {/* Warnungen */}
           {problemBookings.length > 0 && (

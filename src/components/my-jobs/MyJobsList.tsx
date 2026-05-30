@@ -5,14 +5,11 @@ import { useRouter } from "next/navigation";
 import { formatDateLong } from "@/lib/utils";
 import {
   Home, Users, Clock, CheckCircle, ClipboardList,
-  Calendar, List, ChevronLeft, ChevronRight, AlertTriangle,
+  Calendar, AlertTriangle,
 } from "lucide-react";
-import {
-  startOfMonth, endOfMonth, startOfWeek, endOfWeek,
-  eachDayOfInterval, isSameDay, isSameMonth, isToday,
-  addMonths, subMonths, format, startOfDay,
-} from "date-fns";
+import { startOfDay } from "date-fns";
 import { de } from "date-fns/locale";
+import { format } from "date-fns";
 
 interface Assignment {
   id: string;
@@ -41,6 +38,15 @@ const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   ...extra,
 });
 
+function monthKey(d: Date) {
+  const date = new Date(d);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`;
+}
+function monthLabel(key: string) {
+  const [y, m] = key.split("-");
+  return format(new Date(Number(y), Number(m) - 1, 1), "MMMM yyyy", { locale: de });
+}
+
 export function MyJobsList({
   assignments,
   isCleaner,
@@ -49,18 +55,16 @@ export function MyJobsList({
   isCleaner: boolean;
 }) {
   const router = useRouter();
-  const [view, setView] = useState<"list" | "calendar">("list");
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [unavailableId, setUnavailableId] = useState<string | null>(null);
   const [unavailableNote, setUnavailableNote] = useState("");
-  const [calMonth, setCalMonth] = useState(new Date());
-  const [selectedDay, setSelectedDay] = useState<Date | null>(null);
 
+  const today = startOfDay(new Date());
   const upcoming = assignments.filter(
-    (a) => a.status === "ASSIGNED" && new Date(a.booking.checkOut) >= startOfDay(new Date())
+    (a) => a.status === "ASSIGNED" && new Date(a.booking.checkOut) >= today
   );
   const done = assignments.filter((a) => a.status === "COMPLETED");
-  const unavailable = assignments.filter((a) => a.cleanerUnavailable);
+  const unavailableList = assignments.filter((a) => a.cleanerUnavailable);
 
   async function markDone(bookingId: string, assignmentId: string) {
     setLoadingId(assignmentId);
@@ -99,36 +103,37 @@ export function MyJobsList({
 
   if (assignments.length === 0) {
     return (
-      <div style={{ ...glass(), padding: "48px 24px", textAlign: "center" }}>
+      <div style={{ ...glass(), padding: "48px 24px", textAlign: "center" as const }}>
         <ClipboardList style={{ width: 48, height: 48, color: "rgba(255,255,255,0.2)", margin: "0 auto 16px" }} />
         <p style={{ fontSize: 17, color: "rgba(255,255,255,0.55)", fontWeight: 500 }}>Keine Aufträge.</p>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>
-          {isCleaner ? "Du wirst benachrichtigt wenn ein Auftrag zugewiesen wird." : "Noch keine Aufträge zugewiesen."}
-        </p>
       </div>
     );
   }
 
-  // Absage-Hinweis für Admin/Manager
-  const unavailableWarning = !isCleaner && unavailable.length > 0;
+  // Absage-Banner für Admin/Manager
+  const showWarning = !isCleaner && unavailableList.length > 0;
+
+  // Offene Aufträge nach Monat gruppieren
+  const monthGroups: Record<string, Assignment[]> = {};
+  for (const a of upcoming) {
+    const key = monthKey(a.booking.checkOut);
+    if (!monthGroups[key]) monthGroups[key] = [];
+    monthGroups[key].push(a);
+  }
 
   return (
     <div className="space-y-4">
-      {/* Absage-Banner für Admin */}
-      {unavailableWarning && (
+      {showWarning && (
         <div style={{
-          display: "flex", alignItems: "flex-start", gap: 12,
-          padding: "14px 18px",
-          background: "rgba(239,68,68,0.15)",
-          border: "1px solid rgba(239,68,68,0.35)",
-          borderRadius: 16,
+          display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px",
+          background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 16,
         }}>
           <AlertTriangle style={{ width: 20, height: 20, color: "#f87171", flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>
-              {unavailable.length} {unavailable.length === 1 ? "Absage" : "Absagen"} — Reinigung muss neu organisiert werden
+              {unavailableList.length} {unavailableList.length === 1 ? "Absage" : "Absagen"} — Reinigung muss neu organisiert werden
             </p>
-            {unavailable.map((a) => (
+            {unavailableList.map((a) => (
               <p key={a.id} style={{ fontSize: 13, color: "rgba(255,255,255,0.70)" }}>
                 · {formatDateLong(a.booking.checkOut)} — {a.booking.apartment.name}
                 {a.cleanerUnavailableNote && <span style={{ color: "rgba(255,255,255,0.50)" }}> · „{a.cleanerUnavailableNote}"</span>}
@@ -138,51 +143,53 @@ export function MyJobsList({
         </div>
       )}
 
-      {/* View-Umschalter */}
-      <div style={{ display: "flex", gap: 6, padding: 4, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 14, width: "fit-content" }}>
-        {(["list", "calendar"] as const).map((v) => (
-          <button
-            key={v}
-            onClick={() => setView(v)}
-            style={{
-              display: "flex", alignItems: "center", gap: 6,
-              padding: "8px 18px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer",
-              background: view === v ? "rgba(255,255,255,0.20)" : "transparent",
-              border: "none",
-              color: view === v ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.55)",
-              transition: "all 0.15s",
-            }}
-          >
-            {v === "list" ? <List style={{ width: 15, height: 15 }} /> : <Calendar style={{ width: 15, height: 15 }} />}
-            {v === "list" ? "Liste" : "Kalender"}
-          </button>
-        ))}
-      </div>
+      {/* Offen — nach Monat */}
+      {Object.entries(monthGroups).map(([key, group]) => (
+        <section key={key}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <Calendar style={{ width: 13, height: 13, color: "rgba(255,255,255,0.40)" }} />
+            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+              {monthLabel(key)}
+            </span>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
+          </div>
+          <div className="space-y-3">
+            {group.map((a) => (
+              <JobCard
+                key={a.id}
+                assignment={a}
+                isCleaner={isCleaner}
+                loading={loadingId === a.id}
+                onMarkDone={() => markDone(a.booking.id, a.id)}
+                onUnavailable={() => { setUnavailableId(a.id); setUnavailableNote(""); }}
+                onCancelUnavailable={() => cancelUnavailable(a)}
+              />
+            ))}
+          </div>
+        </section>
+      ))}
 
-      {view === "calendar" ? (
-        <CalendarView
-          assignments={assignments}
-          month={calMonth}
-          onPrev={() => setCalMonth(subMonths(calMonth, 1))}
-          onNext={() => setCalMonth(addMonths(calMonth, 1))}
-          selectedDay={selectedDay}
-          onSelectDay={setSelectedDay}
-          onMarkDone={markDone}
-          onUnavailable={(id) => { setUnavailableId(id); setUnavailableNote(""); }}
-          onCancelUnavailable={cancelUnavailable}
-          loadingId={loadingId}
-          isCleaner={isCleaner}
-        />
-      ) : (
-        <ListView
-          upcoming={upcoming}
-          done={done}
-          loadingId={loadingId}
-          isCleaner={isCleaner}
-          onMarkDone={markDone}
-          onUnavailable={(id) => { setUnavailableId(id); setUnavailableNote(""); }}
-          onCancelUnavailable={cancelUnavailable}
-        />
+      {upcoming.length === 0 && done.length === 0 && (
+        <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.40)", fontSize: 14 }}>
+          Alle Aufträge erledigt.
+        </div>
+      )}
+
+      {/* Erledigt */}
+      {done.length > 0 && (
+        <section>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.40)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+              Erledigt ({done.length})
+            </span>
+            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
+          </div>
+          <div className="space-y-3" style={{ opacity: 0.6 }}>
+            {done.map((a) => (
+              <JobCard key={a.id} assignment={a} isCleaner={isCleaner} loading={false} />
+            ))}
+          </div>
+        </section>
       )}
 
       {/* Absage-Dialog */}
@@ -227,235 +234,9 @@ export function MyJobsList({
   );
 }
 
-// ─── Listenansicht ────────────────────────────────────────────────────────────
-
-function ListView({
-  upcoming, done, loadingId, isCleaner, onMarkDone, onUnavailable, onCancelUnavailable,
-}: {
-  upcoming: Assignment[];
-  done: Assignment[];
-  loadingId: string | null;
-  isCleaner: boolean;
-  onMarkDone: (bookingId: string, id: string) => void;
-  onUnavailable: (id: string) => void;
-  onCancelUnavailable: (a: Assignment) => void;
-}) {
-  return (
-    <div className="space-y-6">
-      {upcoming.length > 0 && (
-        <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Offen ({upcoming.length})
-            </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
-          </div>
-          <div className="space-y-3">
-            {upcoming.map((a) => (
-              <JobCard
-                key={a.id}
-                assignment={a}
-                isCleaner={isCleaner}
-                loading={loadingId === a.id}
-                onMarkDone={() => onMarkDone(a.booking.id, a.id)}
-                onUnavailable={() => onUnavailable(a.id)}
-                onCancelUnavailable={() => onCancelUnavailable(a)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
-      {upcoming.length === 0 && done.length === 0 && (
-        <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.40)", fontSize: 14 }}>
-          Alle Aufträge erledigt.
-        </div>
-      )}
-
-      {done.length > 0 && (
-        <section>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.40)", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-              Erledigt ({done.length})
-            </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.08)" }} />
-          </div>
-          <div className="space-y-3" style={{ opacity: 0.6 }}>
-            {done.map((a) => (
-              <JobCard key={a.id} assignment={a} isCleaner={isCleaner} loading={false} />
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
-
-// ─── Kalenderansicht ──────────────────────────────────────────────────────────
-
-function CalendarView({
-  assignments, month, onPrev, onNext, selectedDay, onSelectDay,
-  onMarkDone, onUnavailable, onCancelUnavailable, loadingId, isCleaner,
-}: {
-  assignments: Assignment[];
-  month: Date;
-  onPrev: () => void;
-  onNext: () => void;
-  selectedDay: Date | null;
-  onSelectDay: (d: Date | null) => void;
-  onMarkDone: (bookingId: string, id: string) => void;
-  onUnavailable: (id: string) => void;
-  onCancelUnavailable: (a: Assignment) => void;
-  loadingId: string | null;
-  isCleaner: boolean;
-}) {
-  const monthStart = startOfMonth(month);
-  const monthEnd   = endOfMonth(month);
-  const gridStart  = startOfWeek(monthStart, { weekStartsOn: 1 });
-  const gridEnd    = endOfWeek(monthEnd, { weekStartsOn: 1 });
-  const days       = eachDayOfInterval({ start: gridStart, end: gridEnd });
-  const DAYS       = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
-
-  function assignmentsForDay(d: Date) {
-    return assignments.filter((a) => isSameDay(new Date(a.booking.checkOut), d));
-  }
-
-  const selectedAssignments = selectedDay ? assignmentsForDay(selectedDay) : [];
-
-  return (
-    <div className="space-y-4">
-      <div style={{ ...glass(), padding: "16px" }}>
-        {/* Monat-Navigation */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <button onClick={onPrev} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.65)", cursor: "pointer", padding: 6, borderRadius: 8 }}>
-            <ChevronLeft style={{ width: 20, height: 20 }} />
-          </button>
-          <span style={{ fontWeight: 700, fontSize: 15, color: "rgba(255,255,255,0.95)" }}>
-            {format(month, "MMMM yyyy", { locale: de })}
-          </span>
-          <button onClick={onNext} style={{ background: "none", border: "none", color: "rgba(255,255,255,0.65)", cursor: "pointer", padding: 6, borderRadius: 8 }}>
-            <ChevronRight style={{ width: 20, height: 20 }} />
-          </button>
-        </div>
-
-        {/* Wochentag-Header */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", marginBottom: 6 }}>
-          {DAYS.map((d) => (
-            <div key={d} style={{ textAlign: "center", fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.50)", paddingBottom: 6 }}>
-              {d}
-            </div>
-          ))}
-        </div>
-
-        {/* Kalender-Grid */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 3 }}>
-          {days.map((day) => {
-            const dayAssignments = assignmentsForDay(day);
-            const inMonth  = isSameMonth(day, month);
-            const today    = isToday(day);
-            const selected = selectedDay ? isSameDay(day, selectedDay) : false;
-            const hasJob   = dayAssignments.length > 0;
-            const hasAbsage = dayAssignments.some((a) => a.cleanerUnavailable);
-
-            return (
-              <button
-                key={day.toISOString()}
-                onClick={() => {
-                  if (!hasJob) return;
-                  onSelectDay(selected ? null : day);
-                }}
-                style={{
-                  position: "relative",
-                  display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-                  aspectRatio: "1",
-                  borderRadius: 10,
-                  background: selected
-                    ? "rgba(13,148,136,0.45)"
-                    : today
-                    ? "rgba(13,148,136,0.20)"
-                    : hasJob
-                    ? "rgba(255,255,255,0.10)"
-                    : "transparent",
-                  border: selected
-                    ? "1px solid rgba(13,148,136,0.7)"
-                    : today
-                    ? "1px solid rgba(13,148,136,0.4)"
-                    : "1px solid transparent",
-                  cursor: hasJob ? "pointer" : "default",
-                  padding: "4px 2px",
-                }}
-              >
-                <span style={{
-                  fontSize: 13, fontWeight: today ? 700 : hasJob ? 600 : 400,
-                  color: !inMonth
-                    ? "rgba(255,255,255,0.20)"
-                    : today || selected
-                    ? "rgba(255,255,255,0.95)"
-                    : hasJob
-                    ? "rgba(255,255,255,0.90)"
-                    : "rgba(255,255,255,0.45)",
-                }}>
-                  {format(day, "d")}
-                </span>
-                {hasJob && (
-                  <div style={{ display: "flex", gap: 2, marginTop: 2 }}>
-                    {dayAssignments.map((a) => (
-                      <span
-                        key={a.id}
-                        style={{
-                          width: 5, height: 5, borderRadius: "50%",
-                          backgroundColor: a.cleanerUnavailable
-                            ? "#f87171"
-                            : (a.booking.apartment.color ?? "#14B8A6"),
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-                {hasAbsage && (
-                  <span style={{ position: "absolute", top: 2, right: 2, fontSize: 8 }}>⚠️</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Legende */}
-        <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" as const }}>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#14B8A6", display: "inline-block" }} />
-            Auftrag
-          </span>
-          <span style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", display: "flex", alignItems: "center", gap: 5 }}>
-            <span style={{ width: 8, height: 8, borderRadius: "50%", background: "#f87171", display: "inline-block" }} />
-            Absage
-          </span>
-        </div>
-      </div>
-
-      {/* Ausgewählter Tag */}
-      {selectedAssignments.length > 0 && (
-        <div className="space-y-3">
-          {selectedAssignments.map((a) => (
-            <JobCard
-              key={a.id}
-              assignment={a}
-              isCleaner={isCleaner}
-              loading={loadingId === a.id}
-              onMarkDone={() => onMarkDone(a.booking.id, a.id)}
-              onUnavailable={() => onUnavailable(a.id)}
-              onCancelUnavailable={() => onCancelUnavailable(a)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
 // ─── Auftrags-Karte ───────────────────────────────────────────────────────────
 
-function JobCard({
+export function JobCard({
   assignment, isCleaner, loading, onMarkDone, onUnavailable, onCancelUnavailable,
 }: {
   assignment: Assignment;
@@ -472,9 +253,7 @@ function JobCard({
 
   return (
     <div style={{
-      background: isAbsage
-        ? "rgba(239,68,68,0.12)"
-        : "rgba(255,255,255,0.14)",
+      background: isAbsage ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.14)",
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
       border: isAbsage
@@ -487,8 +266,6 @@ function JobCard({
     }}>
       <div style={{ height: 4, backgroundColor: isAbsage ? "#ef4444" : aptColor }} />
       <div style={{ padding: "16px 20px" }}>
-
-        {/* Header */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
@@ -511,14 +288,12 @@ function JobCard({
           )}
         </div>
 
-        {/* Absage-Hinweis */}
         {isAbsage && assignment.cleanerUnavailableNote && (
           <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, marginBottom: 12 }}>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>„{assignment.cleanerUnavailableNote}"</p>
           </div>
         )}
 
-        {/* Details */}
         <div className="space-y-3">
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
@@ -560,7 +335,6 @@ function JobCard({
           )}
         </div>
 
-        {/* Aktionen */}
         {!isDone && (
           <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
             {!isAbsage && onMarkDone && (
@@ -587,10 +361,8 @@ function JobCard({
                 style={{
                   display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "14px 16px",
-                  background: "rgba(239,68,68,0.15)",
-                  border: "1px solid rgba(239,68,68,0.35)",
-                  borderRadius: 12,
-                  color: "#fca5a5", fontWeight: 600, fontSize: 14,
+                  background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)",
+                  borderRadius: 12, color: "#fca5a5", fontWeight: 600, fontSize: 14,
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
               >
@@ -605,10 +377,8 @@ function JobCard({
                 style={{
                   flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                   padding: "14px 0",
-                  background: "rgba(255,255,255,0.10)",
-                  border: "1px solid rgba(255,255,255,0.22)",
-                  borderRadius: 12,
-                  color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14,
+                  background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)",
+                  borderRadius: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14,
                   cursor: loading ? "not-allowed" : "pointer",
                 }}
               >

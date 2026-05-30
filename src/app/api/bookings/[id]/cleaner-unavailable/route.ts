@@ -17,11 +17,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
 
+  // CLEANER: nur eigene Aufträge — außer Hauptreiniger darf alle
+  let cleanerFilter: Record<string, unknown> = {};
+  if (session.user.role === "CLEANER") {
+    const currentUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { isPrimary: true },
+    });
+    if (!currentUser?.isPrimary) {
+      cleanerFilter = { cleanerId: session.user.id };
+    }
+  }
+
   const assignment = await prisma.cleaningAssignment.findFirst({
     where: {
       bookingId: params.id,
       organizationId: session.user.organizationId,
-      cleanerId: session.user.role === "CLEANER" ? session.user.id : undefined,
+      ...cleanerFilter,
     },
   });
 

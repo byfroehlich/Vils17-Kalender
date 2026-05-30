@@ -13,6 +13,7 @@ const adminUpdateSchema = z.object({
   active: z.boolean().optional(),
   role: z.enum(["ADMIN", "MANAGER", "CLEANER"]).optional(),
   password: z.string().min(8).optional(),
+  isPrimary: z.boolean().optional(),
 });
 
 const ownUpdateSchema = z.object({
@@ -78,11 +79,39 @@ export async function PATCH(
     return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
   }
 
-  const { password, ...rest } = parsed.data;
+  const { password, isPrimary, ...rest } = parsed.data;
   const updateData: Record<string, unknown> = { ...rest };
 
   if (password) {
     updateData.passwordHash = await bcrypt.hash(password, 12);
+  }
+
+  if (isPrimary === true) {
+    // Setzt diesen User als Hauptreiniger + weist alle offenen zukünftigen Jobs zu
+    const now = new Date();
+    await prisma.$transaction([
+      // Alle anderen als nicht-primary markieren
+      prisma.user.updateMany({
+        where: { organizationId: session.user.organizationId, isPrimary: true },
+        data: { isPrimary: false },
+      }),
+      // Alle offenen zukünftigen Aufträge zuweisen
+      prisma.cleaningAssignment.updateMany({
+        where: {
+          organizationId: session.user.organizationId,
+          status: "UNASSIGNED",
+          booking: { checkOut: { gte: now }, status: "confirmed" },
+        },
+        data: {
+          cleanerId: params.id,
+          status: "ASSIGNED",
+          assignedAt: now,
+        },
+      }),
+    ]);
+    updateData.isPrimary = true;
+  } else if (isPrimary === false) {
+    updateData.isPrimary = false;
   }
 
   const updated = await prisma.user.update({
@@ -90,7 +119,7 @@ export async function PATCH(
     data: updateData,
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true, role: true,
+      notes: true, language: true, active: true, role: true, isPrimary: true,
     },
   });
 

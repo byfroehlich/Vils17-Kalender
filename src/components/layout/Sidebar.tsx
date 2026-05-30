@@ -2,19 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, Briefcase, LogOut, Settings, TrendingUp, List } from "lucide-react";
 import { signOut } from "next-auth/react";
 
-// adminMobileHide: sichtbar im Desktop-Menü für ADMIN, aber nicht im Mobile-Nav
-const navItems = [
-  { href: "/dashboard",   label: "Übersicht",     icon: LayoutDashboard, noClean: true,  mobileOrder: 1 },
-  { href: "/bookings",    label: "Buchungen",      icon: BookOpen,        noClean: true,  mobileOrder: 2 },
-  { href: "/cleaners",    label: "Reinigung",      icon: Users,           noClean: true,  mobileOrder: 3 },
-  { href: "/calendar",    label: "Kalender",       icon: Calendar,        noClean: true,  mobileOrder: 4 },
-  { href: "/my-jobs",     label: "Aufträge",       icon: Briefcase,       cleanerOnly: true, mobileOrder: 1 },
-  { href: "/statistics",  label: "Statistiken",    icon: TrendingUp,      noClean: true,  mobileOrder: 5 },
-  { href: "/settings",    label: "Einstellungen",  icon: Settings,        adminOnly: true, mobileOrder: 5, adminMobileHide: true },
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  noClean?: boolean;
+  cleanerOnly?: boolean;
+  adminOnly?: boolean;
+  adminMobileHide?: boolean;
+  mobileOrder: number;
+  exact?: boolean;
+};
+
+const adminManagerItems: NavItem[] = [
+  { href: "/dashboard",  label: "Übersicht",    icon: LayoutDashboard, noClean: true, mobileOrder: 1 },
+  { href: "/bookings",   label: "Buchungen",     icon: BookOpen,        noClean: true, mobileOrder: 2 },
+  { href: "/cleaners",   label: "Reinigung",     icon: Users,           noClean: true, mobileOrder: 3 },
+  { href: "/calendar",   label: "Kalender",      icon: Calendar,        noClean: true, mobileOrder: 4 },
+  { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 5 },
+  { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 5, adminMobileHide: true },
 ];
+
+const cleanerItems: NavItem[] = [
+  { href: "/my-jobs",          label: "Dashboard", icon: LayoutDashboard, cleanerOnly: true, mobileOrder: 1, exact: true },
+  { href: "/my-jobs/list",     label: "Liste",      icon: List,            cleanerOnly: true, mobileOrder: 2 },
+  { href: "/my-jobs/calendar", label: "Kalender",   icon: Calendar,        cleanerOnly: true, mobileOrder: 3 },
+];
+
+const navItems = [...adminManagerItems, ...cleanerItems];
 
 const sidebarGlass = {
   background: "rgba(10,50,45,0.75)",
@@ -29,19 +47,23 @@ export function Sidebar({ role }: { role: string }) {
   const isCleaner = role === "CLEANER";
 
   const visibleItems = navItems.filter((item) => {
-    if ((item as any).adminOnly   && !isAdmin)   return false;
-    if ((item as any).cleanerOnly && !isCleaner) return false;
-    if ((item as any).noClean     && isCleaner)  return false;
+    if (item.adminOnly   && !isAdmin)   return false;
+    if (item.cleanerOnly && !isCleaner) return false;
+    if (item.noClean     && isCleaner)  return false;
     return true;
   });
 
   const mobileItems = visibleItems
     .filter((item) => {
-      if (item.mobileOrder === null) return false;
-      if ((item as any).adminMobileHide && isAdmin) return false;
+      if (item.adminMobileHide && isAdmin) return false;
       return true;
     })
-    .sort((a, b) => (a.mobileOrder ?? 99) - (b.mobileOrder ?? 99));
+    .sort((a, b) => a.mobileOrder - b.mobileOrder);
+
+  function isActive(item: NavItem) {
+    if (item.exact) return pathname === item.href;
+    return pathname.startsWith(item.href);
+  }
 
   return (
     <>
@@ -63,7 +85,7 @@ export function Sidebar({ role }: { role: string }) {
         {/* Navigation */}
         <nav className="flex-1 px-2 py-4 space-y-0.5">
           {visibleItems.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = isActive(item);
             return (
               <Link
                 key={item.href}
@@ -109,15 +131,7 @@ export function Sidebar({ role }: { role: string }) {
         }}
       >
         {mobileItems.map((item) => {
-          const active = pathname.startsWith(item.href);
-          const shortLabel: Record<string, string> = {
-            "Übersicht": "Übersicht",
-            "Kalender": "Kalender",
-            "Buchungen": "Buchungen",
-            "Statistiken": "Statistiken",
-            "Einstellungen": "Einstell.",
-            "Meine Aufträge": "Aufträge",
-          };
+          const active = isActive(item);
           return (
             <Link
               key={item.href}
@@ -127,7 +141,7 @@ export function Sidebar({ role }: { role: string }) {
             >
               <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">
-                {shortLabel[item.label] ?? item.label}
+                {item.label}
               </span>
             </Link>
           );

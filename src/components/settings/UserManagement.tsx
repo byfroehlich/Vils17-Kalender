@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, KeyRound, ChevronDown } from "lucide-react";
+import { Plus, Pencil, Trash2, KeyRound, ChevronDown, Star } from "lucide-react";
 
 interface User {
   id: string;
@@ -13,6 +13,7 @@ interface User {
   language: string;
   active: boolean;
   role: string;
+  isPrimary: boolean;
   _count: { assignments: number };
 }
 
@@ -45,6 +46,7 @@ export function UserManagement({
   });
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [saving, setSaving] = useState(false);
+  const [primaryLoading, setPrimaryLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   function showMsg(text: string, error = false) {
@@ -104,6 +106,31 @@ export function UserManagement({
     else showMsg(data.error ?? "Fehler", true);
   }
 
+  async function togglePrimary(user: User) {
+    if (primaryLoading) return;
+    const newVal = !user.isPrimary;
+    if (newVal && !confirm(`"${user.name}" als Hauptreiniger festlegen? Alle offenen zukünftigen Reinigungsaufträge werden automatisch zugewiesen.`)) return;
+    if (!newVal && !confirm(`Hauptreiniger-Status von "${user.name}" entfernen?`)) return;
+
+    setPrimaryLoading(user.id);
+    try {
+      const res = await fetch(`/api/users/${user.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isPrimary: newVal }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showMsg(newVal ? `${user.name} ist jetzt Hauptreiniger` : "Hauptreiniger-Status entfernt");
+        router.refresh();
+      } else {
+        showMsg(data.error ?? "Fehler", true);
+      }
+    } finally {
+      setPrimaryLoading(null);
+    }
+  }
+
   async function handlePwChange() {
     if (pwForm.newPassword !== pwForm.confirmPassword) {
       showMsg("Passwörter stimmen nicht überein", true); return;
@@ -151,10 +178,7 @@ export function UserManagement({
           <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", marginTop: 2 }}>Login-Zugänge verwalten</p>
         </div>
         {!showForm && !showPwForm && (
-          <button
-            onClick={startNew}
-            className="btn-primary py-2 px-3 text-sm"
-          >
+          <button onClick={startNew} className="btn-primary py-2 px-3 text-sm">
             <Plus className="w-3.5 h-3.5" />
             Neuer Benutzer
           </button>
@@ -164,10 +188,7 @@ export function UserManagement({
       <div style={{ padding: "16px 24px" }} className="space-y-4">
         {message && (
           <div style={{
-            padding: "10px 14px",
-            borderRadius: 10,
-            fontSize: 13,
-            fontWeight: 500,
+            padding: "10px 14px", borderRadius: 10, fontSize: 13, fontWeight: 500,
             background: message.error ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.12)",
             border: `1px solid ${message.error ? "rgba(239,68,68,0.3)" : "rgba(16,185,129,0.3)"}`,
             color: message.error ? "#fca5a5" : "#6ee7b7",
@@ -176,7 +197,7 @@ export function UserManagement({
           </div>
         )}
 
-        {/* Formular: Neuer/Bearbeiten User */}
+        {/* Formular */}
         {showForm && (
           <div style={glassForm}>
             <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginBottom: 16 }}>
@@ -252,8 +273,8 @@ export function UserManagement({
             <div
               key={user.id}
               style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.09)",
+                background: user.isPrimary ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.05)",
+                border: user.isPrimary ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(255,255,255,0.09)",
                 borderRadius: 12,
                 padding: "12px 16px",
                 display: "flex",
@@ -271,6 +292,16 @@ export function UserManagement({
                   }}>
                     {ROLE_LABELS[user.role] ?? user.role}
                   </span>
+                  {user.isPrimary && (
+                    <span style={{
+                      display: "flex", alignItems: "center", gap: 3,
+                      fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
+                      background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d",
+                    }}>
+                      <Star style={{ width: 10, height: 10 }} fill="currentColor" />
+                      Hauptreiniger
+                    </span>
+                  )}
                   {!user.active && (
                     <span style={{ fontSize: 11, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", padding: "2px 8px", borderRadius: 20 }}>Inaktiv</span>
                   )}
@@ -280,6 +311,20 @@ export function UserManagement({
                 </p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
+                {/* Hauptreiniger-Toggle (nur für CLEANER) */}
+                {user.role === "CLEANER" && (
+                  <button
+                    onClick={() => togglePrimary(user)}
+                    disabled={primaryLoading === user.id}
+                    style={{
+                      ...iconBtn,
+                      color: user.isPrimary ? "#fcd34d" : "rgba(255,255,255,0.3)",
+                    }}
+                    title={user.isPrimary ? "Hauptreiniger entfernen" : "Als Hauptreiniger festlegen"}
+                  >
+                    <Star style={{ width: 15, height: 15 }} fill={user.isPrimary ? "currentColor" : "none"} />
+                  </button>
+                )}
                 {user.id === currentUserId && (
                   <button
                     onClick={() => { setShowPwForm(true); setShowForm(false); }}

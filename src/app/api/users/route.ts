@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
     orderBy: [{ role: "asc" }, { name: "asc" }],
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true, role: true, createdAt: true,
+      notes: true, language: true, active: true, role: true, isPrimary: true, createdAt: true,
       _count: { select: { assignments: true } },
     },
   });
