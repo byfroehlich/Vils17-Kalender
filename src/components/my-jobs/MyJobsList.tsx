@@ -5,13 +5,13 @@ import { useRouter } from "next/navigation";
 import { formatDateLong } from "@/lib/utils";
 import {
   Home, Users, Clock, CheckCircle, ClipboardList,
-  Calendar, AlertTriangle,
+  Calendar, AlertTriangle, Zap,
 } from "lucide-react";
 import { startOfDay } from "date-fns";
 import { de } from "date-fns/locale";
 import { format } from "date-fns";
 
-interface Assignment {
+export interface Assignment {
   id: string;
   status: string;
   notes?: string | null;
@@ -25,6 +25,19 @@ interface Assignment {
     checkIn: Date;
     arrivalTime?: string | null;
     departureTime?: string | null;
+    apartment: { name: string; color?: string | null };
+  };
+}
+
+export interface OpenAssignment {
+  id: string;
+  booking: {
+    id: string;
+    guestCount: number;
+    checkOut: Date;
+    checkIn: Date;
+    departureTime?: string | null;
+    arrivalTime?: string | null;
     apartment: { name: string; color?: string | null };
   };
 }
@@ -48,23 +61,38 @@ function monthLabel(key: string) {
 }
 
 export function MyJobsList({
-  assignments,
+  myAssignments,
+  openAssignments,
   isCleaner,
 }: {
-  assignments: Assignment[];
+  myAssignments: Assignment[];
+  openAssignments: OpenAssignment[];
   isCleaner: boolean;
 }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [unavailableId, setUnavailableId] = useState<string | null>(null);
   const [unavailableNote, setUnavailableNote] = useState("");
+  const [claimError, setClaimError] = useState<string | null>(null);
 
   const today = startOfDay(new Date());
-  const upcoming = assignments.filter(
+  const upcoming = myAssignments.filter(
     (a) => a.status === "ASSIGNED" && new Date(a.booking.checkOut) >= today
   );
-  const done = assignments.filter((a) => a.status === "COMPLETED");
-  const unavailableList = assignments.filter((a) => a.cleanerUnavailable);
+  const done = myAssignments.filter((a) => a.status === "COMPLETED");
+  const unavailableList = myAssignments.filter((a) => a.cleanerUnavailable);
+
+  async function claimJob(bookingId: string) {
+    setLoadingId(bookingId);
+    setClaimError(null);
+    const res = await fetch(`/api/bookings/${bookingId}/claim`, { method: "POST" });
+    if (!res.ok) {
+      const data = await res.json();
+      setClaimError(data.error ?? "Fehler");
+    }
+    setLoadingId(null);
+    router.refresh();
+  }
 
   async function markDone(bookingId: string, assignmentId: string) {
     setLoadingId(assignmentId);
@@ -101,7 +129,7 @@ export function MyJobsList({
     router.refresh();
   }
 
-  if (assignments.length === 0) {
+  if (myAssignments.length === 0 && openAssignments.length === 0) {
     return (
       <div style={{ ...glass(), padding: "48px 24px", textAlign: "center" as const }}>
         <ClipboardList style={{ width: 48, height: 48, color: "rgba(255,255,255,0.2)", margin: "0 auto 16px" }} />
@@ -113,21 +141,31 @@ export function MyJobsList({
   // Absage-Banner für Admin/Manager
   const showWarning = !isCleaner && unavailableList.length > 0;
 
-  // Offene Aufträge nach Monat gruppieren
-  const monthGroups: Record<string, Assignment[]> = {};
+  // Offene und meine Aufträge nach Monat
+  const openByMonth: Record<string, OpenAssignment[]> = {};
+  for (const a of openAssignments) {
+    const key = monthKey(a.booking.checkOut);
+    if (!openByMonth[key]) openByMonth[key] = [];
+    openByMonth[key].push(a);
+  }
+
+  const myByMonth: Record<string, Assignment[]> = {};
   for (const a of upcoming) {
     const key = monthKey(a.booking.checkOut);
-    if (!monthGroups[key]) monthGroups[key] = [];
-    monthGroups[key].push(a);
+    if (!myByMonth[key]) myByMonth[key] = [];
+    myByMonth[key].push(a);
   }
+
+  // Alle Monate (union von offen + meine)
+  const allMonths = Array.from(new Set([
+    ...Object.keys(openByMonth),
+    ...Object.keys(myByMonth),
+  ])).sort();
 
   return (
     <div className="space-y-4">
       {showWarning && (
-        <div style={{
-          display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px",
-          background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 16,
-        }}>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 12, padding: "14px 18px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 16 }}>
           <AlertTriangle style={{ width: 20, height: 20, color: "#f87171", flexShrink: 0, marginTop: 1 }} />
           <div>
             <p style={{ fontSize: 14, fontWeight: 700, color: "#f87171", marginBottom: 4 }}>
@@ -143,33 +181,54 @@ export function MyJobsList({
         </div>
       )}
 
-      {/* Offen — nach Monat */}
-      {Object.entries(monthGroups).map(([key, group]) => (
-        <section key={key}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-            <Calendar style={{ width: 13, height: 13, color: "rgba(255,255,255,0.40)" }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-              {monthLabel(key)}
-            </span>
-            <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
-          </div>
-          <div className="space-y-3">
-            {group.map((a) => (
-              <JobCard
-                key={a.id}
-                assignment={a}
-                isCleaner={isCleaner}
-                loading={loadingId === a.id}
-                onMarkDone={() => markDone(a.booking.id, a.id)}
-                onUnavailable={() => { setUnavailableId(a.id); setUnavailableNote(""); }}
-                onCancelUnavailable={() => cancelUnavailable(a)}
-              />
-            ))}
-          </div>
-        </section>
-      ))}
+      {claimError && (
+        <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, fontSize: 13, color: "#fca5a5" }}>
+          {claimError}
+        </div>
+      )}
 
-      {upcoming.length === 0 && done.length === 0 && (
+      {/* Nach Monat gruppiert: offen + zugesagt */}
+      {allMonths.map((key) => {
+        const open = openByMonth[key] ?? [];
+        const mine = myByMonth[key] ?? [];
+        return (
+          <section key={key}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <Calendar style={{ width: 13, height: 13, color: "rgba(255,255,255,0.40)" }} />
+              <span style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.60)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
+                {monthLabel(key)}
+              </span>
+              <div style={{ flex: 1, height: 1, background: "rgba(255,255,255,0.10)" }} />
+            </div>
+
+            <div className="space-y-3">
+              {/* Offene Jobs zuerst */}
+              {open.map((a) => (
+                <OpenJobCard
+                  key={a.id}
+                  assignment={a}
+                  loading={loadingId === a.booking.id}
+                  onClaim={() => claimJob(a.booking.id)}
+                />
+              ))}
+              {/* Zugesagte Jobs */}
+              {mine.map((a) => (
+                <JobCard
+                  key={a.id}
+                  assignment={a}
+                  isCleaner={isCleaner}
+                  loading={loadingId === a.id}
+                  onMarkDone={() => markDone(a.booking.id, a.id)}
+                  onUnavailable={() => { setUnavailableId(a.id); setUnavailableNote(""); }}
+                  onCancelUnavailable={() => cancelUnavailable(a)}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+
+      {upcoming.length === 0 && openAssignments.length === 0 && (
         <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.40)", fontSize: 14 }}>
           Alle Aufträge erledigt.
         </div>
@@ -194,7 +253,7 @@ export function MyJobsList({
 
       {/* Absage-Dialog */}
       {unavailableId && (() => {
-        const a = assignments.find((x) => x.id === unavailableId)!;
+        const a = myAssignments.find((x) => x.id === unavailableId)!;
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
@@ -211,20 +270,10 @@ export function MyJobsList({
                 style={{ resize: "none", marginBottom: 16 }}
               />
               <div style={{ display: "flex", gap: 8 }}>
-                <button
-                  onClick={() => submitUnavailable(a)}
-                  disabled={loadingId === a.id}
-                  style={{ flex: 1, padding: "12px 0", background: "rgba(239,68,68,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}
-                >
+                <button onClick={() => submitUnavailable(a)} disabled={loadingId === a.id} style={{ flex: 1, padding: "12px 0", background: "rgba(239,68,68,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 15, cursor: "pointer" }}>
                   {loadingId === a.id ? "Wird gesendet…" : "Absagen"}
                 </button>
-                <button
-                  onClick={() => setUnavailableId(null)}
-                  className="btn-secondary"
-                  style={{ padding: "12px 18px" }}
-                >
-                  Abbrechen
-                </button>
+                <button onClick={() => setUnavailableId(null)} className="btn-secondary" style={{ padding: "12px 18px" }}>Abbrechen</button>
               </div>
             </div>
           </div>
@@ -234,17 +283,62 @@ export function MyJobsList({
   );
 }
 
-// ─── Auftrags-Karte ───────────────────────────────────────────────────────────
+// ─── Offener Job (Auktion) ────────────────────────────────────────────────────
 
-export function JobCard({
-  assignment, isCleaner, loading, onMarkDone, onUnavailable, onCancelUnavailable,
-}: {
-  assignment: Assignment;
-  isCleaner: boolean;
-  loading: boolean;
-  onMarkDone?: () => void;
-  onUnavailable?: () => void;
-  onCancelUnavailable?: () => void;
+function OpenJobCard({ assignment, loading, onClaim }: {
+  assignment: OpenAssignment; loading: boolean; onClaim: () => void;
+}) {
+  const b = assignment.booking;
+  const aptColor = b.apartment.color ?? "#0D9488";
+  return (
+    <div style={{ background: "rgba(16,185,129,0.08)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 20, overflow: "hidden" }}>
+      <div style={{ height: 4, backgroundColor: aptColor }} />
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
+            <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
+          </div>
+        </div>
+        <div className="space-y-2" style={{ marginBottom: 16 }}>
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <Home style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", marginTop: 2, flexShrink: 0 }} />
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung nach Abreise</p>
+              <p style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
+              {b.departureTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Abreise bis {b.departureTime} Uhr</p>}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Clock style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
+              Nächste Anreise: {formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime}`}
+            </p>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Users style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+          </div>
+        </div>
+        <button
+          onClick={onClaim}
+          disabled={loading}
+          style={{ width: "100%", display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", background: loading ? "rgba(255,255,255,0.10)" : "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer" }}
+        >
+          <Zap style={{ width: 20, height: 20 }} />
+          {loading ? "Wird zugesagt…" : "Jetzt zusagen"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Zugesagter Job ───────────────────────────────────────────────────────────
+
+export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavailable, onCancelUnavailable }: {
+  assignment: Assignment; isCleaner: boolean; loading: boolean;
+  onMarkDone?: () => void; onUnavailable?: () => void; onCancelUnavailable?: () => void;
 }) {
   const b = assignment.booking;
   const isDone   = assignment.status === "COMPLETED";
@@ -254,38 +348,20 @@ export function JobCard({
   return (
     <div style={{
       background: isAbsage ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.14)",
-      backdropFilter: "blur(16px)",
-      WebkitBackdropFilter: "blur(16px)",
-      border: isAbsage
-        ? "1px solid rgba(239,68,68,0.40)"
-        : isDone
-        ? "1px solid rgba(16,185,129,0.35)"
-        : "1px solid rgba(255,255,255,0.22)",
-      borderRadius: 20,
-      overflow: "hidden",
+      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      border: isAbsage ? "1px solid rgba(239,68,68,0.40)" : isDone ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.22)",
+      borderRadius: 20, overflow: "hidden",
     }}>
       <div style={{ height: 4, backgroundColor: isAbsage ? "#ef4444" : aptColor }} />
       <div style={{ padding: "16px 20px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
-              {b.apartment.name}
-            </span>
-            {!isCleaner && assignment.cleaner && (
-              <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {assignment.cleaner.name}</span>
-            )}
+            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
+            {!isCleaner && assignment.cleaner && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {assignment.cleaner.name}</span>}
           </div>
-          {isDone && (
-            <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}>
-              <CheckCircle style={{ width: 16, height: 16 }} /> Erledigt
-            </span>
-          )}
-          {isAbsage && (
-            <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#f87171", fontSize: 13, fontWeight: 700 }}>
-              <AlertTriangle style={{ width: 16, height: 16 }} /> Abgesagt
-            </span>
-          )}
+          {isDone && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}><CheckCircle style={{ width: 16, height: 16 }} /> Erledigt</span>}
+          {isAbsage && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#f87171", fontSize: 13, fontWeight: 700 }}><AlertTriangle style={{ width: 16, height: 16 }} /> Abgesagt</span>}
         </div>
 
         {isAbsage && assignment.cleanerUnavailableNote && (
@@ -299,34 +375,21 @@ export function JobCard({
             <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung nach Abreise</p>
-              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>
-                {formatDateLong(b.checkOut)}
-              </p>
-              {b.departureTime && (
-                <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
-                  Abreise bis {b.departureTime} Uhr
-                </p>
-              )}
+              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkOut)}</p>
+              {b.departureTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
           </div>
-
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Clock style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Nächste Anreise</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>
-                {formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}
-              </p>
+              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>{formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}</p>
             </div>
           </div>
-
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
-              {b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}
-            </p>
+            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
           </div>
-
           {assignment.notes && (
             <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", borderRadius: 10 }}>
               <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 3 }}>Hinweise:</p>
@@ -338,50 +401,17 @@ export function JobCard({
         {!isDone && (
           <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
             {!isAbsage && onMarkDone && (
-              <button
-                onClick={onMarkDone}
-                disabled={loading}
-                style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8,
-                  padding: "14px 0",
-                  background: loading ? "rgba(255,255,255,0.10)" : "rgba(16,185,129,0.85)",
-                  border: "none", borderRadius: 12,
-                  color: "white", fontWeight: 700, fontSize: 16,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
-              >
-                <CheckCircle style={{ width: 20, height: 20 }} />
-                {loading ? "Wird gespeichert…" : "Erledigt"}
+              <button onClick={onMarkDone} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", background: loading ? "rgba(255,255,255,0.10)" : "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer" }}>
+                <CheckCircle style={{ width: 20, height: 20 }} />{loading ? "Wird gespeichert…" : "Erledigt"}
               </button>
             )}
             {isCleaner && !isAbsage && onUnavailable && (
-              <button
-                onClick={onUnavailable}
-                disabled={loading}
-                style={{
-                  display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  padding: "14px 16px",
-                  background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)",
-                  borderRadius: 12, color: "#fca5a5", fontWeight: 600, fontSize: 14,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
-              >
-                <AlertTriangle style={{ width: 16, height: 16 }} />
-                Kann nicht
+              <button onClick={onUnavailable} disabled={loading} style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 16px", background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.35)", borderRadius: 12, color: "#fca5a5", fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer" }}>
+                <AlertTriangle style={{ width: 16, height: 16 }} />Kann nicht
               </button>
             )}
             {isCleaner && isAbsage && onCancelUnavailable && (
-              <button
-                onClick={onCancelUnavailable}
-                disabled={loading}
-                style={{
-                  flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
-                  padding: "14px 0",
-                  background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)",
-                  borderRadius: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14,
-                  cursor: loading ? "not-allowed" : "pointer",
-                }}
-              >
+              <button onClick={onCancelUnavailable} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 0", background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer" }}>
                 Absage zurücknehmen
               </button>
             )}

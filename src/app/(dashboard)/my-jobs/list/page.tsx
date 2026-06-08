@@ -2,7 +2,7 @@ import { getMyJobsData } from "../_data";
 import { MyJobsList } from "@/components/my-jobs/MyJobsList";
 
 export default async function MyJobsListPage() {
-  const { assignments, isCleaner, isPrimary } = await getMyJobsData();
+  const { myAssignments, openAssignments, isCleaner } = await getMyJobsData();
   return (
     <div className="space-y-4">
       <div>
@@ -13,7 +13,7 @@ export default async function MyJobsListPage() {
           Alle Reinigungsaufträge chronologisch
         </p>
       </div>
-      <MyJobsList assignments={assignments} isCleaner={isCleaner} />
+      <MyJobsList myAssignments={myAssignments} openAssignments={openAssignments} isCleaner={isCleaner} />
     </div>
   );
 }

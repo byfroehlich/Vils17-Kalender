@@ -2,27 +2,58 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { startOfDay } from "date-fns";
 
 export async function getMyJobsData() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
 
   const isCleaner = session.user.role === "CLEANER";
+  const orgId = session.user.organizationId;
+  const now = startOfDay(new Date());
 
-  let isPrimary = false;
   if (isCleaner) {
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { isPrimary: true },
+    // Meine zugesagten/erledigten Aufträge
+    const myAssignments = await prisma.cleaningAssignment.findMany({
+      where: {
+        organizationId: orgId,
+        cleanerId: session.user.id,
+        status: { in: ["ASSIGNED", "COMPLETED"] },
+        booking: { status: "confirmed" },
+      },
+      orderBy: { booking: { checkOut: "asc" } },
+      include: {
+        booking: { include: { apartment: true } },
+        cleaner: { select: { name: true } },
+      },
     });
-    isPrimary = user?.isPrimary ?? false;
+
+    // Alle offenen Aufträge (nicht zugewiesen) — für die Auktion
+    const openAssignments = await prisma.cleaningAssignment.findMany({
+      where: {
+        organizationId: orgId,
+        status: "UNASSIGNED",
+        cleanerId: null,
+        booking: { status: "confirmed", checkOut: { gte: now } },
+      },
+      orderBy: { booking: { checkOut: "asc" } },
+      include: {
+        booking: { include: { apartment: true } },
+      },
+    });
+
+    return {
+      myAssignments,
+      openAssignments,
+      isCleaner: true as const,
+      userName: session.user.name ?? "",
+    };
   }
 
-  const assignments = await prisma.cleaningAssignment.findMany({
+  // Admin/Manager: alle Aufträge der Org
+  const allAssignments = await prisma.cleaningAssignment.findMany({
     where: {
-      organizationId: session.user.organizationId,
-      // Hauptreiniger und Admin/Manager sehen alle; normaler Cleaner nur eigene
-      ...(isCleaner && !isPrimary ? { cleanerId: session.user.id } : {}),
+      organizationId: orgId,
       status: { in: ["ASSIGNED", "COMPLETED"] },
       booking: { status: "confirmed" },
     },
@@ -34,9 +65,9 @@ export async function getMyJobsData() {
   });
 
   return {
-    assignments,
-    isCleaner,
-    isPrimary,
+    myAssignments: allAssignments,
+    openAssignments: [] as typeof allAssignments,
+    isCleaner: false as const,
     userName: session.user.name ?? "",
   };
 }
