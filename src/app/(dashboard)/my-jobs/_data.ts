@@ -28,13 +28,15 @@ export async function getMyJobsData() {
       },
     });
 
-    // Alle offenen Aufträge (nicht zugewiesen) — für die Auktion
+    // Alle offenen Aufträge — für die Auktion
+    // Zeigt UNASSIGNED jobs inkl. abgesagter (cleanerUnavailable=true), aber
+    // NICHT den eigenen abgesagten Auftrag (cleanerId bleibt für AbsagenBanner gesetzt)
     const openAssignments = await prisma.cleaningAssignment.findMany({
       where: {
         organizationId: orgId,
         status: "UNASSIGNED",
-        cleanerId: null,
         booking: { status: "confirmed", checkOut: { gte: now } },
+        NOT: { cleanerId: session.user.id, cleanerUnavailable: true },
       },
       orderBy: { booking: { checkOut: "asc" } },
       include: {

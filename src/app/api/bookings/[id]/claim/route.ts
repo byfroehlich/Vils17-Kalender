@@ -12,17 +12,23 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   // Race-condition-safe: updateMany mit status=UNASSIGNED als Filter
   // Erster Cleaner der zusagt gewinnt — zweiter bekommt count=0
+  // cleanerId kann noch auf den abgesagten Reiniger zeigen (cleanerUnavailable=true)
+  // → daher nicht `cleanerId: null` als Bedingung, nur status=UNASSIGNED
   const updated = await prisma.cleaningAssignment.updateMany({
     where: {
       bookingId: params.id,
       organizationId: session.user.organizationId,
       status: "UNASSIGNED",
-      cleanerId: null,
     },
     data: {
       cleanerId: session.user.id,
       status: "ASSIGNED",
       assignedAt: new Date(),
+      cleanerUnavailable: false,
+      cleanerUnavailableNote: null,
+      cleanerUnavailableAt: null,
+      cleanerReminderSentAt: null,
+      adminReminderSentAt: null,
     },
   });
 

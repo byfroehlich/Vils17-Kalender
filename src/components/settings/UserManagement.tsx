@@ -79,10 +79,11 @@ export function UserManagement({
     try {
       const url = editingId ? `/api/users/${editingId}` : "/api/users";
       const method = editingId ? "PATCH" : "POST";
-      const cleanerRate = parseFloat(form.cleanerRate) || 50;
+      const isCleanerRole = form.role === "CLEANER";
+      const cleanerRate = isCleanerRole ? (parseFloat(form.cleanerRate) || 50) : undefined;
       const body = editingId
-        ? { name: form.name, phone: form.phone, notes: form.notes, language: form.language, role: form.role, cleanerRate, ...(form.password ? { password: form.password } : {}) }
-        : { ...form, cleanerRate };
+        ? { name: form.name, phone: form.phone, notes: form.notes, language: form.language, role: form.role, ...(cleanerRate !== undefined ? { cleanerRate } : {}), ...(form.password ? { password: form.password } : {}) }
+        : { ...form, ...(cleanerRate !== undefined ? { cleanerRate } : {}) };
 
       const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" },

@@ -193,7 +193,7 @@ export function CleanerDashboard({
 
       {/* Verdienst */}
       {isCleaner && (() => {
-        const rate = myAssignments.find((a) => a.cleaner?.cleanerRate)?.cleaner?.cleanerRate ?? 50;
+        const rate = myAssignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
         const completed = myAssignments.filter((a) => a.status === "COMPLETED");
         const totalEarned = completed.length * rate;
         const paid = completed.filter((a) => a.paidOut).length * rate;

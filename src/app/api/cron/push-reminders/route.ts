@@ -12,8 +12,8 @@ export async function POST(req: NextRequest) {
   const now = new Date();
   const results = { cleanerReminders: 0, adminReminders: 0 };
 
-  // ─── 10 Tage vor Anreise: Push an alle Reiniger ─────────────────────────
-  // "Noch nicht vergeben — hat jemand Interesse?"
+  // ─── 10 Tage vor Abreise: Push an alle Reiniger ─────────────────────────
+  // Reinigung findet bei Abreise (checkOut) statt, nicht bei Ankunft
   const in10Start = startOfDay(addDays(now, 10));
   const in10End = endOfDay(addDays(now, 10));
 
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
       cleanerReminderSentAt: null,
       booking: {
         status: "confirmed",
-        checkIn: { gte: in10Start, lte: in10End },
+        checkOut: { gte: in10Start, lte: in10End },
       },
     },
     include: {
@@ -51,8 +51,7 @@ export async function POST(req: NextRequest) {
     results.cleanerReminders++;
   }
 
-  // ─── 7 Tage vor Anreise: Push an Admin/Manager ──────────────────────────
-  // "Immer noch nicht vergeben!"
+  // ─── 7 Tage vor Abreise: Push an Admin/Manager ──────────────────────────
   const in7Start = startOfDay(addDays(now, 7));
   const in7End = endOfDay(addDays(now, 7));
 
@@ -62,7 +61,7 @@ export async function POST(req: NextRequest) {
       adminReminderSentAt: null,
       booking: {
         status: "confirmed",
-        checkIn: { gte: in7Start, lte: in7End },
+        checkOut: { gte: in7Start, lte: in7End },
       },
     },
     include: {

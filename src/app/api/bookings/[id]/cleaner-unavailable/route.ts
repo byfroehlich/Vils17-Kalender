@@ -48,8 +48,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       cleanerUnavailable: isDecline,
       cleanerUnavailableNote: isDecline ? (parsed.data.note ?? null) : null,
       cleanerUnavailableAt: isDecline ? new Date() : null,
-      // Job freigeben damit andere Reiniger zusagen können
-      ...(isDecline ? { status: "UNASSIGNED", cleanerId: null } : {}),
+      // Status auf UNASSIGNED setzen damit andere zusagen können.
+      // cleanerId bleibt gesetzt damit AbsagenBanner den Namen anzeigen kann.
+      ...(isDecline ? { status: "UNASSIGNED" } : {}),
     },
   });
 
