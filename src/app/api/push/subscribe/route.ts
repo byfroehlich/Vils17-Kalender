@@ -9,6 +9,10 @@ const schema = z.object({
   keys: z.object({ p256dh: z.string(), auth: z.string() }),
 });
 
+const deleteSchema = z.object({
+  endpoint: z.string().url(),
+});
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
@@ -38,11 +42,12 @@ export async function DELETE(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
 
-  const { endpoint } = await req.json();
-  if (!endpoint) return NextResponse.json({ error: "Endpoint fehlt" }, { status: 400 });
+  const body = await req.json();
+  const parsed = deleteSchema.safeParse(body);
+  if (!parsed.success) return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
 
   await prisma.pushSubscription.deleteMany({
-    where: { endpoint, userId: session.user.id },
+    where: { endpoint: parsed.data.endpoint, userId: session.user.id },
   });
 
   return NextResponse.json({ ok: true });

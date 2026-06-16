@@ -7,8 +7,8 @@ export async function POST(req: NextRequest) {
   const payload = await req.text();
   const signature = req.headers.get("x-smoobu-signature") ?? "";
 
-  // Webhook-Signatur prüfen (nur wenn Secret gesetzt)
-  if (process.env.SMOOBU_WEBHOOK_SECRET && !verifySmoobuWebhook(payload, signature)) {
+  // Webhook-Signatur prüfen — schlägt fehl wenn Secret nicht konfiguriert
+  if (!verifySmoobuWebhook(payload, signature)) {
     return NextResponse.json({ error: "Ungültige Signatur" }, { status: 401 });
   }
 
