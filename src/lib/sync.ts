@@ -86,6 +86,28 @@ export async function syncBookings(organizationId: string): Promise<{
     console.log(`[sync] ${bookingsWithoutAssignment.length} fehlende CleaningAssignments nachgeholt`);
   }
 
+  // ─── 3d. Bestehende UNASSIGNED-Assignments dem Hauptreiniger zuweisen ────
+  // Betrifft Jobs die vor der Hauptreiniger-Logik als UNASSIGNED angelegt wurden
+  // Nur wenn cleanerId=null (d.h. niemand hat abgesagt — Absagen behalten cleanerId)
+  if (primaryCleaner) {
+    const catchUp = await prisma.cleaningAssignment.updateMany({
+      where: {
+        organizationId,
+        status: "UNASSIGNED",
+        cleanerId: null,
+        booking: { status: "confirmed", checkOut: { gte: now } },
+      },
+      data: {
+        cleanerId: primaryCleaner.id,
+        status: "ASSIGNED",
+        assignedAt: now,
+      },
+    });
+    if (catchUp.count > 0) {
+      console.log(`[sync] ${catchUp.count} offene Aufträge dem Hauptreiniger nachträglich zugewiesen`);
+    }
+  }
+
   // ─── 4. Buchungen upserten ───────────────────────────────────────────────
   const syncedSmoobuIds = new Set<number>();
 
