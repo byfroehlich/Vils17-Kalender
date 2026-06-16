@@ -57,9 +57,9 @@ services:
     region: frankfurt
     plan: free
     schedule: "*/15 * * * *"
-    buildCommand: npm ci
+    buildCommand: echo "ready"
     startCommand: |
-      curl -s -X POST "${NEXT_PUBLIC_APP_URL}/api/bookings/sync" \
+      curl -s --max-time 90 --connect-timeout 30 -X POST "${NEXT_PUBLIC_APP_URL}/api/bookings/sync" \
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json"
     envVars:

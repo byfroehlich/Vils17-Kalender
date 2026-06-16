@@ -146,15 +146,6 @@ export function Sidebar({ role }: { role: string }) {
             </Link>
           );
         })}
-        {/* Logout immer am Ende */}
-        <button
-          onClick={() => signOut({ callbackUrl: "/login" })}
-          className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors"
-          style={{ color: "rgba(255,255,255,0.40)", background: "none", border: "none", cursor: "pointer" }}
-        >
-          <LogOut className="w-[22px] h-[22px] flex-shrink-0" />
-          <span className="text-[10px] font-medium leading-tight">Logout</span>
-        </button>
       </nav>
     </>
   );

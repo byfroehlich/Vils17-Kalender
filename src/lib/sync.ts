@@ -53,18 +53,32 @@ export async function syncBookings(organizationId: string): Promise<{
   const reservations = await adapter.fetchReservations({ from, to });
   console.log(`[sync] ${reservations.length} Buchungen von ${adapter.name} erhalten`);
 
-  // ─── 3b. Fehlende CleaningAssignments für bestehende Buchungen nachholen ──
+  // ─── 3b. Hauptreiniger (isPrimary) einmalig laden ───────────────────────
+  const primaryCleaner = await prisma.user.findFirst({
+    where: { organizationId, isPrimary: true, role: "CLEANER", active: true },
+    select: { id: true },
+  });
+  const now = new Date();
+
+  // ─── 3c. Fehlende CleaningAssignments für bestehende Buchungen nachholen ──
   const bookingsWithoutAssignment = await prisma.booking.findMany({
     where: {
       organizationId,
       status: "confirmed",
       cleaningAssignment: null,
     },
-    select: { id: true },
+    select: { id: true, checkOut: true },
   });
   for (const b of bookingsWithoutAssignment) {
+    const assignToPrimary = primaryCleaner && b.checkOut >= now;
     await prisma.cleaningAssignment.create({
-      data: { organizationId, bookingId: b.id, status: "UNASSIGNED", laundryStatus: "OPEN" },
+      data: {
+        organizationId,
+        bookingId: b.id,
+        status: assignToPrimary ? "ASSIGNED" : "UNASSIGNED",
+        ...(assignToPrimary ? { cleanerId: primaryCleaner.id, assignedAt: now } : {}),
+        laundryStatus: "OPEN",
+      },
     });
   }
   if (bookingsWithoutAssignment.length > 0) {
@@ -105,12 +119,14 @@ export async function syncBookings(organizationId: string): Promise<{
           syncedAt: new Date(),
         },
       });
-      // CleaningAssignment automatisch anlegen
+      // CleaningAssignment automatisch anlegen (ggf. direkt an Hauptreiniger)
+      const assignToPrimary = primaryCleaner && res.checkOut >= now;
       await prisma.cleaningAssignment.create({
         data: {
           organizationId,
           bookingId: booking.id,
-          status: "UNASSIGNED",
+          status: assignToPrimary ? "ASSIGNED" : "UNASSIGNED",
+          ...(assignToPrimary ? { cleanerId: primaryCleaner.id, assignedAt: now } : {}),
           laundryStatus: "OPEN",
         },
       });
