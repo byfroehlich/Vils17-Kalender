@@ -14,6 +14,7 @@ const adminUpdateSchema = z.object({
   role: z.enum(["ADMIN", "MANAGER", "CLEANER"]).optional(),
   password: z.string().min(8).optional(),
   isPrimary: z.boolean().optional(),
+  cleanerRate: z.number().min(0).optional(),
 });
 
 const ownUpdateSchema = z.object({
@@ -119,7 +120,7 @@ export async function PATCH(
     data: updateData,
     select: {
       id: true, name: true, email: true, phone: true,
-      notes: true, language: true, active: true, role: true, isPrimary: true,
+      notes: true, language: true, active: true, role: true, isPrimary: true, cleanerRate: true,
     },
   });
 

@@ -6,17 +6,18 @@ import { useState } from "react";
 import { formatDateLong } from "@/lib/utils";
 import {
   CheckCircle, AlertTriangle, Clock, Users,
-  List, Calendar, Zap,
+  List, Calendar, Zap, Euro,
 } from "lucide-react";
 import { startOfDay, startOfMonth, endOfMonth, addDays, isWithinInterval } from "date-fns";
 
 interface Assignment {
   id: string;
   status: string;
+  paidOut: boolean;
   notes?: string | null;
   cleanerUnavailable: boolean;
   cleanerUnavailableNote?: string | null;
-  cleaner?: { name: string } | null;
+  cleaner?: { name: string; cleanerRate: number } | null;
   booking: {
     id: string;
     guestCount: number;
@@ -189,6 +190,36 @@ export function CleanerDashboard({
           </div>
         ))}
       </div>
+
+      {/* Verdienst */}
+      {isCleaner && (() => {
+        const rate = myAssignments.find((a) => a.cleaner?.cleanerRate)?.cleaner?.cleanerRate ?? 50;
+        const completed = myAssignments.filter((a) => a.status === "COMPLETED");
+        const totalEarned = completed.length * rate;
+        const paid = completed.filter((a) => a.paidOut).length * rate;
+        const pending = totalEarned - paid;
+        if (completed.length === 0) return null;
+        return (
+          <div style={{ background: "rgba(16,185,129,0.10)", border: "1px solid rgba(16,185,129,0.22)", borderRadius: 18, padding: "16px 18px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+              <Euro style={{ width: 16, height: 16, color: "#6ee7b7" }} />
+              <p style={{ fontSize: 12, fontWeight: 700, color: "#6ee7b7", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>Mein Verdienst</p>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
+              {[
+                { label: "Gesamt", value: totalEarned, color: "rgba(255,255,255,0.85)" },
+                { label: "Ausstehend", value: pending, color: pending > 0 ? "#6ee7b7" : "rgba(255,255,255,0.45)" },
+                { label: "Ausgezahlt", value: paid, color: "rgba(255,255,255,0.45)" },
+              ].map(({ label, value, color }) => (
+                <div key={label} style={{ textAlign: "center" as const }}>
+                  <p style={{ fontSize: 20, fontWeight: 800, color, lineHeight: 1 }}>{value.toFixed(0)} €</p>
+                  <p style={{ fontSize: 10, color: "rgba(255,255,255,0.4)", marginTop: 3 }}>{label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Nav-Shortcuts */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>

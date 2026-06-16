@@ -42,5 +42,6 @@ export const config = {
     "/my-jobs/:path*",
     "/statistics/:path*",
     "/settings/:path*",
+    "/billing/:path*",
   ],
 };

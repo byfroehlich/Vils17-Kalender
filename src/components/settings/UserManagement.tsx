@@ -14,6 +14,7 @@ interface User {
   active: boolean;
   role: string;
   isPrimary: boolean;
+  cleanerRate: number;
   _count: { assignments: number };
 }
 
@@ -42,7 +43,7 @@ export function UserManagement({
   const [showPwForm, setShowPwForm] = useState(false);
   const [form, setForm] = useState({
     name: "", email: "", password: "", phone: "", notes: "",
-    language: "de", role: "CLEANER",
+    language: "de", role: "CLEANER", cleanerRate: "50",
   });
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [saving, setSaving] = useState(false);
@@ -56,7 +57,7 @@ export function UserManagement({
 
   function startNew() {
     setEditingId(null);
-    setForm({ name: "", email: "", password: "", phone: "", notes: "", language: "de", role: "CLEANER" });
+    setForm({ name: "", email: "", password: "", phone: "", notes: "", language: "de", role: "CLEANER", cleanerRate: "50" });
     setShowForm(true);
     setShowPwForm(false);
   }
@@ -67,6 +68,7 @@ export function UserManagement({
       name: user.name, email: user.email, password: "",
       phone: user.phone ?? "", notes: user.notes ?? "",
       language: user.language, role: user.role,
+      cleanerRate: String(user.cleanerRate ?? 50),
     });
     setShowForm(true);
     setShowPwForm(false);
@@ -77,9 +79,10 @@ export function UserManagement({
     try {
       const url = editingId ? `/api/users/${editingId}` : "/api/users";
       const method = editingId ? "PATCH" : "POST";
+      const cleanerRate = parseFloat(form.cleanerRate) || 50;
       const body = editingId
-        ? { name: form.name, phone: form.phone, notes: form.notes, language: form.language, role: form.role, ...(form.password ? { password: form.password } : {}) }
-        : form;
+        ? { name: form.name, phone: form.phone, notes: form.notes, language: form.language, role: form.role, cleanerRate, ...(form.password ? { password: form.password } : {}) }
+        : { ...form, cleanerRate };
 
       const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" },
@@ -229,6 +232,19 @@ export function UserManagement({
               <FormField label="Bemerkungen">
                 <input value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} className="form-input" placeholder="z.B. Firmenname" />
               </FormField>
+              {(form.role === "CLEANER") && (
+                <FormField label="Stundensatz / Pauschale (€)">
+                  <input
+                    value={form.cleanerRate}
+                    onChange={e => setForm({ ...form, cleanerRate: e.target.value })}
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    className="form-input"
+                    placeholder="50"
+                  />
+                </FormField>
+              )}
             </div>
             <div className="flex gap-3 mt-4">
               <button onClick={handleSave} disabled={saving} className="btn-primary py-2 px-4 text-sm flex-1">
@@ -307,7 +323,7 @@ export function UserManagement({
                   )}
                 </div>
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
-                  {user.email}{user.phone ? ` · ${user.phone}` : ""}
+                  {user.email}{user.phone ? ` · ${user.phone}` : ""}{user.role === "CLEANER" ? ` · ${user.cleanerRate} €/Auftrag` : ""}
                 </p>
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2 }}>

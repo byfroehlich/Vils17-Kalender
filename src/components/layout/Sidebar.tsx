@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote } from "lucide-react";
 import { signOut } from "next-auth/react";
 
 type NavItem = {
@@ -23,6 +23,7 @@ const adminManagerItems: NavItem[] = [
   { href: "/cleaners",   label: "Reinigung",     icon: Users,           noClean: true, mobileOrder: 3 },
   { href: "/calendar",   label: "Kalender",      icon: Calendar,        noClean: true, mobileOrder: 4 },
   { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 5 },
+  { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 5, adminMobileHide: true },
   { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 5, adminMobileHide: true },
 ];
 

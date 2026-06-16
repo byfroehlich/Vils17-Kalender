@@ -24,7 +24,7 @@ export async function getMyJobsData() {
       orderBy: { booking: { checkOut: "asc" } },
       include: {
         booking: { include: { apartment: true } },
-        cleaner: { select: { name: true } },
+        cleaner: { select: { name: true, cleanerRate: true } },
       },
     });
 
