@@ -345,9 +345,13 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 ### Bekannte offene Punkte
 - Zweite Wohnung kommt im Mai → wird beim nächsten Sync automatisch importiert
 - "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen manuell löschen
-- "First Accept Wins" Reinigungsanfrage (Push an alle Reiniger) noch nicht implementiert
 - E-Mail/WhatsApp: SMTP + Twilio Credentials noch nicht in Render konfiguriert
 - Benutzer deaktivieren (ohne löschen): Backend-Feld `active` vorhanden, UI-Toggle fehlt noch
+- **VAPID-Keys für Push-Benachrichtigungen** noch nicht in Render eingetragen:
+  ```bash
+  npx web-push generate-vapid-keys
+  ```
+  Dann in Render → Environment: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_MAILTO`
 
 ## Geplante Features (später)
 
