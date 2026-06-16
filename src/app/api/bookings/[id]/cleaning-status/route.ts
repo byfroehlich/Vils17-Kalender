@@ -58,9 +58,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
   }
 
+  const newStatus = parsed.data.status;
   const updated = await prisma.cleaningAssignment.update({
     where: { id: assignment.id },
-    data: { status: parsed.data.status },
+    data: {
+      status: newStatus,
+      // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
+      ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
+        ? { cleanerId: null, assignedAt: null }
+        : {}),
+    },
   });
 
   const booking = await prisma.booking.findUnique({
@@ -73,15 +80,13 @@ export async function PATCH(
     const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
     const apt = booking.apartment.name;
 
-    if (parsed.data.status === "COMPLETED") {
-      // Reinigung erledigt → Push an Admin/Manager
+    if (newStatus === "COMPLETED") {
       sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
         title: "Reinigung erledigt",
         body: `${session.user.name}: ${apt} am ${checkOut} ist fertig`,
         url: `/bookings/${params.id}`,
       }).catch(() => null);
-    } else if (parsed.data.status === "UNASSIGNED") {
-      // Auftrag wieder offen → Push an alle CLEANERs
+    } else if (newStatus === "UNASSIGNED") {
       sendPushToRole(orgId, ["CLEANER"], {
         title: "Reinigung wieder verfügbar",
         body: `${apt} am ${checkOut} ist wieder frei — jetzt zusagen!`,

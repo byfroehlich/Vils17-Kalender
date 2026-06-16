@@ -40,16 +40,20 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 
   if (!assignment) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
+  const isDecline = parsed.data.unavailable;
+
   const updated = await prisma.cleaningAssignment.update({
     where: { id: assignment.id },
     data: {
-      cleanerUnavailable: parsed.data.unavailable,
-      cleanerUnavailableNote: parsed.data.unavailable ? (parsed.data.note ?? null) : null,
-      cleanerUnavailableAt: parsed.data.unavailable ? new Date() : null,
+      cleanerUnavailable: isDecline,
+      cleanerUnavailableNote: isDecline ? (parsed.data.note ?? null) : null,
+      cleanerUnavailableAt: isDecline ? new Date() : null,
+      // Job freigeben damit andere Reiniger zusagen können
+      ...(isDecline ? { status: "UNASSIGNED", cleanerId: null } : {}),
     },
   });
 
-  if (parsed.data.unavailable) {
+  if (isDecline) {
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
       select: { checkOut: true, apartment: { select: { name: true } } },
@@ -60,16 +64,16 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       const orgId = session.user.organizationId;
       const cleanerName = session.user.name;
 
-      // Notify admins/managers
+      // Admin/Manager: Vanessa hat abgesagt
       sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
         title: "Reinigung abgesagt",
-        body: `${cleanerName} kann ${apt} am ${checkOut} nicht reinigen`,
+        body: `${cleanerName} kann ${apt} am ${checkOut} nicht — Job wieder offen`,
         url: `/bookings/${params.id}`,
       }).catch(() => null);
 
-      // Notify other cleaners that the job might become available
+      // Alle anderen Reiniger: Job ist wieder frei
       sendPushToRole(orgId, ["CLEANER"], {
-        title: "Reinigung wieder verfügbar",
+        title: "Reinigung wieder frei",
         body: `${apt} am ${checkOut} — hat jemand Interesse?`,
         url: "/my-jobs/list",
       }, [session.user.id]).catch(() => null);

@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { getChannelManagerAdapter } from "./channel-manager";
 import { addDays, format, subDays } from "date-fns";
-import { sendPushToRole } from "./push";
+import { sendPushToRole, sendPushToUsers } from "./push";
 
 export async function syncBookings(organizationId: string): Promise<{
   created: number;
@@ -131,10 +131,18 @@ export async function syncBookings(organizationId: string): Promise<{
           laundryStatus: "OPEN",
         },
       });
-      // Push an alle CLEANERs: neuer offener Auftrag
-      if (!assignToPrimary) {
-        const checkOut = res.checkOut.toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
-        const aptName = apartments.find((a) => a.id === apartmentId)?.name ?? "Wohnung";
+      const checkOut = res.checkOut.toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+      const aptName = apartments.find((a) => a.id === apartmentId)?.name ?? "Wohnung";
+
+      if (assignToPrimary && primaryCleaner) {
+        // Push direkt an Vanessa: Job ist ihr zugewiesen
+        sendPushToUsers([primaryCleaner.id], {
+          title: "Neuer Reinigungsauftrag",
+          body: `${aptName} am ${checkOut} ist für dich eingetragen`,
+          url: "/my-jobs",
+        }).catch(() => null);
+      } else {
+        // Kein Hauptreiniger: Push an alle Reiniger
         sendPushToRole(organizationId, ["CLEANER"], {
           title: "Neuer Reinigungsauftrag",
           body: `${aptName} am ${checkOut} ist frei — jetzt zusagen!`,
