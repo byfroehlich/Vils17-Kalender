@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { sendPushToRole } from "@/lib/push";
 
 const schema = z.object({
   status: z.enum(["UNASSIGNED", "SELF_CLEAN", "ASSIGNED", "COMPLETED"]),
@@ -61,6 +62,33 @@ export async function PATCH(
     where: { id: assignment.id },
     data: { status: parsed.data.status },
   });
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: params.id },
+    select: { checkOut: true, apartment: { select: { name: true } } },
+  });
+  const orgId = session.user.organizationId;
+
+  if (booking) {
+    const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+    const apt = booking.apartment.name;
+
+    if (parsed.data.status === "COMPLETED") {
+      // Reinigung erledigt → Push an Admin/Manager
+      sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
+        title: "Reinigung erledigt",
+        body: `${session.user.name}: ${apt} am ${checkOut} ist fertig`,
+        url: `/bookings/${params.id}`,
+      }).catch(() => null);
+    } else if (parsed.data.status === "UNASSIGNED") {
+      // Auftrag wieder offen → Push an alle CLEANERs
+      sendPushToRole(orgId, ["CLEANER"], {
+        title: "Reinigung wieder verfügbar",
+        body: `${apt} am ${checkOut} ist wieder frei — jetzt zusagen!`,
+        url: "/my-jobs/list",
+      }).catch(() => null);
+    }
+  }
 
   return NextResponse.json({ success: true, assignment: updated });
 }

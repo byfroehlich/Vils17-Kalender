@@ -1,6 +1,7 @@
 import { prisma } from "./prisma";
 import { getChannelManagerAdapter } from "./channel-manager";
 import { addDays, format, subDays } from "date-fns";
+import { sendPushToRole } from "./push";
 
 export async function syncBookings(organizationId: string): Promise<{
   created: number;
@@ -130,6 +131,17 @@ export async function syncBookings(organizationId: string): Promise<{
           laundryStatus: "OPEN",
         },
       });
+      // Push an alle CLEANERs: neuer offener Auftrag
+      if (!assignToPrimary) {
+        const checkOut = res.checkOut.toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+        const aptName = apartments.find((a) => a.id === apartmentId)?.name ?? "Wohnung";
+        sendPushToRole(organizationId, ["CLEANER"], {
+          title: "Neuer Reinigungsauftrag",
+          body: `${aptName} am ${checkOut} ist frei — jetzt zusagen!`,
+          url: "/my-jobs/list",
+        }).catch(() => null);
+      }
+
       stats.created++;
     } else {
       await prisma.booking.update({

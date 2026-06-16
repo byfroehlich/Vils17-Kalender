@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { sendPushToRole } from "@/lib/push";
 
 const schema = z.object({
   unavailable: z.boolean(),
@@ -47,6 +48,33 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       cleanerUnavailableAt: parsed.data.unavailable ? new Date() : null,
     },
   });
+
+  if (parsed.data.unavailable) {
+    const booking = await prisma.booking.findUnique({
+      where: { id: params.id },
+      select: { checkOut: true, apartment: { select: { name: true } } },
+    });
+    if (booking) {
+      const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+      const apt = booking.apartment.name;
+      const orgId = session.user.organizationId;
+      const cleanerName = session.user.name;
+
+      // Notify admins/managers
+      sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
+        title: "Reinigung abgesagt",
+        body: `${cleanerName} kann ${apt} am ${checkOut} nicht reinigen`,
+        url: `/bookings/${params.id}`,
+      }).catch(() => null);
+
+      // Notify other cleaners that the job might become available
+      sendPushToRole(orgId, ["CLEANER"], {
+        title: "Reinigung wieder verfügbar",
+        body: `${apt} am ${checkOut} — hat jemand Interesse?`,
+        url: "/my-jobs/list",
+      }, [session.user.id]).catch(() => null);
+    }
+  }
 
   return NextResponse.json({ success: true, assignment: updated });
 }

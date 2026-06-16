@@ -73,7 +73,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignments CleaningAssignment[]
+  assignments       CleaningAssignment[]
+  pushSubscriptions PushSubscription[]
 
   @@unique([email, organizationId])
   @@index([organizationId])
@@ -182,12 +183,35 @@ model CleaningAssignment {
   paidOut   Boolean   @default(false)
   paidOutAt DateTime?
 
+  // Push-Erinnerungen (Cron-Tracking)
+  cleanerReminderSentAt DateTime?
+  adminReminderSentAt   DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([organizationId])
   @@index([cleanerId])
   @@map("cleaning_assignments")
+}
+
+// ─── Push Subscriptions ───────────────────────────────────────────────────────
+
+model PushSubscription {
+  id             String @id @default(cuid())
+  userId         String
+  user           User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organizationId String
+
+  endpoint String @unique
+  p256dh   String
+  auth     String
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([organizationId])
+  @@map("push_subscriptions")
 }
 
 // ─── Audit Log ────────────────────────────────────────────────────────────────

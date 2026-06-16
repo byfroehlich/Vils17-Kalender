@@ -50,6 +50,12 @@ services:
         generateValue: true
       - key: NEXT_PUBLIC_APP_URL
         sync: false
+      - key: VAPID_PUBLIC_KEY
+        sync: false
+      - key: VAPID_PRIVATE_KEY
+        sync: false
+      - key: VAPID_MAILTO
+        sync: false
 
   - type: cron
     name: smoobu-sync
@@ -60,6 +66,9 @@ services:
     buildCommand: echo "ready"
     startCommand: |
       curl -s --max-time 90 --connect-timeout 30 -X POST "${NEXT_PUBLIC_APP_URL}/api/bookings/sync" \
+        -H "x-cron-secret: ${CRON_SECRET}" \
+        -H "Content-Type: application/json" && \
+      curl -s --max-time 30 --connect-timeout 10 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/push-reminders" \
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json"
     envVars:

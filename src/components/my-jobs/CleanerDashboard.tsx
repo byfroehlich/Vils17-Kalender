@@ -21,8 +21,8 @@ interface Assignment {
   booking: {
     id: string;
     guestCount: number;
-    checkOut: Date;
-    checkIn: Date;
+    checkOut: Date | string;
+    checkIn: Date | string;
     arrivalTime?: string | null;
     departureTime?: string | null;
     apartment: { name: string; color?: string | null };

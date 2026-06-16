@@ -7,8 +7,8 @@ import { useRouter } from "next/navigation";
 type Assignment = {
   id: string;
   paidOut: boolean;
-  paidOutAt: Date | null;
-  booking: { checkOut: Date; guestName: string };
+  paidOutAt: Date | string | null;
+  booking: { checkOut: Date | string; guestName: string };
   cleaner: { id: string; name: string; cleanerRate: number } | null;
 };
 
