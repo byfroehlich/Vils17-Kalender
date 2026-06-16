@@ -6,9 +6,9 @@ export default withAuth(
     const token = req.nextauth.token;
     const pathname = req.nextUrl.pathname;
 
-    // Cleaner darf nur /my-jobs sehen
+    // Cleaner darf nur /my-jobs und /billing sehen
     if (token?.role === "CLEANER") {
-      const allowed = ["/my-jobs"];
+      const allowed = ["/my-jobs", "/billing"];
       const isAllowed = allowed.some((path) => pathname.startsWith(path));
       if (!isAllowed) {
         return NextResponse.redirect(new URL("/my-jobs", req.url));

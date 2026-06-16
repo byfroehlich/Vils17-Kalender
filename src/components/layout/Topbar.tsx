@@ -2,6 +2,7 @@
 
 import { signOut } from "next-auth/react";
 import { LogOut } from "lucide-react";
+import { PushToggle } from "@/components/push/PushToggle";
 
 export function Topbar({ userName, role }: { userName: string; role: string }) {
   return (
@@ -31,9 +32,9 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
         <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.9)", fontSize: 15 }}>Vils17</span>
       </div>
 
-      {/* Rechts: Name + Rolle + Logout */}
-      <div className="flex items-center gap-2">
-        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{userName}</span>
+      {/* Rechts: Name + Rolle + Push + Logout */}
+      <div className="flex items-center gap-1">
+        <span style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>{userName.split(" ")[0]}</span>
         {role === "ADMIN" && (
           <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.15)" }}>Admin</span>
         )}
@@ -43,11 +44,13 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
         {role === "CLEANER" && (
           <span style={{ fontSize: 11, fontWeight: 600, padding: "2px 8px", borderRadius: 20, background: "rgba(16,185,129,0.2)", color: "#6ee7b7", border: "1px solid rgba(16,185,129,0.3)" }}>Reinigung</span>
         )}
+        <PushToggle />
         <button
           onClick={() => signOut({ callbackUrl: "/login" })}
-          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 6px", borderRadius: 8, color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center" }}
+          style={{ background: "none", border: "none", cursor: "pointer", padding: "4px 8px", borderRadius: 8, color: "rgba(255,255,255,0.35)", display: "flex", alignItems: "center", gap: 5 }}
         >
-          <LogOut style={{ width: 18, height: 18 }} />
+          <LogOut style={{ width: 16, height: 16 }} />
+          <span style={{ fontSize: 12, fontWeight: 500 }}>Abmelden</span>
         </button>
       </div>
     </header>

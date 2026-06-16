@@ -28,9 +28,10 @@ const adminManagerItems: NavItem[] = [
 ];
 
 const cleanerItems: NavItem[] = [
-  { href: "/my-jobs",          label: "Dashboard", icon: LayoutDashboard, cleanerOnly: true, mobileOrder: 1, exact: true },
-  { href: "/my-jobs/list",     label: "Liste",      icon: List,            cleanerOnly: true, mobileOrder: 2 },
-  { href: "/my-jobs/calendar", label: "Kalender",   icon: Calendar,        cleanerOnly: true, mobileOrder: 3 },
+  { href: "/my-jobs",          label: "Dashboard",  icon: LayoutDashboard, cleanerOnly: true, mobileOrder: 1, exact: true },
+  { href: "/my-jobs/list",     label: "Liste",       icon: List,            cleanerOnly: true, mobileOrder: 2 },
+  { href: "/my-jobs/calendar", label: "Kalender",    icon: Calendar,        cleanerOnly: true, mobileOrder: 3 },
+  { href: "/billing",          label: "Abrechnung",  icon: Banknote,        cleanerOnly: true, mobileOrder: 4 },
 ];
 
 const navItems = [...adminManagerItems, ...cleanerItems];
