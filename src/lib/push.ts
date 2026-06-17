@@ -1,5 +1,6 @@
 import webpush from "web-push";
 import { prisma } from "./prisma";
+import type { Role } from "@prisma/client";
 
 let initialized = false;
 function init() {
@@ -49,7 +50,7 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
 
 export async function sendPushToRole(
   orgId: string,
-  roles: string[],
+  roles: Role[],
   payload: PushPayload,
   excludeUserIds?: string[]
 ) {
