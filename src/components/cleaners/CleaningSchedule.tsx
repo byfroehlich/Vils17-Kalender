@@ -88,13 +88,11 @@ function AssignmentRow({ a }: { a: Assignment }) {
       <div style={{ flex: 1, minWidth: 0 }}>
         <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.booking.guestName}</p>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{a.booking.apartment.name} · {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}</p>
-      </div>
-      <div style={{ display: "none" }} className="sm:block" >
         {a.isSelfClean
-          ? <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", textAlign: "right" }}>Selbstreinigung</p>
+          ? <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>Selbstreinigung</p>
           : a.cleaner
-            ? <p style={{ fontSize: 11, fontWeight: 600, color: "rgba(255,255,255,0.7)", textAlign: "right" }}>{a.cleaner.name}</p>
-            : <p style={{ fontSize: 11, fontWeight: 600, color: "#FCA5A5", textAlign: "right" }}>Nicht zugewiesen</p>
+            ? <p style={{ fontSize: 11, fontWeight: 600, color: "#5EEAD4", marginTop: 1 }}>{a.cleaner.name}</p>
+            : null
         }
       </div>
       <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0, whiteSpace: "nowrap" }}>
