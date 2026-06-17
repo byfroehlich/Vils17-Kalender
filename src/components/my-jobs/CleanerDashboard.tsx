@@ -318,7 +318,7 @@ export function CleanerDashboard({
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>
-                {formatDateLong(a.booking.checkOut)} · {a.booking.apartment.name}
+                {formatDateLong(new Date(a.booking.checkOut))} · {a.booking.apartment.name}
               </p>
               <textarea
                 value={unavailableNote}
@@ -363,7 +363,7 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{b.apartment.name}</span>
           </div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(new Date(b.checkOut))}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {b.departureTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> bis {b.departureTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
