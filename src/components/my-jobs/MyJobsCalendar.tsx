@@ -138,7 +138,12 @@ export function MyJobsCalendar({
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
                   <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)" }}>{a.booking.apartment.name}</p>
-                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>{a.booking.guestCount} Gäste{a.booking.departureTime && ` · bis ${a.booking.departureTime}`}</p>
+                  <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
+                    {a.nextGuestCount != null
+                      ? `Anreise ${a.nextGuestCount} · Abr. ${a.booking.guestCount}`
+                      : `${a.booking.guestCount} Gäste`}
+                    {a.booking.departureTime && ` · bis ${a.booking.departureTime}`}
+                  </p>
                 </div>
                 <button onClick={() => claimJob(a.booking.id)} disabled={loadingId === a.booking.id}
                   style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0 }}>
@@ -206,7 +211,7 @@ function MonthView({
   const DAYS       = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
   // Buchungsbalken: alle Assignments mit ihrem Zeitraum
-  type BarInfo = { id: string; color: string; guestCount: number; isOpen: boolean; isAbsage: boolean; bookingId: string; };
+  type BarInfo = { id: string; color: string; guestCount: number; nextGuestCount: number | null; isOpen: boolean; isAbsage: boolean; bookingId: string; };
 
   function getBarsForDay(day: Date): Array<BarInfo & { isStart: boolean; isEnd: boolean; isSingleDay: boolean }> {
     const d = startOfDay(day);
@@ -220,6 +225,7 @@ function MonthView({
           id: a.id,
           color: a.cleanerUnavailable ? "#ef4444" : (a.booking.apartment.color ?? "#14B8A6"),
           guestCount: a.booking.guestCount,
+          nextGuestCount: a.nextGuestCount ?? null,
           isOpen: false,
           isAbsage: a.cleanerUnavailable,
           bookingId: a.booking.id,
@@ -238,6 +244,7 @@ function MonthView({
           id: a.id,
           color: a.booking.apartment.color ?? "#14B8A6",
           guestCount: a.booking.guestCount,
+          nextGuestCount: a.nextGuestCount ?? null,
           isOpen: true,
           isAbsage: false,
           bookingId: a.booking.id,
@@ -335,8 +342,8 @@ function MonthView({
                 />
               ))}
 
-              {/* Gästezahl + Reinigungsindikator am Checkout-Tag */}
-              {inMonth && bars.filter((b) => b.isEnd && !b.isOpen).map((bar, i) => (
+              {/* Gästezahl am Checkout-Tag — zeigt Anreisezahl (vorzubereitende Gäste) */}
+              {inMonth && bars.filter((b) => b.isEnd && !b.isOpen).map((bar) => (
                 <div key={"guest-" + bar.id} style={{
                   position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)",
                   fontSize: 9, fontWeight: 800, color: "white",
@@ -344,7 +351,7 @@ function MonthView({
                   borderRadius: 3, padding: "0px 3px", whiteSpace: "nowrap" as const,
                   lineHeight: "14px",
                 }}>
-                  {bar.guestCount}G
+                  {bar.nextGuestCount ?? bar.guestCount}G
                 </div>
               ))}
 
@@ -372,7 +379,7 @@ function MonthView({
         </span>
         <span style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", display: "flex", alignItems: "center", gap: 4 }}>
           <span style={{ fontWeight: 700, fontSize: 9, background: "rgba(13,148,136,0.9)", color: "white", borderRadius: 3, padding: "0 3px" }}>4G</span>
-          Gäste (Abreisetag)
+          Anreise-Gäste
         </span>
       </div>
     </div>
