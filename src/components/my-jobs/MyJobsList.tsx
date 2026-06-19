@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateLong } from "@/lib/utils";
 import {
-  Home, Users, Clock, CheckCircle, ClipboardList,
+  Home, Users, CheckCircle, ClipboardList,
   Calendar, AlertTriangle, Zap,
 } from "lucide-react";
 import { startOfDay } from "date-fns";
@@ -311,14 +311,6 @@ function OpenJobCard({ assignment, loading, onClaim }: {
               {b.departureTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
           </div>
-          {new Date(b.checkIn) >= startOfDay(new Date()) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <Clock style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
-                Nächste Anreise: {formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime}`}
-              </p>
-            </div>
-          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Users style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
@@ -382,15 +374,6 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
               {b.departureTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
           </div>
-          {new Date(b.checkIn) >= startOfDay(new Date()) && (
-            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <Clock style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-              <div>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Nächste Anreise</p>
-                <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>{formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}</p>
-              </div>
-            </div>
-          )}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
