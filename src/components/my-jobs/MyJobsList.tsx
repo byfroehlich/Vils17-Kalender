@@ -253,7 +253,8 @@ export function MyJobsList({
 
       {/* Absage-Dialog */}
       {unavailableId && (() => {
-        const a = myAssignments.find((x) => x.id === unavailableId)!;
+        const a = myAssignments.find((x) => x.id === unavailableId);
+        if (!a) return null;
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
@@ -310,12 +311,14 @@ function OpenJobCard({ assignment, loading, onClaim }: {
               {b.departureTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Clock style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
-              Nächste Anreise: {formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime}`}
-            </p>
-          </div>
+          {new Date(b.checkIn) >= startOfDay(new Date()) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <Clock style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.75)" }}>
+                Nächste Anreise: {formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime}`}
+              </p>
+            </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Users style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
@@ -379,13 +382,15 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
               {b.departureTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Clock style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Nächste Anreise</p>
-              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>{formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}</p>
+          {new Date(b.checkIn) >= startOfDay(new Date()) && (
+            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <Clock style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
+              <div>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Nächste Anreise</p>
+                <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)", marginTop: 1 }}>{formatDateLong(b.checkIn)}{b.arrivalTime && ` ab ${b.arrivalTime} Uhr`}</p>
+              </div>
             </div>
-          </div>
+          )}
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
