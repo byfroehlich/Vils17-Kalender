@@ -18,6 +18,7 @@ interface Assignment {
   cleanerUnavailable: boolean;
   cleanerUnavailableNote?: string | null;
   cleaner?: { name: string; cleanerRate: number } | null;
+  nextGuestCount?: number | null;
   booking: {
     id: string;
     guestCount: number;
@@ -31,6 +32,7 @@ interface Assignment {
 
 interface OpenAssignment {
   id: string;
+  nextGuestCount?: number | null;
   booking: {
     id: string;
     guestCount: number;
@@ -366,7 +368,14 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(new Date(b.checkOut))}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {b.departureTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> bis {b.departureTime}</span>}
-            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
+            {assignment.nextGuestCount != null ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
+                <Users style={{ width: 12, height: 12 }} /> Anreise {assignment.nextGuestCount}
+                <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>· Abr. {b.guestCount}</span>
+              </span>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
+            )}
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, flexShrink: 0 }}>
@@ -402,7 +411,14 @@ function OpenJobCard({ assignment, loading, onClaim }: {
           <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {b.departureTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> bis {b.departureTime}</span>}
-            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount} Gäste</span>
+            {assignment.nextGuestCount != null ? (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
+                <Users style={{ width: 12, height: 12 }} /> Anreise {assignment.nextGuestCount}
+                <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>· Abr. {b.guestCount}</span>
+              </span>
+            ) : (
+              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount} Gäste</span>
+            )}
           </div>
         </div>
         <button

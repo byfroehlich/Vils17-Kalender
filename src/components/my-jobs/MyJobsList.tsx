@@ -18,6 +18,7 @@ export interface Assignment {
   cleanerUnavailable: boolean;
   cleanerUnavailableNote?: string | null;
   cleaner?: { name: string } | null;
+  nextGuestCount?: number | null;
   booking: {
     id: string;
     guestCount: number;
@@ -31,6 +32,7 @@ export interface Assignment {
 
 export interface OpenAssignment {
   id: string;
+  nextGuestCount?: number | null;
   booking: {
     id: string;
     guestCount: number;
@@ -290,6 +292,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
   assignment: OpenAssignment; loading: boolean; onClaim: () => void;
 }) {
   const b = assignment.booking;
+  const nextGuests = assignment.nextGuestCount;
   const aptColor = b.apartment.color ?? "#0D9488";
   return (
     <div style={{ background: "rgba(16,185,129,0.08)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 20, overflow: "hidden" }}>
@@ -313,7 +316,14 @@ function OpenJobCard({ assignment, loading, onClaim }: {
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Users style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+            {nextGuests != null ? (
+              <div>
+                <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.95)" }}>Anreise: {nextGuests} {nextGuests === 1 ? "Person" : "Personen"}</p>
+                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>Abreise: {b.guestCount}</p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+            )}
           </div>
         </div>
         <button
@@ -338,6 +348,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
   const b = assignment.booking;
   const isDone   = assignment.status === "COMPLETED";
   const isAbsage = assignment.cleanerUnavailable;
+  const nextGuests = assignment.nextGuestCount;
   const aptColor = b.apartment.color ?? "#0D9488";
 
   return (
@@ -376,7 +387,14 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+            {nextGuests != null ? (
+              <div>
+                <p style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 1 }}>Anreise: {nextGuests} {nextGuests === 1 ? "Person" : "Personen"}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.40)" }}>Abreise: {b.guestCount}</p>
+              </div>
+            ) : (
+              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+            )}
           </div>
           {assignment.notes && (
             <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", borderRadius: 10 }}>

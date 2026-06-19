@@ -13,7 +13,6 @@ export async function getMyJobsData() {
   const now = startOfDay(new Date());
 
   if (isCleaner) {
-    // Meine zugesagten/erledigten Aufträge
     const myAssignments = await prisma.cleaningAssignment.findMany({
       where: {
         organizationId: orgId,
@@ -28,9 +27,6 @@ export async function getMyJobsData() {
       },
     });
 
-    // Alle offenen Aufträge — für die Auktion
-    // Zeigt UNASSIGNED jobs inkl. abgesagter (cleanerUnavailable=true), aber
-    // NICHT den eigenen abgesagten Auftrag (cleanerId bleibt für AbsagenBanner gesetzt)
     const openAssignments = await prisma.cleaningAssignment.findMany({
       where: {
         organizationId: orgId,
@@ -44,9 +40,11 @@ export async function getMyJobsData() {
       },
     });
 
+    const enriched = await enrichWithNextGuests(orgId, myAssignments, openAssignments);
+
     return {
-      myAssignments,
-      openAssignments,
+      myAssignments: enriched.my,
+      openAssignments: enriched.open,
       isCleaner: true as const,
       userName: session.user.name ?? "",
     };
@@ -66,10 +64,52 @@ export async function getMyJobsData() {
     },
   });
 
+  const enriched = await enrichWithNextGuests(orgId, allAssignments, []);
+
   return {
-    myAssignments: allAssignments,
-    openAssignments: [] as typeof allAssignments,
+    myAssignments: enriched.my,
+    openAssignments: enriched.open as typeof allAssignments & { nextGuestCount: number | null }[],
     isCleaner: false as const,
     userName: session.user.name ?? "",
+  };
+}
+
+async function enrichWithNextGuests<
+  T extends { booking: { apartmentId: string; checkOut: Date } },
+  U extends { booking: { apartmentId: string; checkOut: Date } },
+>(orgId: string, my: T[], open: U[]) {
+  const allAptIds = new Set([
+    ...my.map((a) => a.booking.apartmentId),
+    ...open.map((a) => a.booking.apartmentId),
+  ]);
+
+  if (allAptIds.size === 0) {
+    return {
+      my: my.map((a) => ({ ...a, nextGuestCount: null as number | null })),
+      open: open.map((a) => ({ ...a, nextGuestCount: null as number | null })),
+    };
+  }
+
+  // Alle zukünftigen Buchungen für die relevanten Wohnungen
+  const futureBookings = await prisma.booking.findMany({
+    where: {
+      organizationId: orgId,
+      status: "confirmed",
+      apartmentId: { in: Array.from(allAptIds) },
+    },
+    select: { apartmentId: true, checkIn: true, guestCount: true },
+    orderBy: { checkIn: "asc" },
+  });
+
+  function nextGuests(aptId: string, afterDate: Date): number | null {
+    const found = futureBookings.find(
+      (b) => b.apartmentId === aptId && new Date(b.checkIn) >= afterDate
+    );
+    return found?.guestCount ?? null;
+  }
+
+  return {
+    my: my.map((a) => ({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
+    open: open.map((a) => ({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
   };
 }
