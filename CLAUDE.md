@@ -204,6 +204,7 @@ interface LaundryAdapter {
 | `/cleaners` | ✅ | ✅ | ❌ |
 | `/settings` | ✅ | ❌ | ❌ |
 | `/my-jobs` | ✅ | ✅ | ✅ |
+| `/billing` | ✅ | ✅ | ✅ (nur eigene Jobs) |
 | `/api/bookings/sync` | ✅ | ✅ | ❌ |
 | `/api/bookings/[id]/assign` | ✅ | ✅ | ❌ |
 | `/api/bookings/[id]/laundry` | ✅ | ✅ | ❌ |
@@ -310,7 +311,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 
 **Philosophie:** Reiniger sind die knappe Ressource. Gute Reiniger müssen faire Vermieter finden können. Deshalb bewerten beide Seiten.
 
-## Aktueller Stand (Stand: 15.04.2026)
+## Aktueller Stand (Stand: 21.06.2026)
 
 ### Erledigt ✅
 - Smoobu Sync funktioniert (Buchungen + Apartments automatisch importiert)
@@ -341,10 +342,30 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - Buchungsübersicht nach Monat segmentiert
 - Portal-Icon (Airbnb/Booking.com) und Gästezahl in Buchungskarten
 - Helles, freundliches Theme mit Glass-Morphism-Design
+- **Sicherheits-Fixes:**
+  - Smoobu Webhook schlägt jetzt CLOSED fehl (kein Secret = kein Zugang)
+  - `timingSafeEqual` Crash bei unterschiedlichen Signaturlängen behoben
+  - Push-DELETE Endpoint validiert mit Zod
+  - Absage-Dialog: Non-Null-Assertion-Crash behoben
+- **Push-Benachrichtigungen** (`src/components/push/`):
+  - `PushToggle` in der Topbar (Bell/BellOff Icon)
+  - `PushSubscriber` abonniert beim ersten Login automatisch
+  - Backend: `POST/DELETE /api/push/subscribe`, `GET /api/push/vapid-public-key`
+- **Reiniger-Abrechnung** (`/billing` für CLEANER-Rolle):
+  - `CleanerBillingView`: eigene erledigte Jobs gruppiert nach Monat
+  - 3 Karten: Gesamt / Ausstehend / Ausgezahlt
+  - In Sidebar + Mobile-Nav sichtbar
+- **Sync: Catch-up-Logik** (`src/lib/sync.ts`):
+  - UNASSIGNED zukünftige Jobs ohne cleanerId werden beim Sync automatisch dem Hauptreiniger (isPrimary=true) zugewiesen
+- **Reiniger-Ansichten verbessert:**
+  - Reinigername in der Geplant-Liste immer sichtbar (auch Mobile)
+  - "Nächste Anreise" entfernt (war immer Abreisedatum des aktuellen Gastes, semantisch falsch)
+  - **Anreise-Personenzahl** (`nextGuestCount`): Liste, Dashboard-Karten und Kalender zeigen die Anzahl der anreisenden Gäste (nicht der abreisenden) — Reiniger weiß wie viele Betten/Handtücher vorzubereiten sind
+  - Kalender-Tageskürzel korrigiert: Mo/Di/Mi/Do/Fr/Sa/So
+  - Abmelden-Button zeigt Text auf Mobile
 
 ### Bekannte offene Punkte
-- Zweite Wohnung kommt im Mai → wird beim nächsten Sync automatisch importiert
-- "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen manuell löschen
+- "Wohnung 1" und "Wohnung 2" (Platzhalter) in Einstellungen manuell löschen, falls noch vorhanden
 - E-Mail/WhatsApp: SMTP + Twilio Credentials noch nicht in Render konfiguriert
 - Benutzer deaktivieren (ohne löschen): Backend-Feld `active` vorhanden, UI-Toggle fehlt noch
 - **VAPID-Keys für Push-Benachrichtigungen** noch nicht in Render eingetragen:
