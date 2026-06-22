@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Trash2, Pencil, Check, X } from "lucide-react";
+import { Trash2, Pencil, Check, X, Bot } from "lucide-react";
 
 const COLOR_OPTIONS = [
   "#3b82f6", // Blau
@@ -24,10 +24,11 @@ interface Apartment {
   laundryBedsDivisor: number;
   laundryTowelsPerGuest: number;
   laundryKitchenCount: number;
+  dreameEnabled: boolean;
   _count: { bookings: number };
 }
 
-export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
+export function ApartmentSettings({ apartments, dreameApartmentId }: { apartments: Apartment[]; dreameApartmentId: string | null }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -37,6 +38,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   const [editKitchenCount, setEditKitchenCount] = useState(1);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [togglingDreame, setTogglingDreame] = useState<string | null>(null);
 
   function startEdit(apt: Apartment) {
     setEditingId(apt.id);
@@ -62,6 +64,17 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     });
     setSaving(false);
     setEditingId(null);
+    router.refresh();
+  }
+
+  async function toggleDreame(apt: Apartment) {
+    setTogglingDreame(apt.id);
+    await fetch(`/api/apartments/${apt.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dreameEnabled: !apt.dreameEnabled }),
+    });
+    setTogglingDreame(null);
     router.refresh();
   }
 
@@ -214,6 +227,21 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
+                  {dreameApartmentId === apt.id && (
+                    <button
+                      onClick={() => toggleDreame(apt)}
+                      disabled={togglingDreame === apt.id}
+                      title={apt.dreameEnabled ? "Saugroboter aktiv — klicken zum Deaktivieren" : "Saugroboter inaktiv — klicken zum Aktivieren"}
+                      style={{
+                        padding: 8, borderRadius: 8, cursor: "pointer", border: "none",
+                        background: apt.dreameEnabled ? "rgba(16,185,129,0.15)" : "transparent",
+                        color: apt.dreameEnabled ? "#10b981" : "rgba(255,255,255,0.25)",
+                        transition: "all 0.2s",
+                      }}
+                    >
+                      <Bot className="w-4 h-4" />
+                    </button>
+                  )}
                   <button
                     onClick={() => startEdit(apt)}
                     style={{ padding: 8, borderRadius: 8, color: "rgba(255,255,255,0.4)", cursor: "pointer", background: "transparent", border: "none" }}

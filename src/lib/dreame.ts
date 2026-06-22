@@ -86,3 +86,28 @@ export async function dreameStartCleaning(accessToken: string, deviceId: string)
     throw new Error(`Dreame sendCommand failed ${res.status}: ${text}`);
   }
 }
+
+// Returns the raw device state value (siid=2, piid=2)
+// Known states: 1=sweeping, 2=idle, 4=error, 5=returning, 6=charging, 8=sleeping
+export async function dreameGetStatus(accessToken: string, deviceId: string): Promise<number> {
+  const res = await fetch(`${BASE}/dreame-iot-com-10000/device/getProperties`, {
+    method: "POST",
+    headers: { ...baseHeaders(`Bearer ${accessToken}`), "content-type": "application/json" },
+    body: JSON.stringify({
+      did:        deviceId,
+      properties: [{ siid: 2, piid: 2 }],
+    }),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`Dreame getProperties failed ${res.status}: ${text}`);
+  }
+  const data = await res.json() as { result?: Array<{ siid: number; piid: number; value: unknown }> };
+  const prop = (data.result ?? []).find((p) => p.siid === 2 && p.piid === 2);
+  return typeof prop?.value === "number" ? prop.value : -1;
+}
+
+// Robot is considered "done" when idle (2), charging (6), or sleeping (8)
+export function dreameIsDone(status: number): boolean {
+  return [2, 6, 8].includes(status);
+}

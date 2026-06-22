@@ -86,6 +86,23 @@ services:
         sync: false
 
   - type: cron
+    name: dreame-status
+    env: node
+    region: frankfurt
+    plan: free
+    schedule: "*/30 * * * *"
+    buildCommand: echo "ready"
+    startCommand: |
+      curl -s --max-time 60 --connect-timeout 30 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/dreame-status" \
+        -H "x-cron-secret: ${CRON_SECRET}" \
+        -H "Content-Type: application/json"
+    envVars:
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
     name: dreame-start
     env: node
     region: frankfurt

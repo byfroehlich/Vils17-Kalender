@@ -30,7 +30,7 @@ export default async function SettingsPage() {
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Einstellungen</h1>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Unterkünfte, Benutzer und Ansichten verwalten</p>
       </div>
-      <ApartmentSettings apartments={apartments} />
+      <ApartmentSettings apartments={apartments} dreameApartmentId={process.env.DREAME_APARTMENT_ID ?? null} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
       <UserManagement users={users} currentUserId={session.user.id} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />

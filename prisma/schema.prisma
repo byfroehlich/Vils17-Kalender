@@ -99,6 +99,9 @@ model Apartment {
   laundryTowelsPerGuest  Int @default(1) // Handtücher pro Gast
   laundryKitchenCount    Int @default(1) // Küchenhandtücher pro Buchung (fix)
 
+  // Dreame Saugroboter
+  dreameEnabled Boolean @default(false)
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -186,6 +189,10 @@ model CleaningAssignment {
   // Push-Erinnerungen (Cron-Tracking)
   cleanerReminderSentAt DateTime?
   adminReminderSentAt   DateTime?
+
+  // Dreame Saugroboter
+  dreameStartedAt DateTime?
+  dreameDoneAt    DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
