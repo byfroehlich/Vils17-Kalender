@@ -28,7 +28,7 @@ interface Apartment {
   _count: { bookings: number };
 }
 
-export function ApartmentSettings({ apartments, dreameApartmentId }: { apartments: Apartment[]; dreameApartmentId: string | null }) {
+export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -224,24 +224,27 @@ export function ApartmentSettings({ apartments, dreameApartmentId }: { apartment
                     <p className="text-xs text-zinc-400 mt-0.5">
                       🛏 1 Set/{apt.laundryBedsDivisor ?? 2} Gäste · 🛁 {apt.laundryTowelsPerGuest ?? 1}/Gast · 🍽 {apt.laundryKitchenCount ?? 1}/Buchung
                     </p>
+                    {apt.dreameEnabled && (
+                      <p style={{ fontSize: 11, color: "#10b981", marginTop: 2 }}>
+                        Roboter aktiv · ID: <span style={{ fontFamily: "monospace" }}>{apt.id}</span>
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
-                  {dreameApartmentId === apt.id && (
-                    <button
-                      onClick={() => toggleDreame(apt)}
-                      disabled={togglingDreame === apt.id}
-                      title={apt.dreameEnabled ? "Saugroboter aktiv — klicken zum Deaktivieren" : "Saugroboter inaktiv — klicken zum Aktivieren"}
-                      style={{
-                        padding: 8, borderRadius: 8, cursor: "pointer", border: "none",
-                        background: apt.dreameEnabled ? "rgba(16,185,129,0.15)" : "transparent",
-                        color: apt.dreameEnabled ? "#10b981" : "rgba(255,255,255,0.25)",
-                        transition: "all 0.2s",
-                      }}
-                    >
-                      <Bot className="w-4 h-4" />
-                    </button>
-                  )}
+                  <button
+                    onClick={() => toggleDreame(apt)}
+                    disabled={togglingDreame === apt.id}
+                    title={apt.dreameEnabled ? "Saugroboter aktiv — klicken zum Deaktivieren" : "Saugroboter inaktiv — klicken zum Aktivieren"}
+                    style={{
+                      padding: 8, borderRadius: 8, cursor: "pointer", border: "none",
+                      background: apt.dreameEnabled ? "rgba(16,185,129,0.15)" : "transparent",
+                      color: apt.dreameEnabled ? "#10b981" : "rgba(255,255,255,0.25)",
+                      transition: "all 0.2s",
+                    }}
+                  >
+                    <Bot className="w-4 h-4" />
+                  </button>
                   <button
                     onClick={() => startEdit(apt)}
                     style={{ padding: 8, borderRadius: 8, color: "rgba(255,255,255,0.4)", cursor: "pointer", background: "transparent", border: "none" }}
