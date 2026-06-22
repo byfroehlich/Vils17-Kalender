@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote, MoreHorizontal, X } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { useState, useEffect } from "react";
 
 type NavItem = {
   href: string;
@@ -12,8 +13,8 @@ type NavItem = {
   noClean?: boolean;
   cleanerOnly?: boolean;
   adminOnly?: boolean;
-  adminMobileHide?: boolean;
   mobileOrder: number;
+  mobileMore?: boolean; // erscheint im "Mehr"-Popup statt in der Hauptleiste
   exact?: boolean;
 };
 
@@ -22,16 +23,16 @@ const adminManagerItems: NavItem[] = [
   { href: "/bookings",   label: "Buchungen",     icon: BookOpen,        noClean: true, mobileOrder: 2 },
   { href: "/cleaners",   label: "Reinigung",     icon: Users,           noClean: true, mobileOrder: 3 },
   { href: "/calendar",   label: "Kalender",      icon: Calendar,        noClean: true, mobileOrder: 4 },
-  { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 5 },
-  { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 5 },
-  { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 5, adminMobileHide: true },
+  { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 5, mobileMore: true },
+  { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 6, mobileMore: true },
+  { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 7, mobileMore: true },
 ];
 
 const cleanerItems: NavItem[] = [
   { href: "/my-jobs",          label: "Dashboard",  icon: LayoutDashboard, cleanerOnly: true, mobileOrder: 1, exact: true },
   { href: "/my-jobs/list",     label: "Liste",       icon: List,            cleanerOnly: true, mobileOrder: 2 },
   { href: "/my-jobs/calendar", label: "Kalender",    icon: Calendar,        cleanerOnly: true, mobileOrder: 3 },
-  { href: "/billing",          label: "Abrechnung",  icon: Banknote,        cleanerOnly: true, mobileOrder: 4 },
+  { href: "/billing",          label: "Abrechnung",  icon: Banknote,        cleanerOnly: true, mobileOrder: 4, mobileMore: true },
 ];
 
 const navItems = [...adminManagerItems, ...cleanerItems];
@@ -47,6 +48,10 @@ export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin   = role === "ADMIN";
   const isCleaner = role === "CLEANER";
+  const [moreOpen, setMoreOpen] = useState(false);
+
+  // Close popup on route change
+  useEffect(() => { setMoreOpen(false); }, [pathname]);
 
   const visibleItems = navItems.filter((item) => {
     if (item.adminOnly   && !isAdmin)   return false;
@@ -55,17 +60,20 @@ export function Sidebar({ role }: { role: string }) {
     return true;
   });
 
-  const mobileItems = visibleItems
-    .filter((item) => {
-      if (item.adminMobileHide && isAdmin) return false;
-      return true;
-    })
+  const mobileMainItems = visibleItems
+    .filter((item) => !item.mobileMore)
+    .sort((a, b) => a.mobileOrder - b.mobileOrder);
+
+  const mobileMoreItems = visibleItems
+    .filter((item) => item.mobileMore)
     .sort((a, b) => a.mobileOrder - b.mobileOrder);
 
   function isActive(item: NavItem) {
     if (item.exact) return pathname === item.href;
     return pathname.startsWith(item.href);
   }
+
+  const anyMoreActive = mobileMoreItems.some(isActive);
 
   return (
     <>
@@ -121,6 +129,66 @@ export function Sidebar({ role }: { role: string }) {
         </div>
       </aside>
 
+      {/* ── Mobile: Mehr-Popup ───────────────────────────────────────────── */}
+      {moreOpen && (
+        <>
+          {/* Backdrop */}
+          <div
+            className="lg:hidden fixed inset-0 z-40"
+            onClick={() => setMoreOpen(false)}
+          />
+          {/* Sheet */}
+          <div
+            className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl"
+            style={{
+              background: "rgba(10,50,45,0.97)",
+              backdropFilter: "blur(30px)",
+              WebkitBackdropFilter: "blur(30px)",
+              border: "1px solid rgba(255,255,255,0.14)",
+              borderBottom: "none",
+              paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
+            }}
+          >
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
+              <span style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.5)", letterSpacing: "0.06em", textTransform: "uppercase" }}>Mehr</span>
+              <button onClick={() => setMoreOpen(false)} style={{ color: "rgba(255,255,255,0.4)", background: "transparent", border: "none", cursor: "pointer", padding: 4 }}>
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="px-3 pb-3 space-y-1">
+              {mobileMoreItems.map((item) => {
+                const active = isActive(item);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium"
+                    style={{
+                      background: active ? "rgba(13,148,136,0.2)" : "transparent",
+                      color: active ? "#14B8A6" : "rgba(255,255,255,0.80)",
+                      border: active ? "1px solid rgba(13,148,136,0.3)" : "1px solid transparent",
+                    }}
+                  >
+                    <item.icon className="w-5 h-5 flex-shrink-0" />
+                    <span>{item.label}</span>
+                  </Link>
+                );
+              })}
+              <div style={{ borderTop: "1px solid rgba(255,255,255,0.08)", marginTop: 8, paddingTop: 8 }}>
+                <button
+                  onClick={() => signOut({ callbackUrl: "/login" })}
+                  className="flex items-center gap-3 px-4 py-3 w-full rounded-xl text-sm font-medium"
+                  style={{ color: "rgba(255,255,255,0.4)", background: "transparent", border: "none", cursor: "pointer" }}
+                >
+                  <LogOut className="w-5 h-5" />
+                  <span>Abmelden</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </>
+      )}
+
       {/* ── Mobile Bottom Nav ─────────────────────────────────────────────── */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex"
@@ -132,7 +200,7 @@ export function Sidebar({ role }: { role: string }) {
           paddingBottom: "max(env(safe-area-inset-bottom), 8px)",
         }}
       >
-        {mobileItems.map((item) => {
+        {mobileMainItems.map((item) => {
           const active = isActive(item);
           return (
             <Link
@@ -148,6 +216,23 @@ export function Sidebar({ role }: { role: string }) {
             </Link>
           );
         })}
+
+        {/* Mehr-Button */}
+        {mobileMoreItems.length > 0 && (
+          <button
+            onClick={() => setMoreOpen((o) => !o)}
+            className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0"
+            style={{
+              color: moreOpen || anyMoreActive ? "#0D9488" : "rgba(255,255,255,0.60)",
+              background: "transparent",
+              border: "none",
+              cursor: "pointer",
+            }}
+          >
+            <MoreHorizontal className="w-[22px] h-[22px] flex-shrink-0" />
+            <span className="text-[10px] font-medium leading-tight">Mehr</span>
+          </button>
+        )}
       </nav>
     </>
   );
