@@ -378,10 +378,11 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 
 ### Saugroboter-Automatisierung (Dreame Wischi X50 Ultra)
 - Gerät: **Dreame Wischi X50 Ultra**, gesteuert über Dreame Home App
+- Dreame Konto-ID: **CT115077**
 - Ziel: Roboter startet automatisch um 10:00 Uhr an jedem Abreisetag
 - Umsetzung: Render-Cron um 10:00 prüft ob heute Checkout-Tag → schickt Start-Befehl an Dreame Cloud API
-- Benötigt: Dreame-Account E-Mail + Passwort als Render-Umgebungsvariablen (`DREAME_EMAIL`, `DREAME_PASSWORD`)
-- Klären: für welche Wohnung der Roboter zuständig ist (apartmentId)
+- Benötigt als Render-Umgebungsvariablen: `DREAME_EMAIL`, `DREAME_PASSWORD`
+- Klären: für welche Wohnung (apartmentId) der Roboter zuständig ist
 - Die Dreame Cloud API ist nicht offiziell dokumentiert, aber gut bekannt aus Open-Source-Projekten (python-dreame, HA-Integration)
 
 ### Reinigungsstatistik
