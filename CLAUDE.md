@@ -382,7 +382,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - Ziel: Roboter startet automatisch um 10:00 Uhr an jedem Abreisetag
 - Umsetzung: Render-Cron um 10:00 prüft ob heute Checkout-Tag → schickt Start-Befehl an Dreame Cloud API
 - Benötigt als Render-Umgebungsvariablen: `DREAME_EMAIL`, `DREAME_PASSWORD`
-- Klären: für welche Wohnung (apartmentId) der Roboter zuständig ist
+- Zuständig für: **Penthouse No. 17 – Vils** (apartmentId beim Sync ermitteln)
 - Die Dreame Cloud API ist nicht offiziell dokumentiert, aber gut bekannt aus Open-Source-Projekten (python-dreame, HA-Integration)
 
 ### Reinigungsstatistik
