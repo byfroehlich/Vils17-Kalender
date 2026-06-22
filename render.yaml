@@ -56,6 +56,14 @@ services:
         sync: false
       - key: VAPID_MAILTO
         sync: false
+      - key: DREAME_EMAIL
+        sync: false
+      - key: DREAME_PASSWORD
+        sync: false
+      - key: DREAME_APARTMENT_ID
+        sync: false
+      - key: DREAME_DEVICE_ID
+        sync: false
 
   - type: cron
     name: smoobu-sync
@@ -69,6 +77,23 @@ services:
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json" && \
       curl -s --max-time 30 --connect-timeout 10 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/push-reminders" \
+        -H "x-cron-secret: ${CRON_SECRET}" \
+        -H "Content-Type: application/json"
+    envVars:
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: dreame-start
+    env: node
+    region: frankfurt
+    plan: free
+    schedule: "0 8 * * *"
+    buildCommand: echo "ready"
+    startCommand: |
+      curl -s --max-time 60 --connect-timeout 30 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/dreame-start" \
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json"
     envVars:
