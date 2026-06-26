@@ -48,6 +48,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     setEditBedsDivisor(apt.laundryBedsDivisor ?? 2);
     setEditTowelsPerGuest(apt.laundryTowelsPerGuest ?? 1);
     setEditKitchenCount(apt.laundryKitchenCount ?? 1);
+    setSaveError(null);
   }
 
   async function saveEdit(id: string) {
@@ -72,12 +73,13 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
 
   async function toggleDreame(apt: Apartment) {
     setTogglingDreame(apt.id);
-    await fetch(`/api/apartments/${apt.id}`, {
+    const res = await fetch(`/api/apartments/${apt.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ dreameEnabled: !apt.dreameEnabled }),
     });
     setTogglingDreame(null);
+    if (!res.ok) { alert("Fehler beim Speichern"); return; }
     router.refresh();
   }
 

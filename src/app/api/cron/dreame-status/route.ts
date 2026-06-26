@@ -1,27 +1,39 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { startOfDay, endOfDay } from "date-fns";
 import { dreameLogin, dreameGetDeviceId, dreameGetStatus, dreameIsDone } from "@/lib/dreame";
 import { sendPushToRole } from "@/lib/push";
+import crypto from "crypto";
 
 // Runs every 30 min. Only acts between 08:30–12:00 UTC (= 10:30–14:00 Vienna) on checkout days.
+
+function viennaDay(): { start: Date; end: Date } {
+  const viennaStr = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Vienna" });
+  const startUtc  = new Date(`${viennaStr}T00:00:00+02:00`);
+  const endUtc    = new Date(`${viennaStr}T23:59:59+02:00`);
+  return { start: startUtc, end: endUtc };
+}
+
+function secretOk(provided: string): boolean {
+  const expected = process.env.CRON_SECRET ?? "";
+  if (provided.length !== expected.length) return false;
+  return crypto.timingSafeEqual(Buffer.from(provided), Buffer.from(expected));
+}
+
 export async function POST(req: NextRequest) {
-  const cronSecret = req.headers.get("x-cron-secret");
-  if (!cronSecret || cronSecret !== process.env.CRON_SECRET) {
+  const cronSecret = req.headers.get("x-cron-secret") ?? "";
+  if (!secretOk(cronSecret)) {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  const nowUtc = new Date();
-  const utcHour = nowUtc.getUTCHours();
-  const utcMin = nowUtc.getUTCMinutes();
-  const utcMinutes = utcHour * 60 + utcMin;
+  const nowUtc     = new Date();
+  const utcMinutes = nowUtc.getUTCHours() * 60 + nowUtc.getUTCMinutes();
   // 08:30–12:00 UTC
   if (utcMinutes < 8 * 60 + 30 || utcMinutes > 12 * 60) {
     return NextResponse.json({ skipped: true, reason: "Außerhalb des Zeitfensters" });
   }
 
-  const aptId = process.env.DREAME_APARTMENT_ID;
-  const email = process.env.DREAME_EMAIL;
+  const aptId    = process.env.DREAME_APARTMENT_ID;
+  const email    = process.env.DREAME_EMAIL;
   const password = process.env.DREAME_PASSWORD;
   if (!aptId || !email || !password) {
     return NextResponse.json({ skipped: true, reason: "Dreame env vars fehlen" });
@@ -36,14 +48,13 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Dreame in Einstellungen deaktiviert" });
   }
 
-  const todayStart = startOfDay(nowUtc);
-  const todayEnd = endOfDay(nowUtc);
+  const { start, end } = viennaDay();
 
   const booking = await prisma.booking.findFirst({
     where: {
       apartmentId: aptId,
       status: "confirmed",
-      checkOut: { gte: todayStart, lte: todayEnd },
+      checkOut: { gte: start, lte: end },
     },
     include: {
       apartment: { select: { organizationId: true, name: true } },
@@ -64,12 +75,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ skipped: true, reason: "Fertig-Push bereits gesendet" });
   }
 
-  const token = await dreameLogin(email, password);
+  const token    = await dreameLogin(email, password);
   const deviceId = await dreameGetDeviceId(token);
-  const status = await dreameGetStatus(token, deviceId);
+  const status   = await dreameGetStatus(token, deviceId);
 
   if (!dreameIsDone(status)) {
-    return NextResponse.json({ ok: true, status, done: false, message: "Roboter noch am Reinigen" });
+    return NextResponse.json({ ok: true, done: false, message: "Roboter noch am Reinigen" });
   }
 
   await prisma.cleaningAssignment.update({
@@ -77,7 +88,7 @@ export async function POST(req: NextRequest) {
     data: { dreameDoneAt: new Date() },
   });
 
-  const orgId = booking.apartment.organizationId;
+  const orgId   = booking.apartment.organizationId;
   const aptName = booking.apartment.name;
 
   await sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
@@ -86,5 +97,5 @@ export async function POST(req: NextRequest) {
     url: `/bookings/${booking.id}`,
   });
 
-  return NextResponse.json({ ok: true, status, done: true });
+  return NextResponse.json({ ok: true, done: true });
 }

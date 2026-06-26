@@ -11,10 +11,13 @@ const RLC_PLAIN   = "eu|en|DE";          // region|lang|country
 const PW_SALT     = "RAylYC%fmSKp7%Tq"; // password hashing salt
 
 function computeRlc(): string {
-  const cipher = crypto.createCipheriv("aes-128-ecb", Buffer.from(RLC_KEY), null);
+  const cipher = crypto.createCipheriv("aes-128-ecb", Buffer.from(RLC_KEY, "utf8"), null);
   cipher.setAutoPadding(true);
   return cipher.update(RLC_PLAIN, "utf8", "hex") + cipher.final("hex");
 }
+
+// Computed once at module load — inputs are constants
+const RLC_VALUE = computeRlc();
 
 function hashPassword(password: string): string {
   return crypto.createHash("md5").update(password + PW_SALT).digest("hex").toUpperCase();
@@ -24,7 +27,7 @@ function baseHeaders(authHeader: string): Record<string, string> {
   return {
     "user-agent":    "Dart/3.2 (dart:io)",
     "dreame-meta":   "cv=i_829",
-    "dreame-rlc":    computeRlc(),
+    "dreame-rlc":    RLC_VALUE,
     "tenant-id":     "000000",
     "authorization": authHeader,
   };
@@ -47,14 +50,17 @@ export async function dreameLogin(email: string, password: string): Promise<stri
     body: body.toString(),
   });
   if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`Dreame login failed ${res.status}: ${text}`);
+    throw new Error(`Dreame login failed ${res.status}`);
   }
   const data = await res.json() as { access_token: string };
   return data.access_token;
 }
 
 export async function dreameGetDeviceId(accessToken: string): Promise<string> {
+  // Skip network call when the device ID is already known
+  const overrideId = process.env.DREAME_DEVICE_ID;
+  if (overrideId) return overrideId;
+
   const res = await fetch(`${BASE}/dreame-user-iot/iotuserbind/device/listV2`, {
     headers: baseHeaders(`Bearer ${accessToken}`),
   });
@@ -62,13 +68,6 @@ export async function dreameGetDeviceId(accessToken: string): Promise<string> {
   const data = await res.json() as { result?: Array<{ did: string; name?: string }> };
   const devices = data.result ?? [];
   if (devices.length === 0) throw new Error("No Dreame devices found");
-  // Use DREAME_DEVICE_ID env override if set, else first device
-  const overrideId = process.env.DREAME_DEVICE_ID;
-  if (overrideId) {
-    const found = devices.find((d) => d.did === overrideId);
-    if (!found) throw new Error(`DREAME_DEVICE_ID=${overrideId} not in device list`);
-    return overrideId;
-  }
   return devices[0].did;
 }
 
