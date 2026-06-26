@@ -10,6 +10,8 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const viewport = {
   width: "device-width",
   initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
   viewportFit: "cover",
 };
 
