@@ -37,6 +37,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   const [editTowelsPerGuest, setEditTowelsPerGuest] = useState(1);
   const [editKitchenCount, setEditKitchenCount] = useState(1);
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
   const [togglingDreame, setTogglingDreame] = useState<string | null>(null);
 
@@ -51,7 +52,8 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
 
   async function saveEdit(id: string) {
     setSaving(true);
-    await fetch(`/api/apartments/${id}`, {
+    setSaveError(null);
+    const res = await fetch(`/api/apartments/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -63,6 +65,7 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
       }),
     });
     setSaving(false);
+    if (!res.ok) { setSaveError("Speichern fehlgeschlagen"); return; }
     setEditingId(null);
     router.refresh();
   }
@@ -188,6 +191,9 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                   </div>
                 </div>
 
+                {saveError && (
+                  <p style={{ fontSize: 13, color: "#fca5a5" }}>{saveError}</p>
+                )}
                 <div className="flex gap-2">
                   <button
                     onClick={() => saveEdit(apt.id)}

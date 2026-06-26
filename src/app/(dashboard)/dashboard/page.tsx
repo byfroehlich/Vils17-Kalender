@@ -95,6 +95,7 @@ export default async function DashboardPage() {
         cleaner: { select: { name: true } },
         booking: {
           select: {
+            id: true,
             guestName: true,
             departureTime: true,
             apartment: { select: { name: true, color: true } },

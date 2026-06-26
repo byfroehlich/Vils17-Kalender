@@ -38,6 +38,12 @@ export function MyJobsCalendar({
   const [loadingId, setLoadingId] = useState<string | null>(null);
   const [unavailableId, setUnavailableId] = useState<string | null>(null);
   const [unavailableNote, setUnavailableNote] = useState("");
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  function showError(msg: string) {
+    setActionError(msg);
+    setTimeout(() => setActionError(null), 3000);
+  }
 
   function assignmentsForDay(d: Date): Assignment[] {
     // Zeige Auftrag am Checkout-Tag (= Reinigungstag)
@@ -49,43 +55,47 @@ export function MyJobsCalendar({
 
   async function claimJob(bookingId: string) {
     setLoadingId(bookingId);
-    await fetch(`/api/bookings/${bookingId}/claim`, { method: "POST" });
+    const res = await fetch(`/api/bookings/${bookingId}/claim`, { method: "POST" });
     setLoadingId(null);
+    if (!res.ok) { const d = await res.json().catch(() => ({})); showError(d.error ?? "Fehler beim Zusagen"); return; }
     router.refresh();
   }
 
   async function markDone(bookingId: string, assignmentId: string) {
     setLoadingId(assignmentId);
-    await fetch(`/api/bookings/${bookingId}/cleaning-status`, {
+    const res = await fetch(`/api/bookings/${bookingId}/cleaning-status`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ status: "COMPLETED" }),
     });
     setLoadingId(null);
+    if (!res.ok) { showError("Fehler beim Markieren"); return; }
     router.refresh();
   }
 
   async function submitUnavailable(a: Assignment) {
     setLoadingId(a.id);
-    await fetch(`/api/bookings/${a.booking.id}/cleaner-unavailable`, {
+    const res = await fetch(`/api/bookings/${a.booking.id}/cleaner-unavailable`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ unavailable: true, note: unavailableNote }),
     });
+    setLoadingId(null);
+    if (!res.ok) { showError("Fehler beim Absagen"); return; }
     setUnavailableId(null);
     setUnavailableNote("");
-    setLoadingId(null);
     router.refresh();
   }
 
   async function cancelUnavailable(a: Assignment) {
     setLoadingId(a.id);
-    await fetch(`/api/bookings/${a.booking.id}/cleaner-unavailable`, {
+    const res = await fetch(`/api/bookings/${a.booking.id}/cleaner-unavailable`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ unavailable: false }),
     });
     setLoadingId(null);
+    if (!res.ok) { showError("Fehler beim Zurückziehen"); return; }
     router.refresh();
   }
 
@@ -94,6 +104,11 @@ export function MyJobsCalendar({
 
   return (
     <div className="space-y-4">
+      {actionError && (
+        <div style={{ background: "rgba(239,68,68,0.15)", border: "1px solid rgba(239,68,68,0.4)", borderRadius: 12, padding: "10px 16px", color: "#fca5a5", fontSize: 14 }}>
+          {actionError}
+        </div>
+      )}
       {/* View-Toggle */}
       <div style={{ display: "flex", gap: 6, padding: 4, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 14, width: "fit-content" }}>
         {(["month", "year"] as const).map((v) => (

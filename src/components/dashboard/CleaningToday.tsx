@@ -6,6 +6,7 @@ interface CleaningItem {
   isSelfClean: boolean;
   cleaner?: { name: string } | null;
   booking: {
+    id: string;
     guestName: string;
     departureTime?: string | null;
     apartment: { name: string; color?: string | null };
@@ -125,7 +126,7 @@ export function CleaningToday({ assignments }: { assignments: CleaningItem[] }) 
                       {a.cleaner.name.split(" ")[0]}
                     </span>
                   ) : (
-                    <Link href="/cleaners" style={{ fontSize: 12, color: "#fb923c", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
+                    <Link href={`/bookings/${a.booking.id}`} style={{ fontSize: 12, color: "#fb923c", fontWeight: 600, textDecoration: "none", flexShrink: 0 }}>
                       Zuweisen
                     </Link>
                   )}
