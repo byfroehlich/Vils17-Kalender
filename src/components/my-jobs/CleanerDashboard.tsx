@@ -74,7 +74,7 @@ export function CleanerDashboard({
   const in7 = addDays(now, 7);
 
   const upcoming = myAssignments.filter(
-    (a) => a.status === "ASSIGNED" && new Date(a.booking.checkOut) >= now
+    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkOut) >= now
   );
   const declined = upcoming.filter((a) => a.cleanerUnavailable);
   const next7 = upcoming.filter((a) =>

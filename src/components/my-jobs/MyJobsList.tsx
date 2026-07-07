@@ -79,7 +79,7 @@ export function MyJobsList({
 
   const today = startOfDay(new Date());
   const upcoming = myAssignments.filter(
-    (a) => a.status === "ASSIGNED" && new Date(a.booking.checkOut) >= today
+    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkOut) >= today
   );
   const done = myAssignments.filter((a) => a.status === "COMPLETED");
   const unavailableList = myAssignments.filter((a) => a.cleanerUnavailable);
@@ -309,7 +309,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <Home style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", marginTop: 2, flexShrink: 0 }} />
             <div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung nach Abreise</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
               <p style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
               {b.departureTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>
@@ -380,7 +380,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
             <div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung nach Abreise</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
               <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkOut)}</p>
               {b.departureTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>}
             </div>

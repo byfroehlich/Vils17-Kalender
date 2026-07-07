@@ -17,8 +17,11 @@ export async function getMyJobsData() {
       where: {
         organizationId: orgId,
         cleanerId: session.user.id,
-        status: { in: ["ASSIGNED", "COMPLETED"] },
         booking: { status: "confirmed" },
+        OR: [
+          { status: { in: ["ASSIGNED", "COMPLETED"] } },
+          { status: "UNASSIGNED", cleanerUnavailable: true },
+        ],
       },
       orderBy: { booking: { checkOut: "asc" } },
       include: {
@@ -54,8 +57,11 @@ export async function getMyJobsData() {
   const allAssignments = await prisma.cleaningAssignment.findMany({
     where: {
       organizationId: orgId,
-      status: { in: ["ASSIGNED", "COMPLETED"] },
       booking: { status: "confirmed" },
+      OR: [
+        { status: { in: ["ASSIGNED", "COMPLETED"] } },
+        { status: "UNASSIGNED", cleanerUnavailable: true },
+      ],
     },
     orderBy: { booking: { checkOut: "asc" } },
     include: {
