@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { formatDateLong } from "@/lib/utils";
+import { formatDateLong, formatDateShort } from "@/lib/utils";
 import {
   CheckCircle, AlertTriangle, Clock, Users,
   List, Calendar, Zap, Euro,
@@ -365,7 +365,10 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{b.apartment.name}</span>
           </div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(new Date(b.checkIn))}</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>
+            {formatDateLong(new Date(b.checkIn))}
+            <span style={{ fontSize: 11, fontWeight: 400, color: "rgba(255,255,255,0.35)", marginLeft: 6 }}>– {formatDateShort(new Date(b.checkOut))}</span>
+          </p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
             {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>

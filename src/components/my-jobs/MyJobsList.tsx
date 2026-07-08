@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDateLong } from "@/lib/utils";
+import { formatDateLong, formatDateShort } from "@/lib/utils";
 import {
   Home, Users, CheckCircle, ClipboardList,
   Calendar, AlertTriangle, Zap, Pencil, X,
@@ -310,7 +310,10 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
               <p style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkIn)}</p>
-              {b.arrivalTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Anreise ab {b.arrivalTime} Uhr</p>}
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>
+                bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
+              </p>
+              {b.arrivalTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -390,7 +393,10 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
               <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkIn)}</p>
-              {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Anreise ab {b.arrivalTime} Uhr</p>}
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>
+                bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
+              </p>
+              {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

@@ -271,7 +271,7 @@ function MonthView({
     isStart: boolean;
     isEnd: boolean;
     isSingleDay: boolean;
-    isMidpoint: boolean;
+    isArrivalDay: boolean;
   };
 
   function getBarsForDay(day: Date): BarInfo[] {
@@ -282,8 +282,6 @@ function MonthView({
       const ci = startOfDay(new Date(a.booking.checkIn));
       const co = startOfDay(new Date(a.booking.checkOut));
       if (d >= ci && d <= co) {
-        const diffDays = differenceInDays(co, ci);
-        const midDay = startOfDay(addDays(ci, Math.floor(diffDays / 2)));
         const aptColor = a.booking.apartment.color ?? "#14B8A6";
         result.push({
           id: a.id,
@@ -295,7 +293,7 @@ function MonthView({
           isStart: isSameDay(d, ci),
           isEnd: isSameDay(d, co),
           isSingleDay: isSameDay(ci, co),
-          isMidpoint: isSameDay(d, midDay),
+          isArrivalDay: isSameDay(d, ci),
         });
       }
     }
@@ -304,8 +302,6 @@ function MonthView({
       const ci = startOfDay(new Date(a.booking.checkIn));
       const co = startOfDay(new Date(a.booking.checkOut));
       if (d >= ci && d <= co) {
-        const diffDays = differenceInDays(co, ci);
-        const midDay = startOfDay(addDays(ci, Math.floor(diffDays / 2)));
         result.push({
           id: a.id,
           color: a.booking.apartment.color ?? "#14B8A6",
@@ -316,7 +312,7 @@ function MonthView({
           isStart: isSameDay(d, ci),
           isEnd: isSameDay(d, co),
           isSingleDay: isSameDay(ci, co),
-          isMidpoint: isSameDay(d, midDay),
+          isArrivalDay: isSameDay(d, ci),
         });
       }
     }
@@ -410,11 +406,11 @@ function MonthView({
                       return (
                         <div style={{ display: "flex", height: 20, marginLeft: 2, marginRight: 2 }}>
                           {/* Linke Hälfte: abreisende Buchung */}
-                          <div style={{ flex: 1, backgroundColor: dep.color, opacity: 0.80, borderRadius: depBrLeft, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: dayIndex === 0 ? 3 : 0 }}>
+                          <div style={{ flex: 1, backgroundColor: dep.color, borderRadius: depBrLeft, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: dayIndex === 0 ? 3 : 0 }}>
                             {dep.isAbsage && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.9)" }}>⚠</span>}
                           </div>
                           {/* Rechte Hälfte: anreisende Buchung */}
-                          <div style={{ flex: 1, backgroundColor: arrBgColor, border: arr.isOpen ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 0.92, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
+                          <div style={{ flex: 1, backgroundColor: arrBgColor, border: arr.isOpen ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 1, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
                             {!arr.isOpen && <span style={{ fontSize: 9, fontWeight: 800, color: arrTxt, whiteSpace: "nowrap" as const, lineHeight: 1 }}>{arr.guestCount}G</span>}
                           </div>
                         </div>
@@ -434,7 +430,7 @@ function MonthView({
                             marginRight: barRight ? 2 : 0,
                             backgroundColor: bgColor,
                             border: bar.isOpen ? `2px dashed ${bar.color}` : "none",
-                            opacity: bar.isOpen ? 0.75 : 0.92,
+                            opacity: bar.isOpen ? 0.75 : 1,
                             borderRadius: bar.isSingleDay
                               ? "9999px"
                               : barLeft && barRight
@@ -450,13 +446,13 @@ function MonthView({
                             paddingLeft: barLeft ? 5 : 0,
                           }}
                         >
-                          {bar.isMidpoint && !bar.isOpen && (
+                          {bar.isArrivalDay && !bar.isOpen && (
                             <span style={{ fontSize: 9, fontWeight: 800, color: txtColor, whiteSpace: "nowrap" as const, lineHeight: 1 }}>
                               {bar.guestCount}G
                             </span>
                           )}
-                          {bar.isAbsage && barLeft && (
-                            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginLeft: bar.isMidpoint ? 2 : 0 }}>⚠</span>
+                          {bar.isAbsage && barLeft && !bar.isArrivalDay && (
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>⚠</span>
                           )}
                         </div>
                       );
