@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatDateLong } from "@/lib/utils";
 import {
   Home, Users, CheckCircle, ClipboardList,
-  Calendar, AlertTriangle, Zap,
+  Calendar, AlertTriangle, Zap, Pencil, X,
 } from "lucide-react";
 import { startOfDay } from "date-fns";
 import { de } from "date-fns/locale";
@@ -337,10 +337,27 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
   assignment: Assignment; isCleaner: boolean; loading: boolean;
   onMarkDone?: () => void; onUnavailable?: () => void; onCancelUnavailable?: () => void;
 }) {
+  const router = useRouter();
   const b = assignment.booking;
   const isDone   = assignment.status === "COMPLETED";
   const isAbsage = assignment.cleanerUnavailable;
   const aptColor = b.apartment.color ?? "#0D9488";
+
+  const [editingNotes, setEditingNotes] = useState(false);
+  const [notesValue, setNotesValue] = useState(assignment.notes ?? "");
+  const [notesSaving, setNotesSaving] = useState(false);
+
+  async function saveNotes() {
+    setNotesSaving(true);
+    await fetch(`/api/bookings/${b.id}/assignment-notes`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ notes: notesValue }),
+    });
+    setNotesSaving(false);
+    setEditingNotes(false);
+    router.refresh();
+  }
 
   return (
     <div style={{
@@ -380,10 +397,64 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
           </div>
-          {assignment.notes && (
-            <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", borderRadius: 10 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 3 }}>Hinweise:</p>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)" }}>{assignment.notes}</p>
+          {/* Hinweise — Admin kann bearbeiten, Reiniger sieht nur Text */}
+          {!isCleaner && editingNotes ? (
+            <div style={{ padding: "12px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.35)", borderRadius: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 8 }}>Hinweis für Reiniger:</p>
+              <textarea
+                value={notesValue}
+                onChange={(e) => setNotesValue(e.target.value)}
+                placeholder="z.B. Kinderbett aufbauen, 3 Erwachsene + 1 Kind…"
+                rows={3}
+                className="form-input"
+                style={{ resize: "none", marginBottom: 10, fontSize: 13 }}
+                autoFocus
+              />
+              <div style={{ display: "flex", gap: 8 }}>
+                <button
+                  onClick={saveNotes}
+                  disabled={notesSaving}
+                  style={{ padding: "8px 16px", background: "rgba(245,158,11,0.75)", border: "none", borderRadius: 9, color: "white", fontWeight: 700, fontSize: 13, cursor: "pointer" }}
+                >
+                  {notesSaving ? "Speichern…" : "Speichern"}
+                </button>
+                <button
+                  onClick={() => { setEditingNotes(false); setNotesValue(assignment.notes ?? ""); }}
+                  style={{ padding: "8px 12px", background: "rgba(255,255,255,0.08)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 9, color: "rgba(255,255,255,0.65)", fontSize: 13, cursor: "pointer" }}
+                >
+                  Abbrechen
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div
+              onClick={() => !isCleaner && setEditingNotes(true)}
+              style={{
+                padding: "10px 14px",
+                background: notesValue ? "rgba(245,158,11,0.10)" : "rgba(255,255,255,0.05)",
+                border: notesValue ? "1px solid rgba(245,158,11,0.30)" : "1px dashed rgba(255,255,255,0.15)",
+                borderRadius: 10,
+                cursor: !isCleaner ? "pointer" : "default",
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: 8,
+                minHeight: 38,
+              }}
+            >
+              <div>
+                {notesValue ? (
+                  <>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 3 }}>Hinweise:</p>
+                    <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)" }}>{notesValue}</p>
+                  </>
+                ) : (
+                  !isCleaner && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.30)" }}>Hinweis hinzufügen…</p>
+                )}
+              </div>
+              {!isCleaner && (
+                <Pencil style={{ width: 13, height: 13, color: "rgba(255,255,255,0.30)", flexShrink: 0, marginTop: 2 }} />
+              )}
             </div>
           )}
         </div>

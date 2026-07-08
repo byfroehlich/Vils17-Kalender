@@ -370,6 +370,9 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
           </div>
+          {assignment.notes && (
+            <p style={{ fontSize: 11, color: "#fcd34d", marginTop: 5, paddingTop: 5, borderTop: "1px solid rgba(245,158,11,0.20)" }}>{assignment.notes}</p>
+          )}
         </div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, flexShrink: 0 }}>
           <button onClick={onMarkDone} disabled={loading} style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 14px", background: loading ? "rgba(255,255,255,0.08)" : "rgba(16,185,129,0.85)", border: "none", borderRadius: 10, color: "white", fontWeight: 600, fontSize: 13, cursor: loading ? "not-allowed" : "pointer", whiteSpace: "nowrap" as const }}>
