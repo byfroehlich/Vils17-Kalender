@@ -388,55 +388,85 @@ function MonthView({
                 </span>
               </div>
 
-              {/* Buchungsbalken — admin-style */}
-              {inMonth && (
-                <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4, gap: 2 }}>
-                  {bars.slice(0, 2).map((bar) => {
-                    const barLeft  = bar.isStart || dayIndex === 0;
-                    const barRight = bar.isEnd   || dayIndex === 6;
-                    const bgColor = bar.isOpen ? "transparent" : bar.color;
-                    const txtColor = textColorFor(bar.color);
-                    return (
-                      <div
-                        key={bar.id}
-                        style={{
-                          height: 20,
-                          marginLeft: barLeft ? 2 : 0,
-                          marginRight: barRight ? 2 : 0,
-                          backgroundColor: bgColor,
-                          border: bar.isOpen ? `2px dashed ${bar.color}` : "none",
-                          opacity: bar.isOpen ? 0.75 : 0.92,
-                          borderRadius: bar.isSingleDay
-                            ? "9999px"
-                            : barLeft && barRight
+              {/* Buchungsbalken — admin-style mit Wechsel-Split */}
+              {inMonth && (() => {
+                // Wechseltag: ein auslaufender Balken + ein startender Balken → halb-halb
+                const endBars   = bars.filter((b) => b.isEnd && !b.isStart && !b.isSingleDay);
+                const startBars = bars.filter((b) => b.isStart && !b.isEnd && !b.isSingleDay);
+                const isChangeover = endBars.length > 0 && startBars.length > 0;
+                const otherBars = isChangeover
+                  ? bars.filter((b) => b.isSingleDay || (b.isStart && b.isEnd))
+                  : bars;
+
+                return (
+                  <div style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", paddingBottom: 4, gap: 2 }}>
+                    {isChangeover && (() => {
+                      const dep = endBars[0];
+                      const arr = startBars[0];
+                      const depBrLeft  = dayIndex === 0 ? "9999px 0 0 9999px" : "0";
+                      const arrBrRight = dayIndex === 6 ? "0 9999px 9999px 0" : "0";
+                      const arrBgColor = arr.isOpen ? "transparent" : arr.color;
+                      const arrTxt = textColorFor(arr.color);
+                      return (
+                        <div style={{ display: "flex", height: 20, marginLeft: 2, marginRight: 2 }}>
+                          {/* Linke Hälfte: abreisende Buchung */}
+                          <div style={{ flex: 1, backgroundColor: dep.color, opacity: 0.80, borderRadius: depBrLeft, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: dayIndex === 0 ? 3 : 0 }}>
+                            {dep.isAbsage && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.9)" }}>⚠</span>}
+                          </div>
+                          {/* Rechte Hälfte: anreisende Buchung */}
+                          <div style={{ flex: 1, backgroundColor: arrBgColor, border: arr.isOpen ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 0.92, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
+                            {!arr.isOpen && <span style={{ fontSize: 9, fontWeight: 800, color: arrTxt, whiteSpace: "nowrap" as const, lineHeight: 1 }}>{arr.guestCount}G</span>}
+                          </div>
+                        </div>
+                      );
+                    })()}
+                    {otherBars.slice(0, isChangeover ? 1 : 2).map((bar) => {
+                      const barLeft  = bar.isStart || dayIndex === 0;
+                      const barRight = bar.isEnd   || dayIndex === 6;
+                      const bgColor = bar.isOpen ? "transparent" : bar.color;
+                      const txtColor = textColorFor(bar.color);
+                      return (
+                        <div
+                          key={bar.id}
+                          style={{
+                            height: 20,
+                            marginLeft: barLeft ? 2 : 0,
+                            marginRight: barRight ? 2 : 0,
+                            backgroundColor: bgColor,
+                            border: bar.isOpen ? `2px dashed ${bar.color}` : "none",
+                            opacity: bar.isOpen ? 0.75 : 0.92,
+                            borderRadius: bar.isSingleDay
                               ? "9999px"
-                              : barLeft
-                                ? "9999px 0 0 9999px"
-                                : barRight
-                                  ? "0 9999px 9999px 0"
-                                  : 0,
-                          display: "flex",
-                          alignItems: "center",
-                          overflow: "hidden",
-                          paddingLeft: barLeft ? 5 : 0,
-                        }}
-                      >
-                        {bar.isMidpoint && !bar.isOpen && (
-                          <span style={{ fontSize: 9, fontWeight: 800, color: txtColor, whiteSpace: "nowrap" as const, lineHeight: 1 }}>
-                            {bar.guestCount}G
-                          </span>
-                        )}
-                        {bar.isAbsage && barLeft && (
-                          <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginLeft: bar.isMidpoint ? 2 : 0 }}>⚠</span>
-                        )}
-                      </div>
-                    );
-                  })}
-                  {bars.length > 2 && (
-                    <div style={{ height: 6, marginLeft: 2, marginRight: 2, backgroundColor: "rgba(255,255,255,0.3)", borderRadius: "9999px" }} />
-                  )}
-                </div>
-              )}
+                              : barLeft && barRight
+                                ? "9999px"
+                                : barLeft
+                                  ? "9999px 0 0 9999px"
+                                  : barRight
+                                    ? "0 9999px 9999px 0"
+                                    : 0,
+                            display: "flex",
+                            alignItems: "center",
+                            overflow: "hidden",
+                            paddingLeft: barLeft ? 5 : 0,
+                          }}
+                        >
+                          {bar.isMidpoint && !bar.isOpen && (
+                            <span style={{ fontSize: 9, fontWeight: 800, color: txtColor, whiteSpace: "nowrap" as const, lineHeight: 1 }}>
+                              {bar.guestCount}G
+                            </span>
+                          )}
+                          {bar.isAbsage && barLeft && (
+                            <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginLeft: bar.isMidpoint ? 2 : 0 }}>⚠</span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {bars.length > 2 && !isChangeover && (
+                      <div style={{ height: 6, marginLeft: 2, marginRight: 2, backgroundColor: "rgba(255,255,255,0.3)", borderRadius: "9999px" }} />
+                    )}
+                  </div>
+                );
+              })()}
 
               {hasAbsage && !bars.some((b) => b.isAbsage && b.isStart) && (
                 <div style={{ position: "absolute", top: 3, right: 3, fontSize: 8 }}>⚠️</div>
