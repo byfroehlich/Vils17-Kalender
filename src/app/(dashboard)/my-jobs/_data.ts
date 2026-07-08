@@ -23,7 +23,7 @@ export async function getMyJobsData() {
           { status: "UNASSIGNED", cleanerUnavailable: true },
         ],
       },
-      orderBy: { booking: { checkOut: "asc" } },
+      orderBy: { booking: { checkIn: "asc" } },
       include: {
         booking: { include: { apartment: true } },
         cleaner: { select: { name: true, cleanerRate: true } },
@@ -34,10 +34,10 @@ export async function getMyJobsData() {
       where: {
         organizationId: orgId,
         status: "UNASSIGNED",
-        booking: { status: "confirmed", checkOut: { gte: now } },
+        booking: { status: "confirmed", checkIn: { gte: now } },
         NOT: { cleanerId: session.user.id, cleanerUnavailable: true },
       },
-      orderBy: { booking: { checkOut: "asc" } },
+      orderBy: { booking: { checkIn: "asc" } },
       include: {
         booking: { include: { apartment: true } },
       },
@@ -63,7 +63,7 @@ export async function getMyJobsData() {
         { status: "UNASSIGNED", cleanerUnavailable: true },
       ],
     },
-    orderBy: { booking: { checkOut: "asc" } },
+    orderBy: { booking: { checkIn: "asc" } },
     include: {
       booking: { include: { apartment: true } },
       cleaner: { select: { name: true, cleanerRate: true } },

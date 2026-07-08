@@ -191,7 +191,7 @@ export function MyJobsCalendar({
                   <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)" }}>{a.booking.apartment.name}</p>
                   <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
                     {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}
-                    {a.booking.departureTime && ` · bis ${a.booking.departureTime}`}
+                    {a.booking.arrivalTime && ` · ab ${a.booking.arrivalTime}`}
                   </p>
                 </div>
                 <button onClick={() => claimJob(a.booking.id)} disabled={loadingId === a.booking.id}

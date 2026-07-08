@@ -74,18 +74,18 @@ export function CleanerDashboard({
   const in7 = addDays(now, 7);
 
   const upcoming = myAssignments.filter(
-    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkOut) >= now
+    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkIn) >= now
   );
   const declined = upcoming.filter((a) => a.cleanerUnavailable);
   const next7 = upcoming.filter((a) =>
-    isWithinInterval(new Date(a.booking.checkOut), { start: now, end: in7 })
+    isWithinInterval(new Date(a.booking.checkIn), { start: now, end: in7 })
   );
   const thisMonthStart = startOfMonth(now);
   const thisMonthEnd = endOfMonth(now);
   const completedThisMonth = myAssignments.filter(
     (a) =>
       a.status === "COMPLETED" &&
-      isWithinInterval(new Date(a.booking.checkOut), { start: thisMonthStart, end: thisMonthEnd })
+      isWithinInterval(new Date(a.booking.checkIn), { start: thisMonthStart, end: thisMonthEnd })
   );
 
   async function claimJob(bookingId: string) {
@@ -320,7 +320,7 @@ export function CleanerDashboard({
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>
-                {formatDateLong(new Date(a.booking.checkOut))} · {a.booking.apartment.name}
+                {formatDateLong(new Date(a.booking.checkIn))} · {a.booking.apartment.name}
               </p>
               <textarea
                 value={unavailableNote}
@@ -365,17 +365,10 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{b.apartment.name}</span>
           </div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(new Date(b.checkOut))}</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(new Date(b.checkIn))}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-            {b.departureTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> bis {b.departureTime}</span>}
-            {assignment.nextGuestCount != null ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
-                <Users style={{ width: 12, height: 12 }} /> Anreise {assignment.nextGuestCount}
-                <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>· Abr. {b.guestCount}</span>
-              </span>
-            ) : (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
-            )}
+            {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, flexShrink: 0 }}>
@@ -408,17 +401,10 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
             <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
           </div>
-          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
+          <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkIn)}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
-            {b.departureTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> bis {b.departureTime}</span>}
-            {assignment.nextGuestCount != null ? (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
-                <Users style={{ width: 12, height: 12 }} /> Anreise {assignment.nextGuestCount}
-                <span style={{ color: "rgba(255,255,255,0.35)", fontWeight: 400 }}>· Abr. {b.guestCount}</span>
-              </span>
-            ) : (
-              <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount} Gäste</span>
-            )}
+            {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
+            <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount} Gäste</span>
           </div>
         </div>
         <button

@@ -79,7 +79,7 @@ export function MyJobsList({
 
   const today = startOfDay(new Date());
   const upcoming = myAssignments.filter(
-    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkOut) >= today
+    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkIn) >= today
   );
   const done = myAssignments.filter((a) => a.status === "COMPLETED");
   const unavailableList = myAssignments.filter((a) => a.cleanerUnavailable);
@@ -146,14 +146,14 @@ export function MyJobsList({
   // Offene und meine Aufträge nach Monat
   const openByMonth: Record<string, OpenAssignment[]> = {};
   for (const a of openAssignments) {
-    const key = monthKey(a.booking.checkOut);
+    const key = monthKey(a.booking.checkIn);
     if (!openByMonth[key]) openByMonth[key] = [];
     openByMonth[key].push(a);
   }
 
   const myByMonth: Record<string, Assignment[]> = {};
   for (const a of upcoming) {
-    const key = monthKey(a.booking.checkOut);
+    const key = monthKey(a.booking.checkIn);
     if (!myByMonth[key]) myByMonth[key] = [];
     myByMonth[key].push(a);
   }
@@ -175,7 +175,7 @@ export function MyJobsList({
             </p>
             {unavailableList.map((a) => (
               <p key={a.id} style={{ fontSize: 13, color: "rgba(255,255,255,0.70)" }}>
-                · {formatDateLong(a.booking.checkOut)} — {a.booking.apartment.name}
+                · {formatDateLong(a.booking.checkIn)} — {a.booking.apartment.name}
                 {a.cleanerUnavailableNote && <span style={{ color: "rgba(255,255,255,0.50)" }}> · „{a.cleanerUnavailableNote}"</span>}
               </p>
             ))}
@@ -262,7 +262,7 @@ export function MyJobsList({
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>
-                {formatDateLong(a.booking.checkOut)} · {a.booking.apartment.name}
+                {formatDateLong(a.booking.checkIn)} · {a.booking.apartment.name}
               </p>
               <textarea
                 value={unavailableNote}
@@ -292,7 +292,6 @@ function OpenJobCard({ assignment, loading, onClaim }: {
   assignment: OpenAssignment; loading: boolean; onClaim: () => void;
 }) {
   const b = assignment.booking;
-  const nextGuests = assignment.nextGuestCount;
   const aptColor = b.apartment.color ?? "#0D9488";
   return (
     <div style={{ background: "rgba(16,185,129,0.08)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 20, overflow: "hidden" }}>
@@ -310,20 +309,13 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             <Home style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", marginTop: 2, flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
-              <p style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkOut)}</p>
-              {b.departureTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Abreise bis {b.departureTime} Uhr</p>}
+              <p style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkIn)}</p>
+              {b.arrivalTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Anreise ab {b.arrivalTime} Uhr</p>}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Users style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            {nextGuests != null ? (
-              <div>
-                <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.95)" }}>Anreise: {nextGuests} {nextGuests === 1 ? "Person" : "Personen"}</p>
-                <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)" }}>Abreise: {b.guestCount}</p>
-              </div>
-            ) : (
-              <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
-            )}
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
           </div>
         </div>
         <button
@@ -348,7 +340,6 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
   const b = assignment.booking;
   const isDone   = assignment.status === "COMPLETED";
   const isAbsage = assignment.cleanerUnavailable;
-  const nextGuests = assignment.nextGuestCount;
   const aptColor = b.apartment.color ?? "#0D9488";
 
   return (
@@ -381,20 +372,13 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
             <div>
               <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
-              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkOut)}</p>
-              {b.departureTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Abreise bis {b.departureTime} Uhr</p>}
+              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkIn)}</p>
+              {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>Anreise ab {b.arrivalTime} Uhr</p>}
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            {nextGuests != null ? (
-              <div>
-                <p style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 1 }}>Anreise: {nextGuests} {nextGuests === 1 ? "Person" : "Personen"}</p>
-                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.40)" }}>Abreise: {b.guestCount}</p>
-              </div>
-            ) : (
-              <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
-            )}
+            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
           </div>
           {assignment.notes && (
             <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", borderRadius: 10 }}>
