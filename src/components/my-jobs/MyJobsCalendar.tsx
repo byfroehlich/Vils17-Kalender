@@ -30,6 +30,21 @@ function textColorFor(hex: string): string {
   return (r * 299 + g * 587 + b * 114) / 1000 > 155 ? "#1e293b" : "#ffffff";
 }
 
+function lightenHex(hex: string, factor: number): string {
+  if (!hex.startsWith("#") || hex.length < 7) return hex;
+  const r = parseInt(hex.slice(1, 3), 16);
+  const g = parseInt(hex.slice(3, 5), 16);
+  const b = parseInt(hex.slice(5, 7), 16);
+  const lr = Math.round(r * (1 - factor) + 255 * factor);
+  const lg = Math.round(g * (1 - factor) + 255 * factor);
+  const lb = Math.round(b * (1 - factor) + 255 * factor);
+  return `#${lr.toString(16).padStart(2, "0")}${lg.toString(16).padStart(2, "0")}${lb.toString(16).padStart(2, "0")}`;
+}
+
+function getAptPair(baseColor: string): [string, string] {
+  return [baseColor, lightenHex(baseColor, 0.38)];
+}
+
 export function MyJobsCalendar({
   myAssignments,
   openAssignments,
@@ -261,6 +276,21 @@ function MonthView({
   const days       = eachDayOfInterval({ start: gridStart, end: gridEnd });
   const DAYS       = ["Mo", "Di", "Mi", "Do", "Fr", "Sa", "So"];
 
+  // Alternating booking colors per apartment — same logic as admin CalendarGrid
+  const aptColorIndex = new Map<string, number>();
+  const bookingColorMap = new Map<string, string>();
+  const allSorted = [...myAssignments, ...openAssignments].sort(
+    (a, b) => new Date(a.booking.checkIn).getTime() - new Date(b.booking.checkIn).getTime()
+  );
+  for (const a of allSorted) {
+    const base = a.booking.apartment.color ?? "#14B8A6";
+    const [c1, c2] = getAptPair(base);
+    const aptKey = a.booking.apartment.name;
+    const idx = aptColorIndex.get(aptKey) ?? 0;
+    bookingColorMap.set(a.id, idx % 2 === 0 ? c1 : c2);
+    aptColorIndex.set(aptKey, idx + 1);
+  }
+
   type BarInfo = {
     id: string;
     color: string;
@@ -282,10 +312,9 @@ function MonthView({
       const ci = startOfDay(new Date(a.booking.checkIn));
       const co = startOfDay(new Date(a.booking.checkOut));
       if (d >= ci && d <= co) {
-        const aptColor = a.booking.apartment.color ?? "#14B8A6";
         result.push({
           id: a.id,
-          color: a.cleanerUnavailable ? "#ef4444" : aptColor,
+          color: a.cleanerUnavailable ? "#ef4444" : (bookingColorMap.get(a.id) ?? a.booking.apartment.color ?? "#14B8A6"),
           guestCount: a.booking.guestCount,
           isOpen: false,
           isAbsage: a.cleanerUnavailable,
@@ -304,7 +333,7 @@ function MonthView({
       if (d >= ci && d <= co) {
         result.push({
           id: a.id,
-          color: a.booking.apartment.color ?? "#14B8A6",
+          color: bookingColorMap.get(a.id) ?? a.booking.apartment.color ?? "#14B8A6",
           guestCount: a.booking.guestCount,
           isOpen: true,
           isAbsage: false,
