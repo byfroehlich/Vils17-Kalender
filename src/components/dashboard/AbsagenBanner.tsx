@@ -8,7 +8,7 @@ interface DeclinedAssignment {
   cleaner?: { name: string } | null;
   booking: {
     id: string;
-    checkOut: Date;
+    checkIn: Date;
     apartment: { name: string };
   };
 }
@@ -49,7 +49,7 @@ export function AbsagenBanner({ assignments }: { assignments: DeclinedAssignment
             }}>
               <div style={{ minWidth: 0 }}>
                 <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>
-                  {a.booking.apartment.name} · {formatDate(a.booking.checkOut)}
+                  {a.booking.apartment.name} · {formatDate(a.booking.checkIn)}
                 </p>
                 {a.cleanerUnavailableNote && (
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.45)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>

@@ -108,15 +108,15 @@ export default async function DashboardPage() {
       where: {
         organizationId: orgId,
         cleanerUnavailable: true,
-        booking: { status: "confirmed", checkOut: { gte: startOfDay(now) } },
+        booking: { status: "confirmed", checkIn: { gte: startOfDay(now) } },
       },
-      orderBy: { booking: { checkOut: "asc" } },
+      orderBy: { booking: { checkIn: "asc" } },
       include: {
         cleaner: { select: { name: true } },
         booking: {
           select: {
             id: true,
-            checkOut: true,
+            checkIn: true,
             apartment: { select: { name: true } },
           },
         },
