@@ -14,7 +14,7 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="min-h-screen flex">
+    <div className="flex">
       {/* Hintergrund-Gradient — hinter allem, alle Seiten */}
       <div
         aria-hidden
