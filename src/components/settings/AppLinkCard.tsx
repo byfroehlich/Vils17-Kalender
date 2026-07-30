@@ -1,16 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Copy, Check, Link } from "lucide-react";
 
-export function AppLinkCard({ url }: { url: string }) {
+export function AppLinkCard() {
   const [copied, setCopied] = useState(false);
+  const [url, setUrl] = useState("");
+
+  useEffect(() => {
+    setUrl(window.location.origin);
+  }, []);
 
   async function copy() {
     await navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
+
+  if (!url) return null;
 
   return (
     <div style={{

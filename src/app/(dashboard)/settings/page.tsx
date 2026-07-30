@@ -25,8 +25,6 @@ export default async function SettingsPage() {
     }),
   ]);
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
-
   const apartmentsBrief = apartments.map((a) => ({
     id: a.id,
     name: a.name,
@@ -41,9 +39,7 @@ export default async function SettingsPage() {
       </div>
 
       {/* App-Link */}
-      {appUrl && (
-        <AppLinkCard url={appUrl} />
-      )}
+      <AppLinkCard />
 
       <ApartmentSettings apartments={apartments} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
