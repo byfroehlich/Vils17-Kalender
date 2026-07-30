@@ -18,6 +18,12 @@ interface User {
   _count: { assignments: number };
 }
 
+interface ApartmentBrief {
+  id: string;
+  name: string;
+  preferredCleanerId: string | null;
+}
+
 const ROLE_LABELS: Record<string, string> = {
   ADMIN: "Admin",
   MANAGER: "Verwaltung",
@@ -33,9 +39,11 @@ const ROLE_BADGE: Record<string, React.CSSProperties> = {
 export function UserManagement({
   users,
   currentUserId,
+  apartments,
 }: {
   users: User[];
   currentUserId: string;
+  apartments: ApartmentBrief[];
 }) {
   const router = useRouter();
   const [showForm, setShowForm] = useState(false);
@@ -48,6 +56,7 @@ export function UserManagement({
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [saving, setSaving] = useState(false);
   const [primaryLoading, setPrimaryLoading] = useState<string | null>(null);
+  const [aptAssignLoading, setAptAssignLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
   function showMsg(text: string, error = false) {
@@ -140,6 +149,25 @@ export function UserManagement({
       }
     } finally {
       setPrimaryLoading(null);
+    }
+  }
+
+  async function toggleApartment(aptId: string, userId: string, isAssigned: boolean) {
+    const key = `${aptId}-${userId}`;
+    if (aptAssignLoading) return;
+    setAptAssignLoading(key);
+    try {
+      const res = await fetch(`/api/apartments/${aptId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ preferredCleanerId: isAssigned ? null : userId }),
+      });
+      if (res.ok) router.refresh();
+      else showMsg("Fehler beim Speichern", true);
+    } catch {
+      showMsg("Netzwerkfehler", true);
+    } finally {
+      setAptAssignLoading(null);
     }
   }
 
@@ -334,6 +362,36 @@ export function UserManagement({
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.35)", marginTop: 2 }}>
                   {user.email}{user.phone ? ` · ${user.phone}` : ""}{user.role === "CLEANER" ? ` · ${user.cleanerRate} €/Auftrag` : ""}
                 </p>
+                {user.role === "CLEANER" && apartments.length > 0 && (
+                  <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
+                    {apartments.map((apt) => {
+                      const isAssigned = apt.preferredCleanerId === user.id;
+                      const loadKey = `${apt.id}-${user.id}`;
+                      return (
+                        <button
+                          key={apt.id}
+                          onClick={() => toggleApartment(apt.id, user.id, isAssigned)}
+                          disabled={aptAssignLoading === loadKey}
+                          title={isAssigned ? "Zuweisung entfernen" : "Fest zuweisen"}
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 600,
+                            padding: "2px 9px",
+                            borderRadius: 20,
+                            cursor: aptAssignLoading === loadKey ? "not-allowed" : "pointer",
+                            border: "none",
+                            transition: "all 0.15s",
+                            background: isAssigned ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.06)",
+                            color: isAssigned ? "#6ee7b7" : "rgba(255,255,255,0.3)",
+                            outline: isAssigned ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.1)",
+                          }}
+                        >
+                          {isAssigned ? "✓ " : ""}{apt.name}
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
                 {/* Hauptreiniger-Toggle (nur für CLEANER) */}

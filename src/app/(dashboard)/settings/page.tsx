@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { ApartmentSettings } from "@/components/settings/ApartmentSettings";
 import { CalendarViewSettings } from "@/components/settings/CalendarViewSettings";
 import { UserManagement } from "@/components/settings/UserManagement";
+import { AppLinkCard } from "@/components/settings/AppLinkCard";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -24,15 +25,29 @@ export default async function SettingsPage() {
     }),
   ]);
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "";
+
+  const apartmentsBrief = apartments.map((a) => ({
+    id: a.id,
+    name: a.name,
+    preferredCleanerId: a.preferredCleanerId ?? null,
+  }));
+
   return (
     <div className="space-y-6 max-w-2xl">
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Einstellungen</h1>
         <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Unterkünfte, Benutzer und Ansichten verwalten</p>
       </div>
+
+      {/* App-Link */}
+      {appUrl && (
+        <AppLinkCard url={appUrl} />
+      )}
+
       <ApartmentSettings apartments={apartments} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
-      <UserManagement users={users} currentUserId={session.user.id} />
+      <UserManagement users={users} currentUserId={session.user.id} apartments={apartmentsBrief} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
       <CalendarViewSettings />
     </div>

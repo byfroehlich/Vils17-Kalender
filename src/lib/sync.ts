@@ -36,6 +36,9 @@ export async function syncBookings(organizationId: string): Promise<{
   // ─── 2. Apartments dieser Organization laden ─────────────────────────────
   const apartments = await prisma.apartment.findMany({
     where: { organizationId, active: true, smoobuId: { not: null } },
+    select: {
+      id: true, smoobuId: true, name: true, preferredCleanerId: true,
+    },
   });
 
   if (apartments.length === 0) {
@@ -54,11 +57,6 @@ export async function syncBookings(organizationId: string): Promise<{
   const reservations = await adapter.fetchReservations({ from, to });
   console.log(`[sync] ${reservations.length} Buchungen von ${adapter.name} erhalten`);
 
-  // ─── 3b. Hauptreiniger (isPrimary) einmalig laden ───────────────────────
-  const primaryCleaner = await prisma.user.findFirst({
-    where: { organizationId, isPrimary: true, role: "CLEANER", active: true },
-    select: { id: true },
-  });
   const now = new Date();
 
   // ─── 3c. Fehlende CleaningAssignments für bestehende Buchungen nachholen ──
@@ -68,16 +66,18 @@ export async function syncBookings(organizationId: string): Promise<{
       status: "confirmed",
       cleaningAssignment: null,
     },
-    select: { id: true, checkOut: true },
+    select: { id: true, checkIn: true, apartmentId: true },
   });
   for (const b of bookingsWithoutAssignment) {
-    const assignToPrimary = primaryCleaner && b.checkOut >= now;
+    const apt = apartments.find((a) => a.id === b.apartmentId);
+    const preferredCleanerId = apt?.preferredCleanerId ?? null;
+    const assign = preferredCleanerId && b.checkIn >= now;
     await prisma.cleaningAssignment.create({
       data: {
         organizationId,
         bookingId: b.id,
-        status: assignToPrimary ? "ASSIGNED" : "UNASSIGNED",
-        ...(assignToPrimary ? { cleanerId: primaryCleaner.id, assignedAt: now } : {}),
+        status: assign ? "ASSIGNED" : "UNASSIGNED",
+        ...(assign ? { cleanerId: preferredCleanerId, assignedAt: now } : {}),
         laundryStatus: "OPEN",
       },
     });
@@ -86,26 +86,28 @@ export async function syncBookings(organizationId: string): Promise<{
     console.log(`[sync] ${bookingsWithoutAssignment.length} fehlende CleaningAssignments nachgeholt`);
   }
 
-  // ─── 3d. Bestehende UNASSIGNED-Assignments dem Hauptreiniger zuweisen ────
-  // Betrifft Jobs die vor der Hauptreiniger-Logik als UNASSIGNED angelegt wurden
-  // Nur wenn cleanerId=null (d.h. niemand hat abgesagt — Absagen behalten cleanerId)
-  if (primaryCleaner) {
-    const catchUp = await prisma.cleaningAssignment.updateMany({
+  // ─── 3d. Bestehende UNASSIGNED-Assignments dem Wohnungs-Reiniger zuweisen ─
+  // Pro Wohnung: UNASSIGNED future jobs an deren preferredCleaner (cleanerId=null = keine Absage)
+  let catchUpTotal = 0;
+  for (const apt of apartments) {
+    if (!apt.preferredCleanerId) continue;
+    const result = await prisma.cleaningAssignment.updateMany({
       where: {
         organizationId,
         status: "UNASSIGNED",
         cleanerId: null,
-        booking: { status: "confirmed", checkOut: { gte: now } },
+        booking: { status: "confirmed", checkIn: { gte: now }, apartmentId: apt.id },
       },
       data: {
-        cleanerId: primaryCleaner.id,
+        cleanerId: apt.preferredCleanerId,
         status: "ASSIGNED",
         assignedAt: now,
       },
     });
-    if (catchUp.count > 0) {
-      console.log(`[sync] ${catchUp.count} offene Aufträge dem Hauptreiniger nachträglich zugewiesen`);
-    }
+    catchUpTotal += result.count;
+  }
+  if (catchUpTotal > 0) {
+    console.log(`[sync] ${catchUpTotal} offene Aufträge den Wohnungs-Reinigern nachträglich zugewiesen`);
   }
 
   // ─── 4. Buchungen upserten ───────────────────────────────────────────────
@@ -142,32 +144,32 @@ export async function syncBookings(organizationId: string): Promise<{
           syncedAt: new Date(),
         },
       });
-      // CleaningAssignment automatisch anlegen (ggf. direkt an Hauptreiniger)
-      const assignToPrimary = primaryCleaner && res.checkOut >= now;
+      // CleaningAssignment automatisch anlegen — Reiniger aus Wohnungszuweisung
+      const aptData = apartments.find((a) => a.id === apartmentId);
+      const preferredCleanerId = aptData?.preferredCleanerId ?? null;
+      const assign = preferredCleanerId && res.checkIn >= now;
       await prisma.cleaningAssignment.create({
         data: {
           organizationId,
           bookingId: booking.id,
-          status: assignToPrimary ? "ASSIGNED" : "UNASSIGNED",
-          ...(assignToPrimary ? { cleanerId: primaryCleaner.id, assignedAt: now } : {}),
+          status: assign ? "ASSIGNED" : "UNASSIGNED",
+          ...(assign ? { cleanerId: preferredCleanerId, assignedAt: now } : {}),
           laundryStatus: "OPEN",
         },
       });
-      const checkOut = res.checkOut.toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
-      const aptName = apartments.find((a) => a.id === apartmentId)?.name ?? "Wohnung";
+      const checkIn = res.checkIn.toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+      const aptName = aptData?.name ?? "Wohnung";
 
-      if (assignToPrimary && primaryCleaner) {
-        // Push direkt an Vanessa: Job ist ihr zugewiesen
-        sendPushToUsers([primaryCleaner.id], {
+      if (assign && preferredCleanerId) {
+        sendPushToUsers([preferredCleanerId], {
           title: "Neuer Reinigungsauftrag",
-          body: `${aptName} am ${checkOut} ist für dich eingetragen`,
+          body: `${aptName} am ${checkIn} ist für dich eingetragen`,
           url: "/my-jobs",
         }).catch(() => null);
       } else {
-        // Kein Hauptreiniger: Push an alle Reiniger
         sendPushToRole(organizationId, ["CLEANER"], {
           title: "Neuer Reinigungsauftrag",
-          body: `${aptName} am ${checkOut} ist frei — jetzt zusagen!`,
+          body: `${aptName} am ${checkIn} ist frei — jetzt zusagen!`,
           url: "/my-jobs/list",
         }).catch(() => null);
       }

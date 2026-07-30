@@ -12,6 +12,7 @@ const UpdateSchema = z.object({
   laundryTowelsPerGuest: z.number().int().min(0).max(10).optional(),
   laundryKitchenCount: z.number().int().min(0).max(10).optional(),
   dreameEnabled: z.boolean().optional(),
+  preferredCleanerId: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {

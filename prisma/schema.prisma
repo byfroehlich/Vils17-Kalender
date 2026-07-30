@@ -73,8 +73,9 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  assignments       CleaningAssignment[]
-  pushSubscriptions PushSubscription[]
+  assignments            CleaningAssignment[]
+  pushSubscriptions      PushSubscription[]
+  preferredForApartments Apartment[]          @relation("ApartmentPreferredCleaner")
 
   @@unique([email, organizationId])
   @@index([organizationId])
@@ -101,6 +102,10 @@ model Apartment {
 
   // Dreame Saugroboter
   dreameEnabled Boolean @default(false)
+
+  // Feste Reinigungskraft-Zuweisung
+  preferredCleanerId String?
+  preferredCleaner   User?   @relation("ApartmentPreferredCleaner", fields: [preferredCleanerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
