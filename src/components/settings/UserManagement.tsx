@@ -75,6 +75,12 @@ export function UserManagement({
   }
 
   async function handleSave() {
+    // Client-side validation with specific messages
+    if (form.name.trim().length < 2) { showMsg("Name muss mindestens 2 Zeichen haben", true); return; }
+    if (!editingId && !form.email.includes("@")) { showMsg("Bitte gültige E-Mail eingeben", true); return; }
+    if (!editingId && form.password.length < 8) { showMsg("Passwort muss mindestens 8 Zeichen haben", true); return; }
+    if (editingId && form.password && form.password.length < 8) { showMsg("Neues Passwort muss mindestens 8 Zeichen haben", true); return; }
+
     setSaving(true);
     try {
       const url = editingId ? `/api/users/${editingId}` : "/api/users";
@@ -83,7 +89,7 @@ export function UserManagement({
       const cleanerRate = isCleanerRole ? (parseFloat(form.cleanerRate) || 50) : undefined;
       const body = editingId
         ? { name: form.name, phone: form.phone, notes: form.notes, language: form.language, role: form.role, ...(cleanerRate !== undefined ? { cleanerRate } : {}), ...(form.password ? { password: form.password } : {}) }
-        : { ...form, ...(cleanerRate !== undefined ? { cleanerRate } : {}) };
+        : { name: form.name, email: form.email, password: form.password, phone: form.phone || undefined, notes: form.notes || undefined, language: form.language, role: form.role, ...(cleanerRate !== undefined ? { cleanerRate } : {}) };
 
       const res = await fetch(url, {
         method, headers: { "Content-Type": "application/json" },
@@ -95,8 +101,10 @@ export function UserManagement({
         setShowForm(false);
         router.refresh();
       } else {
-        showMsg(data.error ?? "Fehler", true);
+        showMsg(data.error ?? "Fehler beim Speichern", true);
       }
+    } catch {
+      showMsg("Netzwerkfehler – bitte erneut versuchen", true);
     } finally {
       setSaving(false);
     }
