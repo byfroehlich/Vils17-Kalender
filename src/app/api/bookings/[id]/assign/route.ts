@@ -69,7 +69,9 @@ export async function POST(
       status: isSelfClean ? "SELF_CLEAN" : cleanerId ? "ASSIGNED" : "UNASSIGNED",
       notes,
       assignedAt: new Date(),
-      notifiedAt: null, // Reset, wird unten gesetzt
+      notifiedAt: null,
+      cleanerUnavailable: false,
+      cleanerUnavailableNote: null,
     },
   });
 
