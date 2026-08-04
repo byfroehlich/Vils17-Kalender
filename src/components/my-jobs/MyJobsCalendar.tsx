@@ -439,7 +439,7 @@ function MonthView({
                             {dep.isAbsage && <span style={{ fontSize: 9, color: "rgba(255,255,255,0.9)" }}>⚠</span>}
                           </div>
                           {/* Rechte Hälfte: anreisende Buchung */}
-                          <div style={{ flex: 1, backgroundColor: arrBgColor, border: arr.isOpen ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 1, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
+                          <div style={{ flex: 1, backgroundColor: arrBgColor, borderTop: arr.isOpen ? `2px dashed ${arr.color}` : "none", borderBottom: arr.isOpen ? `2px dashed ${arr.color}` : "none", borderLeft: "none", borderRight: arr.isOpen && dayIndex === 6 ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 1, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
                             {!arr.isOpen && <span style={{ fontSize: 9, fontWeight: 800, color: arrTxt, whiteSpace: "nowrap" as const, lineHeight: 1 }}>{arr.guestCount}G</span>}
                           </div>
                         </div>
@@ -458,7 +458,10 @@ function MonthView({
                             marginLeft: barLeft ? 2 : 0,
                             marginRight: barRight ? 2 : 0,
                             backgroundColor: bgColor,
-                            border: bar.isOpen ? `2px dashed ${bar.color}` : "none",
+                            borderTop: bar.isOpen ? `2px dashed ${bar.color}` : "none",
+                            borderBottom: bar.isOpen ? `2px dashed ${bar.color}` : "none",
+                            borderLeft: bar.isOpen && barLeft ? `2px dashed ${bar.color}` : "none",
+                            borderRight: bar.isOpen && barRight ? `2px dashed ${bar.color}` : "none",
                             opacity: bar.isOpen ? 0.75 : 1,
                             borderRadius: bar.isSingleDay
                               ? "9999px"
