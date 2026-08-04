@@ -76,6 +76,7 @@ export function MyJobsList({
   const [unavailableId, setUnavailableId] = useState<string | null>(null);
   const [unavailableNote, setUnavailableNote] = useState("");
   const [claimError, setClaimError] = useState<string | null>(null);
+  const [filter, setFilter] = useState<"all" | "mine" | "open" | "cancelled">("all");
 
   const today = startOfDay(new Date());
   const upcoming = myAssignments.filter(
@@ -83,6 +84,8 @@ export function MyJobsList({
   );
   const done = myAssignments.filter((a) => a.status === "COMPLETED");
   const unavailableList = myAssignments.filter((a) => a.cleanerUnavailable);
+
+  const confirmedUpcoming = upcoming.filter((a) => !a.cleanerUnavailable);
 
   async function claimJob(bookingId: string) {
     setLoadingId(bookingId);
@@ -143,16 +146,23 @@ export function MyJobsList({
   // Absage-Banner für Admin/Manager
   const showWarning = !isCleaner && unavailableList.length > 0;
 
+  // Welche Listen anzeigen basierend auf Filter
+  const visibleOpen = (!isCleaner || filter === "all" || filter === "open") ? openAssignments : [];
+  const visibleMine = (!isCleaner || filter === "all" || filter === "mine")
+    ? (isCleaner ? confirmedUpcoming : upcoming)
+    : [];
+  const visibleCancelled = (!isCleaner || filter === "all" || filter === "cancelled") ? unavailableList : [];
+
   // Offene und meine Aufträge nach Monat
   const openByMonth: Record<string, OpenAssignment[]> = {};
-  for (const a of openAssignments) {
+  for (const a of visibleOpen) {
     const key = monthKey(a.booking.checkIn);
     if (!openByMonth[key]) openByMonth[key] = [];
     openByMonth[key].push(a);
   }
 
   const myByMonth: Record<string, Assignment[]> = {};
-  for (const a of upcoming) {
+  for (const a of [...visibleMine, ...visibleCancelled]) {
     const key = monthKey(a.booking.checkIn);
     if (!myByMonth[key]) myByMonth[key] = [];
     myByMonth[key].push(a);
@@ -186,6 +196,50 @@ export function MyJobsList({
       {claimError && (
         <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, fontSize: 13, color: "#fca5a5" }}>
           {claimError}
+        </div>
+      )}
+
+      {/* Filter-Chips (nur für Reiniger) */}
+      {isCleaner && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+          {([
+            { key: "all",       label: "Alle",      count: confirmedUpcoming.length + openAssignments.length + unavailableList.length },
+            { key: "mine",      label: "Geplant",   count: confirmedUpcoming.length },
+            { key: "open",      label: "Offen",     count: openAssignments.length },
+            { key: "cancelled", label: "Abgesagt",  count: unavailableList.length },
+          ] as const).map(({ key, label, count }) => {
+            const active = filter === key;
+            return (
+              <button
+                key={key}
+                onClick={() => setFilter(key)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "7px 14px",
+                  background: active ? "rgba(13,148,136,0.25)" : "rgba(255,255,255,0.07)",
+                  border: active ? "1px solid rgba(13,148,136,0.55)" : "1px solid rgba(255,255,255,0.14)",
+                  borderRadius: 20,
+                  color: active ? "#5eead4" : "rgba(255,255,255,0.55)",
+                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {label}
+                {count > 0 && (
+                  <span style={{
+                    fontSize: 11, fontWeight: 700,
+                    background: active ? "rgba(13,148,136,0.40)" : "rgba(255,255,255,0.12)",
+                    color: active ? "#99f6e4" : "rgba(255,255,255,0.45)",
+                    borderRadius: "9999px", padding: "1px 7px",
+                    minWidth: 20, textAlign: "center" as const,
+                  }}>
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       )}
 
@@ -230,9 +284,9 @@ export function MyJobsList({
         );
       })}
 
-      {upcoming.length === 0 && openAssignments.length === 0 && (
+      {allMonths.length === 0 && (
         <div style={{ textAlign: "center", padding: "32px 0", color: "rgba(255,255,255,0.40)", fontSize: 14 }}>
-          Alle Aufträge erledigt.
+          {filter === "mine" ? "Keine geplanten Aufträge." : filter === "open" ? "Keine offenen Aufträge." : filter === "cancelled" ? "Keine Absagen." : "Alle Aufträge erledigt."}
         </div>
       )}
 
