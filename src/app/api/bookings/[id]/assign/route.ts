@@ -51,6 +51,16 @@ export async function POST(
     }
   }
 
+  // Aktuellen Status prüfen — COMPLETED bleibt erhalten beim Reiniger-Wechsel
+  const existing = await prisma.cleaningAssignment.findUnique({
+    where: { bookingId: params.id },
+    select: { status: true },
+  });
+  const preserveCompleted = existing?.status === "COMPLETED";
+  const newStatus = isSelfClean ? "SELF_CLEAN"
+    : cleanerId ? (preserveCompleted ? "COMPLETED" : "ASSIGNED")
+    : "UNASSIGNED";
+
   // Assignment anlegen oder aktualisieren
   const assignment = await prisma.cleaningAssignment.upsert({
     where: { bookingId: params.id },
@@ -66,7 +76,7 @@ export async function POST(
     update: {
       cleanerId: cleanerId ?? null,
       isSelfClean,
-      status: isSelfClean ? "SELF_CLEAN" : cleanerId ? "ASSIGNED" : "UNASSIGNED",
+      status: newStatus,
       notes,
       assignedAt: new Date(),
       notifiedAt: null,
