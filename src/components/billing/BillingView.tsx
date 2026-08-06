@@ -63,8 +63,18 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const [paying, setPaying] = useState<string | null>(null);
+  const [selectedCleaner, setSelectedCleaner] = useState<string>("all");
 
-  const groups = groupByMonthAndCleaner(assignments);
+  const allGroups = groupByMonthAndCleaner(assignments);
+
+  // Eindeutige Reiniger aus allen Gruppen
+  const cleaners = Array.from(
+    new Map(allGroups.map((g) => [g.cleanerId, g.cleanerName])).entries()
+  ).sort((a, b) => a[1].localeCompare(b[1]));
+
+  const groups = selectedCleaner === "all"
+    ? allGroups
+    : allGroups.filter((g) => g.cleanerId === selectedCleaner);
 
   const totalUnpaid = groups.reduce(
     (sum, g) => sum + (g.allPaid ? 0 : g.jobs.filter((j) => !j.paidOut).length * g.rate),
@@ -118,6 +128,45 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
           Erledigte Reinigungen pro Monat
         </p>
       </div>
+
+      {/* Reiniger-Filter */}
+      {cleaners.length > 1 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap" as const }}>
+          {([["all", "Alle"] as const, ...cleaners]).map(([id, name]) => {
+            const active = selectedCleaner === id;
+            const count = id === "all"
+              ? allGroups.reduce((s, g) => s + g.jobs.length, 0)
+              : allGroups.filter((g) => g.cleanerId === id).reduce((s, g) => s + g.jobs.length, 0);
+            return (
+              <button
+                key={id}
+                onClick={() => setSelectedCleaner(id)}
+                style={{
+                  display: "flex", alignItems: "center", gap: 6,
+                  padding: "7px 14px",
+                  background: active ? "rgba(13,148,136,0.25)" : "rgba(255,255,255,0.07)",
+                  border: active ? "1px solid rgba(13,148,136,0.55)" : "1px solid rgba(255,255,255,0.14)",
+                  borderRadius: 20,
+                  color: active ? "#5eead4" : "rgba(255,255,255,0.55)",
+                  fontSize: 13, fontWeight: active ? 700 : 500,
+                  cursor: "pointer",
+                  transition: "all 0.15s",
+                }}
+              >
+                {name}
+                <span style={{
+                  fontSize: 11, fontWeight: 700,
+                  background: active ? "rgba(13,148,136,0.40)" : "rgba(255,255,255,0.12)",
+                  color: active ? "#99f6e4" : "rgba(255,255,255,0.45)",
+                  borderRadius: "9999px", padding: "1px 7px",
+                }}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Übersicht Karten */}
       <div className="grid grid-cols-2 gap-3">

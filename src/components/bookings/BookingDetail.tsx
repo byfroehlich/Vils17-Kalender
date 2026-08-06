@@ -295,6 +295,22 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
               Erledigt
             </button>
           )}
+          {cleaningStatus === "COMPLETED" && (
+            <button
+              onClick={async () => {
+                await fetch(`/api/bookings/${booking.id}/cleaning-status`, {
+                  method: "PATCH",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ status: "ASSIGNED" }),
+                });
+                router.refresh();
+              }}
+              style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, color: "rgba(255,255,255,0.55)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
+            >
+              <Clock style={{ width: 14, height: 14 }} />
+              Erledigt rückgängig
+            </button>
+          )}
         </div>
       </div>
 
