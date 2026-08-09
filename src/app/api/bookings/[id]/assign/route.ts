@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { sendCleaningAssignmentMail } from "@/lib/mail";
 import { sendCleaningWhatsApp } from "@/lib/whatsapp";
+import { sendPushToUsers } from "@/lib/push";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
@@ -82,13 +83,28 @@ export async function POST(
       notifiedAt: null,
       cleanerUnavailable: false,
       cleanerUnavailableNote: null,
+      cleanerUnavailableAt: null,
       declinedById: null,
+      cleanerReminderSentAt: null,
+      adminReminderSentAt: null,
     },
   });
 
   // Benachrichtigung senden (nur wenn echter Reiniger zugewiesen)
   if (cleaner && !isSelfClean) {
     const notifyPromises: Promise<unknown>[] = [];
+
+    // Push an den zugewiesenen Reiniger (nicht bei bereits erledigten Reinigungen)
+    if (!preserveCompleted) {
+      const checkInStr = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+      notifyPromises.push(
+        sendPushToUsers([cleaner.id], {
+          title: "Neuer Reinigungsauftrag",
+          body: `${booking.apartment.name} am ${checkInStr} wurde dir zugewiesen`,
+          url: "/my-jobs",
+        }).catch((err) => console.error("[Push] Failed:", err))
+      );
+    }
 
     if (cleaner.email) {
       notifyPromises.push(
