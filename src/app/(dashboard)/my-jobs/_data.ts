@@ -13,12 +13,30 @@ export async function getMyJobsData() {
   const now = startOfDay(new Date());
 
   if (isCleaner) {
-    // Meine zugewiesenen Wohnungen (Wohnungszuweisung in Einstellungen)
-    const myApartments = await prisma.apartment.findMany({
-      where: { organizationId: orgId, preferredCleanerId: session.user.id },
-      select: { id: true },
-    });
-    const myAptIds = myApartments.map((a) => a.id);
+    // Wohnungen für die ich zuständig bin — zwei Quellen, damit die Kontrollansicht
+    // nicht ausgerechnet dann blind wird, wenn die feste Zuweisung verdreht ist:
+    //   1. fest zugewiesen (Einstellungen → Wohnungszuweisung)
+    //   2. Wohnungen in denen ich schon abgesagt habe — dort war ich zuständig
+    // Bewusst NICHT "wo ich irgendeinen Auftrag habe": eine einmalige Aushilfe in
+    // einer fremden Wohnung würde sonst deren komplette Planung als "übernommen"
+    // in die eigene Absagen-Liste spülen.
+    const [preferredApts, declinedIn] = await Promise.all([
+      prisma.apartment.findMany({
+        where: { organizationId: orgId, preferredCleanerId: session.user.id },
+        select: { id: true, name: true },
+      }),
+      prisma.cleaningAssignment.findMany({
+        where: { organizationId: orgId, declinedById: session.user.id },
+        select: { booking: { select: { apartmentId: true } } },
+      }),
+    ]);
+
+    const myAptIds = Array.from(
+      new Set([
+        ...preferredApts.map((a) => a.id),
+        ...declinedIn.map((a) => a.booking.apartmentId),
+      ])
+    );
 
     const myAssignmentsRaw = await prisma.cleaningAssignment.findMany({
       where: {
@@ -84,6 +102,9 @@ export async function getMyJobsData() {
       openAssignments: enriched.open,
       isCleaner: true as const,
       userName: session.user.name ?? "",
+      // Offizielle Wohnungszuweisung — wird in der Liste angezeigt, damit eine
+      // fehlende oder falsche Zuweisung sofort auffällt statt still zu wirken
+      myApartmentNames: preferredApts.map((a) => a.name),
     };
   }
 
@@ -111,6 +132,7 @@ export async function getMyJobsData() {
     openAssignments: enriched.open as typeof allAssignments & { nextGuestCount: number | null }[],
     isCleaner: false as const,
     userName: session.user.name ?? "",
+    myApartmentNames: [] as string[],
   };
 }
 

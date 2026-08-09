@@ -29,6 +29,8 @@ export default async function SettingsPage() {
     id: a.id,
     name: a.name,
     preferredCleanerId: a.preferredCleanerId ?? null,
+    // gleiche Bedingung wie in sync.ts — nur solche Unterkünfte bekommen Aufträge
+    live: a.active && a.smoobuId !== null,
   }));
 
   return (

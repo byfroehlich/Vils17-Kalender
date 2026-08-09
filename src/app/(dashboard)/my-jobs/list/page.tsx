@@ -3,7 +3,7 @@ import { MyJobsList } from "@/components/my-jobs/MyJobsList";
 import { RefreshButton } from "@/components/my-jobs/RefreshButton";
 
 export default async function MyJobsListPage() {
-  const { myAssignments, openAssignments, isCleaner } = await getMyJobsData();
+  const { myAssignments, openAssignments, isCleaner, myApartmentNames } = await getMyJobsData();
   return (
     <div className="space-y-4">
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
@@ -17,7 +17,7 @@ export default async function MyJobsListPage() {
         </div>
         <RefreshButton />
       </div>
-      <MyJobsList myAssignments={myAssignments} openAssignments={openAssignments} isCleaner={isCleaner} />
+      <MyJobsList myAssignments={myAssignments} openAssignments={openAssignments} isCleaner={isCleaner} myApartmentNames={myApartmentNames} />
     </div>
   );
 }

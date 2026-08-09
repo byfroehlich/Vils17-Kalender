@@ -21,6 +21,8 @@ interface ApartmentBrief {
   id: string;
   name: string;
   preferredCleanerId: string | null;
+  /** aktiv und mit Smoobu verknüpft — nur solche Unterkünfte nutzt der Sync */
+  live?: boolean;
 }
 
 const ROLE_LABELS: Record<string, string> = {
@@ -135,8 +137,13 @@ export function UserManagement({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ preferredCleanerId: isAssigned ? null : userId }),
       });
-      if (res.ok) router.refresh();
-      else showMsg("Fehler beim Speichern", true);
+      if (res.ok) {
+        showMsg(isAssigned ? "Zuweisung entfernt" : "Wohnung zugewiesen");
+        router.refresh();
+      } else {
+        const data = await res.json().catch(() => ({}));
+        showMsg(data.error ?? "Fehler beim Speichern", true);
+      }
     } catch {
       showMsg("Netzwerkfehler", true);
     } finally {
@@ -329,27 +336,50 @@ export function UserManagement({
                   <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
                     {apartments.map((apt) => {
                       const isAssigned = apt.preferredCleanerId === user.id;
+                      const owner = apt.preferredCleanerId
+                        ? users.find((u) => u.id === apt.preferredCleanerId)
+                        : null;
+                      const ownedByOther = !!owner && owner.id !== user.id;
                       const loadKey = `${apt.id}-${user.id}`;
+                      // Inaktive/nicht mit Smoobu verknüpfte Unterkünfte nur zeigen,
+                      // wenn dort noch eine Zuweisung hängt — zuweisen wäre wirkungslos
+                      if (apt.live === false && !isAssigned) return null;
                       return (
                         <button
                           key={apt.id}
-                          onClick={() => toggleApartment(apt.id, user.id, isAssigned)}
-                          disabled={aptAssignLoading === loadKey}
-                          title={isAssigned ? "Zuweisung entfernen" : "Fest zuweisen"}
+                          onClick={() => {
+                            if (apt.live === false) return;
+                            if (ownedByOther && owner &&
+                                !confirm(`"${apt.name}" ist aktuell ${owner.name} zugewiesen. Auf ${user.name} übertragen?`)) return;
+                            if (isAssigned &&
+                                !confirm(`Zuweisung von "${apt.name}" entfernen? Danach ist niemand mehr fest zuständig.`)) return;
+                            toggleApartment(apt.id, user.id, isAssigned);
+                          }}
+                          disabled={aptAssignLoading === loadKey || apt.live === false}
+                          title={
+                            apt.live === false ? "Unterkunft inaktiv — Zuweisung ohne Wirkung"
+                              : isAssigned ? "Zuweisung entfernen"
+                              : ownedByOther && owner ? `Aktuell ${owner.name} — auf ${user.name} übertragen`
+                              : "Fest zuweisen"
+                          }
                           style={{
                             fontSize: 11,
                             fontWeight: 600,
                             padding: "2px 9px",
                             borderRadius: 20,
-                            cursor: aptAssignLoading === loadKey ? "not-allowed" : "pointer",
+                            cursor: aptAssignLoading === loadKey || apt.live === false ? "not-allowed" : "pointer",
                             border: "none",
                             transition: "all 0.15s",
+                            textDecoration: apt.live === false ? "line-through" : "none",
                             background: isAssigned ? "rgba(16,185,129,0.2)" : "rgba(255,255,255,0.06)",
                             color: isAssigned ? "#6ee7b7" : "rgba(255,255,255,0.3)",
                             outline: isAssigned ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.1)",
                           }}
                         >
                           {isAssigned ? "✓ " : ""}{apt.name}
+                          {ownedByOther && owner && (
+                            <span style={{ opacity: 0.7, fontWeight: 500 }}> · {owner.name}</span>
+                          )}
                         </button>
                       );
                     })}

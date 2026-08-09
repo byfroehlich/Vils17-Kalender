@@ -32,6 +32,22 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
   });
   if (!apt) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
 
+  // Wohnungszuweisung: nur aktive Reinigungskräfte derselben Organization
+  if (parsed.data.preferredCleanerId) {
+    const cleaner = await prisma.user.findFirst({
+      where: {
+        id: parsed.data.preferredCleanerId,
+        organizationId: session.user.organizationId,
+        role: "CLEANER",
+        active: true,
+      },
+      select: { id: true },
+    });
+    if (!cleaner) {
+      return NextResponse.json({ error: "Reinigungskraft nicht gefunden" }, { status: 400 });
+    }
+  }
+
   const updated = await prisma.apartment.update({
     where: { id: params.id },
     data: parsed.data,

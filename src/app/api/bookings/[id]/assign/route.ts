@@ -55,12 +55,19 @@ export async function POST(
   // Aktuellen Status prüfen — COMPLETED bleibt erhalten beim Reiniger-Wechsel
   const existing = await prisma.cleaningAssignment.findUnique({
     where: { bookingId: params.id },
-    select: { status: true },
+    select: { status: true, declinedById: true },
   });
   const preserveCompleted = existing?.status === "COMPLETED";
   const newStatus = isSelfClean ? "SELF_CLEAN"
     : cleanerId ? (preserveCompleted ? "COMPLETED" : "ASSIGNED")
     : "UNASSIGNED";
+
+  // Absage-Historie behalten: wer abgesagt hat, sieht die Buchung weiterhin als
+  // "abgesagt · übernommen von X" — auch wenn ein Admin sie neu zuweist.
+  // Gegenstandslos wird die Absage nur, wenn der Auftrag zurück an die absagende
+  // Person geht oder die Reinigung auf Selbstreinigung umgestellt wird.
+  const clearDecline =
+    isSelfClean || !existing?.declinedById || existing.declinedById === cleanerId;
 
   // Assignment anlegen oder aktualisieren
   const assignment = await prisma.cleaningAssignment.upsert({
@@ -84,7 +91,7 @@ export async function POST(
       cleanerUnavailable: false,
       cleanerUnavailableNote: null,
       cleanerUnavailableAt: null,
-      declinedById: null,
+      ...(clearDecline ? { declinedById: null } : {}),
       cleanerReminderSentAt: null,
       adminReminderSentAt: null,
     },

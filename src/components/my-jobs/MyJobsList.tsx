@@ -70,10 +70,12 @@ export function MyJobsList({
   myAssignments,
   openAssignments,
   isCleaner,
+  myApartmentNames = [],
 }: {
   myAssignments: Assignment[];
   openAssignments: OpenAssignment[];
   isCleaner: boolean;
+  myApartmentNames?: string[];
 }) {
   const router = useRouter();
   const [loadingId, setLoadingId] = useState<string | null>(null);
@@ -88,7 +90,11 @@ export function MyJobsList({
   );
   const done = myAssignments.filter((a) => a.status === "COMPLETED" && !a.takenByOther);
   const unavailableList = myAssignments.filter(
-    (a) => (a.cleanerUnavailable || a.takenByOther) && new Date(a.booking.checkIn) >= today
+    (a) =>
+      a.status !== "COMPLETED" &&
+      // Übernahmen ohne Datumsgrenze — eine verdrehte Zuweisung muss auch im
+      // Nachhinein sichtbar bleiben. Eigene offene Absagen erst ab heute.
+      (a.takenByOther || (a.cleanerUnavailable && new Date(a.booking.checkIn) >= today))
   );
 
   const confirmedUpcoming = upcoming.filter((a) => !a.cleanerUnavailable);
@@ -172,7 +178,7 @@ export function MyJobsList({
   for (const a of [...visibleMine, ...visibleCancelled]) mergedById.set(a.id, a);
 
   const myByMonth: Record<string, Assignment[]> = {};
-  for (const a of mergedById.values()) {
+  for (const a of Array.from(mergedById.values())) {
     const key = monthKey(a.booking.checkIn);
     if (!myByMonth[key]) myByMonth[key] = [];
     myByMonth[key].push(a);
@@ -206,6 +212,27 @@ export function MyJobsList({
       {claimError && (
         <div style={{ padding: "10px 14px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.3)", borderRadius: 12, fontSize: 13, color: "#fca5a5" }}>
           {claimError}
+        </div>
+      )}
+
+      {/* Zuständige Wohnung — macht eine fehlende Zuweisung sofort sichtbar */}
+      {isCleaner && (
+        <div style={{
+          display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const,
+          padding: "9px 14px", borderRadius: 12,
+          background: myApartmentNames.length > 0 ? "rgba(255,255,255,0.06)" : "rgba(245,158,11,0.12)",
+          border: myApartmentNames.length > 0 ? "1px solid rgba(255,255,255,0.12)" : "1px solid rgba(245,158,11,0.35)",
+        }}>
+          <Home style={{ width: 14, height: 14, color: myApartmentNames.length > 0 ? "rgba(255,255,255,0.4)" : "#fcd34d", flexShrink: 0 }} />
+          {myApartmentNames.length > 0 ? (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Deine Wohnung: <span style={{ fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>{myApartmentNames.join(" · ")}</span>
+            </p>
+          ) : (
+            <p style={{ fontSize: 13, color: "#fcd34d" }}>
+              Dir ist keine Wohnung fest zugewiesen — bitte beim Verwalter melden.
+            </p>
+          )}
         </div>
       )}
 
@@ -410,7 +437,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
   const takenByOther = assignment.takenByOther ?? false;
   const foreignDecline = assignment.foreignDecline ?? false;
   const isDone   = assignment.status === "COMPLETED" && !takenByOther;
-  const isAbsage = assignment.cleanerUnavailable || takenByOther;
+  const isAbsage = !isDone && (assignment.cleanerUnavailable || takenByOther);
   const aptColor = b.apartment.color ?? "#0D9488";
 
   const [editingNotes, setEditingNotes] = useState(false);
