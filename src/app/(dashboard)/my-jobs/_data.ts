@@ -32,6 +32,9 @@ export async function getMyJobsData() {
           { declinedById: session.user.id },
           // Absagen in MEINER Wohnung — sehe ich immer, egal wer abgesagt hat
           { cleanerUnavailable: true, booking: { apartmentId: { in: myAptIds } } },
+          // Jobs in MEINER Wohnung, die aktuell jemand anderes hat (Absage, Claim
+          // oder Admin-Zuweisung) — zur Kontrolle ob etwas verdreht wurde
+          { status: "ASSIGNED", cleanerId: { not: session.user.id }, booking: { apartmentId: { in: myAptIds } } },
         ],
       },
       orderBy: { booking: { checkIn: "asc" } },
@@ -41,10 +44,16 @@ export async function getMyJobsData() {
       },
     });
 
-    // Von mir abgesagt + von jemand anderem übernommen → als "abgesagt" anzeigen
+    // "takenByOther": Job gehört zu mir (Absage-Historie oder meine Wohnung),
+    // ist aber aktuell bei jemand anderem → als "abgesagt" mit Info anzeigen
     const myAssignments = myAssignmentsRaw.map((a) => ({
       ...a,
-      takenByOther: a.declinedById === session.user.id && a.cleanerId !== session.user.id,
+      takenByOther:
+        (a.declinedById === session.user.id && a.cleanerId !== session.user.id) ||
+        (a.status === "ASSIGNED" &&
+          a.cleanerId !== null &&
+          a.cleanerId !== session.user.id &&
+          myAptIds.includes(a.booking.apartmentId)),
       // Fremde Absage in meiner Wohnung — kann von mir übernommen werden
       foreignDecline: a.cleanerUnavailable && a.cleanerId !== session.user.id,
     }));
