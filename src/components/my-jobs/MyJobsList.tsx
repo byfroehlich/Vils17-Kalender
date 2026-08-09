@@ -17,6 +17,8 @@ export interface Assignment {
   notes?: string | null;
   cleanerUnavailable: boolean;
   cleanerUnavailableNote?: string | null;
+  /** Von mir abgesagt und inzwischen von jemand anderem übernommen */
+  takenByOther?: boolean;
   cleaner?: { name: string } | null;
   nextGuestCount?: number | null;
   booking: {
@@ -80,10 +82,12 @@ export function MyJobsList({
 
   const today = startOfDay(new Date());
   const upcoming = myAssignments.filter(
-    (a) => (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkIn) >= today
+    (a) => !a.takenByOther && (a.status === "ASSIGNED" || (a.status === "UNASSIGNED" && a.cleanerUnavailable)) && new Date(a.booking.checkIn) >= today
   );
-  const done = myAssignments.filter((a) => a.status === "COMPLETED");
-  const unavailableList = myAssignments.filter((a) => a.cleanerUnavailable);
+  const done = myAssignments.filter((a) => a.status === "COMPLETED" && !a.takenByOther);
+  const unavailableList = myAssignments.filter(
+    (a) => (a.cleanerUnavailable || a.takenByOther) && new Date(a.booking.checkIn) >= today
+  );
 
   const confirmedUpcoming = upcoming.filter((a) => !a.cleanerUnavailable);
 
@@ -161,8 +165,12 @@ export function MyJobsList({
     openByMonth[key].push(a);
   }
 
+  // Dedupe: Absagen können in beiden Listen stecken (z.B. Admin-Ansicht)
+  const mergedById = new Map<string, Assignment>();
+  for (const a of [...visibleMine, ...visibleCancelled]) mergedById.set(a.id, a);
+
   const myByMonth: Record<string, Assignment[]> = {};
-  for (const a of [...visibleMine, ...visibleCancelled]) {
+  for (const a of mergedById.values()) {
     const key = monthKey(a.booking.checkIn);
     if (!myByMonth[key]) myByMonth[key] = [];
     myByMonth[key].push(a);
@@ -396,8 +404,9 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
 }) {
   const router = useRouter();
   const b = assignment.booking;
-  const isDone   = assignment.status === "COMPLETED";
-  const isAbsage = assignment.cleanerUnavailable;
+  const takenByOther = assignment.takenByOther ?? false;
+  const isDone   = assignment.status === "COMPLETED" && !takenByOther;
+  const isAbsage = assignment.cleanerUnavailable || takenByOther;
   const aptColor = b.apartment.color ?? "#0D9488";
 
   const [editingNotes, setEditingNotes] = useState(false);
@@ -434,6 +443,14 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           {isDone && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}><CheckCircle style={{ width: 16, height: 16 }} /> Erledigt</span>}
           {isAbsage && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#f87171", fontSize: 13, fontWeight: 700 }}><AlertTriangle style={{ width: 16, height: 16 }} /> Abgesagt</span>}
         </div>
+
+        {takenByOther && (
+          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Übernommen von {assignment.cleaner?.name ?? "jemand anderem"}
+            </p>
+          </div>
+        )}
 
         {isAbsage && assignment.cleanerUnavailableNote && (
           <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, marginBottom: 12 }}>
@@ -519,7 +536,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           )}
         </div>
 
-        {!isDone && (
+        {!isDone && !takenByOther && (
           <div style={{ display: "flex", gap: 8, marginTop: 18 }}>
             {!isAbsage && onMarkDone && (
               <button onClick={onMarkDone} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", background: loading ? "rgba(255,255,255,0.10)" : "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer" }}>
@@ -531,7 +548,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
                 <AlertTriangle style={{ width: 16, height: 16 }} />Kann nicht
               </button>
             )}
-            {isCleaner && isAbsage && onCancelUnavailable && (
+            {isCleaner && isAbsage && !takenByOther && onCancelUnavailable && (
               <button onClick={onCancelUnavailable} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 0", background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer" }}>
                 Absage zurücknehmen
               </button>

@@ -82,6 +82,7 @@ export async function POST(
       notifiedAt: null,
       cleanerUnavailable: false,
       cleanerUnavailableNote: null,
+      declinedById: null,
     },
   });
 

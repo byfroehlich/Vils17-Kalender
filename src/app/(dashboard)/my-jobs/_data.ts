@@ -13,14 +13,15 @@ export async function getMyJobsData() {
   const now = startOfDay(new Date());
 
   if (isCleaner) {
-    const myAssignments = await prisma.cleaningAssignment.findMany({
+    const myAssignmentsRaw = await prisma.cleaningAssignment.findMany({
       where: {
         organizationId: orgId,
-        cleanerId: session.user.id,
         booking: { status: "confirmed" },
         OR: [
-          { status: { in: ["ASSIGNED", "COMPLETED"] } },
-          { status: "UNASSIGNED", cleanerUnavailable: true },
+          { cleanerId: session.user.id, status: { in: ["ASSIGNED", "COMPLETED"] } },
+          { cleanerId: session.user.id, status: "UNASSIGNED", cleanerUnavailable: true },
+          // Von mir abgesagt — bleibt sichtbar, auch wenn jemand anderes übernommen hat
+          { declinedById: session.user.id },
         ],
       },
       orderBy: { booking: { checkIn: "asc" } },
@@ -29,6 +30,12 @@ export async function getMyJobsData() {
         cleaner: { select: { name: true, cleanerRate: true } },
       },
     });
+
+    // Von mir abgesagt + von jemand anderem übernommen → als "abgesagt" anzeigen
+    const myAssignments = myAssignmentsRaw.map((a) => ({
+      ...a,
+      takenByOther: a.declinedById === session.user.id && a.cleanerId !== session.user.id,
+    }));
 
     const openAssignments = await prisma.cleaningAssignment.findMany({
       where: {

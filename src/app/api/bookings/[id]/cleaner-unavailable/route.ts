@@ -18,17 +18,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
 
-  // CLEANER: nur eigene Aufträge — außer Hauptreiniger darf alle
-  let cleanerFilter: Record<string, unknown> = {};
-  if (session.user.role === "CLEANER") {
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { isPrimary: true },
-    });
-    if (!currentUser?.isPrimary) {
-      cleanerFilter = { cleanerId: session.user.id };
-    }
-  }
+  // CLEANER: nur eigene Aufträge
+  const cleanerFilter: Record<string, unknown> =
+    session.user.role === "CLEANER" ? { cleanerId: session.user.id } : {};
 
   const assignment = await prisma.cleaningAssignment.findFirst({
     where: {
@@ -48,6 +40,9 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       cleanerUnavailable: isDecline,
       cleanerUnavailableNote: isDecline ? (parsed.data.note ?? null) : null,
       cleanerUnavailableAt: isDecline ? new Date() : null,
+      // declinedById bleibt auch nach Übernahme durch andere erhalten,
+      // damit der Absagende die Buchung weiterhin sieht
+      declinedById: isDecline ? (assignment.cleanerId ?? session.user.id) : null,
       // Status auf UNASSIGNED setzen damit andere zusagen können.
       // cleanerId bleibt gesetzt damit AbsagenBanner den Namen anzeigen kann.
       ...(isDecline ? { status: "UNASSIGNED" } : {}),

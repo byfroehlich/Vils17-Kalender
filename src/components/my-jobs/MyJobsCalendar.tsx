@@ -311,13 +311,14 @@ function MonthView({
     for (const a of myAssignments) {
       const ci = startOfDay(new Date(a.booking.checkIn));
       const co = startOfDay(new Date(a.booking.checkOut));
+      const absage = a.cleanerUnavailable || (a.takenByOther ?? false);
       if (d >= ci && d <= co) {
         result.push({
           id: a.id,
-          color: a.cleanerUnavailable ? "#ef4444" : (bookingColorMap.get(a.id) ?? a.booking.apartment.color ?? "#14B8A6"),
+          color: absage ? "#ef4444" : (bookingColorMap.get(a.id) ?? a.booking.apartment.color ?? "#14B8A6"),
           guestCount: a.booking.guestCount,
           isOpen: false,
-          isAbsage: a.cleanerUnavailable,
+          isAbsage: absage,
           bookingId: a.booking.id,
           isStart: isSameDay(d, ci),
           isEnd: isSameDay(d, co),
@@ -631,7 +632,7 @@ function MiniMonth({ month, myAssignments, openAssignments, selectedDay, onSelec
                   height: 3,
                   marginLeft: barLeft ? 1 : 0,
                   marginRight: barRight ? 1 : 0,
-                  backgroundColor: firstBar.cleanerUnavailable ? "#ef4444" : (firstBar.booking.apartment.color ?? "#14B8A6"),
+                  backgroundColor: (firstBar.cleanerUnavailable || firstBar.takenByOther) ? "#ef4444" : (firstBar.booking.apartment.color ?? "#14B8A6"),
                   opacity: 0.85,
                   borderRadius: barLeft && barRight ? "9999px" : barLeft ? "9999px 0 0 9999px" : barRight ? "0 9999px 9999px 0" : 0,
                 }} />

@@ -34,17 +34,10 @@ export async function PATCH(
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  // CLEANER: nur eigene Aufträge oder als Hauptreiniger alle
-  let cleanerFilter: Record<string, unknown> = {};
-  if (isCleaner) {
-    const currentUser = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { isPrimary: true },
-    });
-    if (!currentUser?.isPrimary) {
-      cleanerFilter = { cleanerId: session.user.id };
-    }
-  }
+  // CLEANER: nur eigene Aufträge
+  const cleanerFilter: Record<string, unknown> = isCleaner
+    ? { cleanerId: session.user.id }
+    : {};
 
   const assignment = await prisma.cleaningAssignment.findFirst({
     where: {
@@ -65,7 +58,7 @@ export async function PATCH(
       status: newStatus,
       // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
       ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
-        ? { cleanerId: null, assignedAt: null }
+        ? { cleanerId: null, assignedAt: null, cleanerUnavailable: false, cleanerUnavailableNote: null, declinedById: null }
         : {}),
     },
   });

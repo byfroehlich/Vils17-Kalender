@@ -74,6 +74,7 @@ model User {
   updatedAt DateTime @updatedAt
 
   assignments            CleaningAssignment[]
+  declinedAssignments    CleaningAssignment[] @relation("AssignmentDeclinedBy")
   pushSubscriptions      PushSubscription[]
   preferredForApartments Apartment[]          @relation("ApartmentPreferredCleaner")
 
@@ -177,6 +178,10 @@ model CleaningAssignment {
   cleanerUnavailable     Boolean  @default(false)
   cleanerUnavailableNote String?
   cleanerUnavailableAt   DateTime?
+  // Wer hat abgesagt — bleibt erhalten wenn jemand anderes den Job übernimmt,
+  // damit der Absagende die Buchung weiterhin als "abgesagt" sieht
+  declinedById String?
+  declinedBy   User?   @relation("AssignmentDeclinedBy", fields: [declinedById], references: [id], onDelete: SetNull)
 
   // Wäsche
   laundryStatus      LaundryStatus @default(OPEN)
