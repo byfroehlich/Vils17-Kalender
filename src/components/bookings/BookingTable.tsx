@@ -97,13 +97,13 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                   <div style={{ width: 4, height: 36, borderRadius: 4, flexShrink: 0, backgroundColor: booking.apartment.color ?? "#18181b" }} />
 
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, minWidth: 0 }}>
                       <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.95)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                         {booking.guestName}
                       </span>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", flexShrink: 0 }}>{booking.apartment.name}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{booking.apartment.name}</span>
                     </div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.60)" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: "3px 12px", marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.60)", flexWrap: "wrap" as const }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>
                         <Users style={{ width: 12, height: 12 }} />
                         {booking.guestCount}

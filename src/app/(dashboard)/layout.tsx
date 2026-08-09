@@ -35,7 +35,8 @@ export default async function DashboardLayout({
       <Sidebar role={session.user.role} />
 
       {/* Hauptbereich */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-60" style={{ position: "relative", zIndex: 1 }}>
+      {/* min-w-0 + overflow-x clip: breite Inhalte dürfen die Seite nie über den Viewport hinausdrücken */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, overflowX: "clip" }}>
         <Topbar userName={session.user.name ?? ""} role={session.user.role} />
         <PushSubscriber />
         <main className="flex-1 px-4 pt-6 pb-32 lg:px-8 lg:pt-8 lg:pb-8">{children}</main>
