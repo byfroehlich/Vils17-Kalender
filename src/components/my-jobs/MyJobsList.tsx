@@ -19,6 +19,8 @@ export interface Assignment {
   cleanerUnavailableNote?: string | null;
   /** Von mir abgesagt und inzwischen von jemand anderem übernommen */
   takenByOther?: boolean;
+  /** Von jemand anderem abgesagt — kann von mir übernommen werden */
+  foreignDecline?: boolean;
   cleaner?: { name: string } | null;
   nextGuestCount?: number | null;
   booking: {
@@ -281,10 +283,11 @@ export function MyJobsList({
                   key={a.id}
                   assignment={a}
                   isCleaner={isCleaner}
-                  loading={loadingId === a.id}
+                  loading={loadingId === a.id || loadingId === a.booking.id}
                   onMarkDone={() => markDone(a.booking.id, a.id)}
                   onUnavailable={() => { setUnavailableId(a.id); setUnavailableNote(""); }}
                   onCancelUnavailable={() => cancelUnavailable(a)}
+                  onClaim={() => claimJob(a.booking.id)}
                 />
               ))}
             </div>
@@ -398,13 +401,14 @@ function OpenJobCard({ assignment, loading, onClaim }: {
 
 // ─── Zugesagter Job ───────────────────────────────────────────────────────────
 
-export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavailable, onCancelUnavailable }: {
+export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavailable, onCancelUnavailable, onClaim }: {
   assignment: Assignment; isCleaner: boolean; loading: boolean;
-  onMarkDone?: () => void; onUnavailable?: () => void; onCancelUnavailable?: () => void;
+  onMarkDone?: () => void; onUnavailable?: () => void; onCancelUnavailable?: () => void; onClaim?: () => void;
 }) {
   const router = useRouter();
   const b = assignment.booking;
   const takenByOther = assignment.takenByOther ?? false;
+  const foreignDecline = assignment.foreignDecline ?? false;
   const isDone   = assignment.status === "COMPLETED" && !takenByOther;
   const isAbsage = assignment.cleanerUnavailable || takenByOther;
   const aptColor = b.apartment.color ?? "#0D9488";
@@ -448,6 +452,14 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
               Übernommen von {assignment.cleaner?.name ?? "jemand anderem"}
+            </p>
+          </div>
+        )}
+
+        {isCleaner && foreignDecline && (
+          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Abgesagt von {assignment.cleaner?.name ?? "jemand anderem"} — du kannst übernehmen
             </p>
           </div>
         )}
@@ -548,7 +560,13 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
                 <AlertTriangle style={{ width: 16, height: 16 }} />Kann nicht
               </button>
             )}
-            {isCleaner && isAbsage && !takenByOther && onCancelUnavailable && (
+            {isCleaner && foreignDecline && onClaim && (
+              <button onClick={onClaim} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 8, padding: "14px 0", background: loading ? "rgba(255,255,255,0.10)" : "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 16, cursor: loading ? "not-allowed" : "pointer" }}>
+                <Zap style={{ width: 20, height: 20 }} />
+                {loading ? "Wird zugesagt…" : "Übernehmen"}
+              </button>
+            )}
+            {isCleaner && isAbsage && !takenByOther && !foreignDecline && onCancelUnavailable && (
               <button onClick={onCancelUnavailable} disabled={loading} style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", gap: 6, padding: "14px 0", background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.22)", borderRadius: 12, color: "rgba(255,255,255,0.75)", fontWeight: 600, fontSize: 14, cursor: loading ? "not-allowed" : "pointer" }}>
                 Absage zurücknehmen
               </button>

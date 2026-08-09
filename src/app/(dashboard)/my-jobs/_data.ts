@@ -19,7 +19,9 @@ export async function getMyJobsData() {
         booking: { status: "confirmed" },
         OR: [
           { cleanerId: session.user.id, status: { in: ["ASSIGNED", "COMPLETED"] } },
-          { cleanerId: session.user.id, status: "UNASSIGNED", cleanerUnavailable: true },
+          // TEMPORÄR: alle Absagen für alle Reiniger sichtbar (eigene + fremde),
+          // damit jeder sehen kann was abgesagt wurde und direkt zusagen kann
+          { cleanerUnavailable: true },
           // Von mir abgesagt — bleibt sichtbar, auch wenn jemand anderes übernommen hat
           { declinedById: session.user.id },
         ],
@@ -35,6 +37,8 @@ export async function getMyJobsData() {
     const myAssignments = myAssignmentsRaw.map((a) => ({
       ...a,
       takenByOther: a.declinedById === session.user.id && a.cleanerId !== session.user.id,
+      // Fremde Absage — noch nicht übernommen, kann von mir zugesagt werden
+      foreignDecline: a.cleanerUnavailable && a.cleanerId !== session.user.id,
     }));
 
     const openAssignments = await prisma.cleaningAssignment.findMany({
@@ -42,7 +46,8 @@ export async function getMyJobsData() {
         organizationId: orgId,
         status: "UNASSIGNED",
         booking: { status: "confirmed", checkIn: { gte: now } },
-        NOT: { cleanerId: session.user.id, cleanerUnavailable: true },
+        // Absagen erscheinen unter "Abgesagt" (myAssignments), nicht unter "Offen"
+        cleanerUnavailable: false,
       },
       orderBy: { booking: { checkIn: "asc" } },
       include: {

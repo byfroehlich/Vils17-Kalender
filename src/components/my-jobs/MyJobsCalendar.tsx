@@ -222,10 +222,11 @@ export function MyJobsCalendar({
               key={a.id}
               assignment={a}
               isCleaner={isCleaner}
-              loading={loadingId === a.id}
+              loading={loadingId === a.id || loadingId === a.booking.id}
               onMarkDone={() => markDone(a.booking.id, a.id)}
               onUnavailable={() => { setUnavailableId(a.id); setUnavailableNote(""); }}
               onCancelUnavailable={() => cancelUnavailable(a)}
+              onClaim={() => claimJob(a.booking.id)}
             />
           ))}
         </div>
