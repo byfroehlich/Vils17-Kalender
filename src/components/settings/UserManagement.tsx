@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, Pencil, Trash2, KeyRound, ChevronDown, Star } from "lucide-react";
+import { Plus, Pencil, Trash2, KeyRound, ChevronDown } from "lucide-react";
 
 interface User {
   id: string;
@@ -13,7 +13,6 @@ interface User {
   language: string;
   active: boolean;
   role: string;
-  isPrimary: boolean;
   cleanerRate: number;
   _count: { assignments: number };
 }
@@ -55,7 +54,6 @@ export function UserManagement({
   });
   const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
   const [saving, setSaving] = useState(false);
-  const [primaryLoading, setPrimaryLoading] = useState<string | null>(null);
   const [aptAssignLoading, setAptAssignLoading] = useState<string | null>(null);
   const [message, setMessage] = useState<{ text: string; error?: boolean } | null>(null);
 
@@ -125,31 +123,6 @@ export function UserManagement({
     const data = await res.json();
     if (res.ok) { showMsg("Gelöscht"); router.refresh(); }
     else showMsg(data.error ?? "Fehler", true);
-  }
-
-  async function togglePrimary(user: User) {
-    if (primaryLoading) return;
-    const newVal = !user.isPrimary;
-    if (newVal && !confirm(`"${user.name}" als Hauptreiniger festlegen? Alle offenen zukünftigen Reinigungsaufträge werden automatisch zugewiesen.`)) return;
-    if (!newVal && !confirm(`Hauptreiniger-Status von "${user.name}" entfernen?`)) return;
-
-    setPrimaryLoading(user.id);
-    try {
-      const res = await fetch(`/api/users/${user.id}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPrimary: newVal }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        showMsg(newVal ? `${user.name} ist jetzt Hauptreiniger` : "Hauptreiniger-Status entfernt");
-        router.refresh();
-      } else {
-        showMsg(data.error ?? "Fehler", true);
-      }
-    } finally {
-      setPrimaryLoading(null);
-    }
   }
 
   async function toggleApartment(aptId: string, userId: string, isAssigned: boolean) {
@@ -326,8 +299,8 @@ export function UserManagement({
             <div
               key={user.id}
               style={{
-                background: user.isPrimary ? "rgba(245,158,11,0.08)" : "rgba(255,255,255,0.05)",
-                border: user.isPrimary ? "1px solid rgba(245,158,11,0.25)" : "1px solid rgba(255,255,255,0.09)",
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.09)",
                 borderRadius: 12,
                 padding: "12px 16px",
                 display: "flex",
@@ -345,16 +318,6 @@ export function UserManagement({
                   }}>
                     {ROLE_LABELS[user.role] ?? user.role}
                   </span>
-                  {user.isPrimary && (
-                    <span style={{
-                      display: "flex", alignItems: "center", gap: 3,
-                      fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 20,
-                      background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d",
-                    }}>
-                      <Star style={{ width: 10, height: 10 }} fill="currentColor" />
-                      Hauptreiniger
-                    </span>
-                  )}
                   {!user.active && (
                     <span style={{ fontSize: 11, background: "rgba(255,255,255,0.08)", color: "rgba(255,255,255,0.35)", padding: "2px 8px", borderRadius: 20 }}>Inaktiv</span>
                   )}
@@ -394,20 +357,6 @@ export function UserManagement({
                 )}
               </div>
               <div style={{ display: "flex", alignItems: "center", gap: 2 }}>
-                {/* Hauptreiniger-Toggle (nur für CLEANER) */}
-                {user.role === "CLEANER" && (
-                  <button
-                    onClick={() => togglePrimary(user)}
-                    disabled={primaryLoading === user.id}
-                    style={{
-                      ...iconBtn,
-                      color: user.isPrimary ? "#fcd34d" : "rgba(255,255,255,0.3)",
-                    }}
-                    title={user.isPrimary ? "Hauptreiniger entfernen" : "Als Hauptreiniger festlegen"}
-                  >
-                    <Star style={{ width: 15, height: 15 }} fill={user.isPrimary ? "currentColor" : "none"} />
-                  </button>
-                )}
                 {user.id === currentUserId && (
                   <button
                     onClick={() => { setShowPwForm(true); setShowForm(false); }}
