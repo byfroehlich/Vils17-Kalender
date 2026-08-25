@@ -132,6 +132,9 @@ model Booking {
   guestEmail String?
   guestPhone String?
   guestCount Int     @default(1)
+  // true = Gästezahl wurde von Hand korrigiert; der Sync überschreibt sie dann
+  // nicht mehr (Smoobu liefert für manche Kanäle keine Gästezahl)
+  guestCountManual Boolean @default(false)
   petCount   Int?    // Haustiere (manuell gepflegt, Smoobu liefert keine Daten)
 
   checkIn       DateTime

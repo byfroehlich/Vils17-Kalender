@@ -90,6 +90,14 @@ export async function POST(req: NextRequest) {
     const channelName = (res.channel as any)?.name ?? (res["channel-name"] as string) ?? null;
     const guestName = (res["guest-name"] as string) ?? (res.firstname as string) ?? "Unbekannt";
 
+    // Von Hand korrigierte Gästezahl nicht überschreiben
+    const existingBooking = await prisma.booking.findUnique({
+      where: { smoobuId },
+      select: { guestCountManual: true },
+    });
+    const guestCountFromSmoobu =
+      ((res.adults as number) ?? 1) + ((res.children as number) ?? 0);
+
     await prisma.booking.upsert({
       where: { smoobuId },
       create: {
@@ -99,7 +107,7 @@ export async function POST(req: NextRequest) {
         guestName,
         guestEmail: (res.email as string) ?? null,
         guestPhone: (res.phone as string) ?? null,
-        guestCount: ((res.adults as number) ?? 1) + ((res.children as number) ?? 0),
+        guestCount: guestCountFromSmoobu,
         checkIn,
         checkOut,
         arrivalTime: (res["check-in"] as string) || null,
@@ -110,7 +118,7 @@ export async function POST(req: NextRequest) {
       },
       update: {
         guestName,
-        guestCount: ((res.adults as number) ?? 1) + ((res.children as number) ?? 0),
+        ...(existingBooking?.guestCountManual ? {} : { guestCount: guestCountFromSmoobu }),
         checkIn,
         checkOut,
         arrivalTime: (res["check-in"] as string) || null,

@@ -180,7 +180,9 @@ export async function syncBookings(organizationId: string): Promise<{
         where: { smoobuId: res.externalId },
         data: {
           guestName: res.guestName,
-          guestCount: res.guestCount,
+          // Von Hand korrigierte Gästezahl nicht überschreiben — Smoobu liefert
+          // für manche Kanäle keine Gästezahl, die Korrektur muss bestehen bleiben
+          ...(existing.guestCountManual ? {} : { guestCount: res.guestCount }),
           checkIn: res.checkIn,
           checkOut: res.checkOut,
           arrivalTime: res.arrivalTime,

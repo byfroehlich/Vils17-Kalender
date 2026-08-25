@@ -27,6 +27,7 @@ interface Booking {
   guestEmail?: string | null;
   guestPhone?: string | null;
   guestCount: number;
+  guestCountManual?: boolean;
   petCount?: number | null;
   checkIn: Date;
   checkOut: Date;
@@ -81,6 +82,37 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
   const [cleaningNotes, setCleaningNotes] = useState(assignment?.notes ?? "");
   const [laundryNotes, setLaundryNotes] = useState(assignment?.laundryNotes ?? "");
   const [petCount, setPetCount] = useState<number | null>(booking.petCount ?? null);
+  const [guestCount, setGuestCount] = useState<number | "">(booking.guestCount);
+
+  async function saveGuestCount() {
+    if (guestCount === "" || guestCount < 1) { setGuestCount(booking.guestCount); return; }
+    if (guestCount === booking.guestCount && booking.guestCountManual) return;
+    const res = await fetch(`/api/bookings/${booking.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guestCount }),
+    });
+    if (res.ok) {
+      setMessage("✓ Gästezahl gespeichert");
+      router.refresh();
+    } else {
+      setMessage("Fehler beim Speichern");
+    }
+    setTimeout(() => setMessage(""), 2500);
+  }
+
+  async function resetGuestCount() {
+    const res = await fetch(`/api/bookings/${booking.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ guestCount: null }),
+    });
+    if (res.ok) {
+      setMessage("✓ Korrektur aufgehoben — nächster Sync setzt den Smoobu-Wert");
+      router.refresh();
+    }
+    setTimeout(() => setMessage(""), 3000);
+  }
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -193,9 +225,41 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
               {booking.departureTime && <span style={{ color: "rgba(255,255,255,0.60)", fontSize: 13, marginLeft: 4 }}>bis {booking.departureTime} Uhr</span>}
             </InfoRow>
             <InfoRow icon={<Users style={{ width: 14, height: 14 }} />} label="Gäste">
-              <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>
-                {booking.guestCount} {booking.guestCount === 1 ? "Person" : "Personen"}
-              </span>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
+                <input
+                  type="number"
+                  min={1}
+                  max={99}
+                  value={guestCount}
+                  onChange={(e) => setGuestCount(e.target.value === "" ? "" : parseInt(e.target.value, 10))}
+                  onBlur={saveGuestCount}
+                  style={{
+                    width: 56, padding: "4px 8px", borderRadius: 8,
+                    background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)",
+                    color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: 600,
+                    textAlign: "center",
+                  }}
+                />
+                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.45)" }}>
+                  {guestCount === 1 ? "Person" : "Personen"}
+                </span>
+                {booking.guestCountManual && (
+                  <span
+                    title="Von Hand korrigiert — der Smoobu-Sync überschreibt diesen Wert nicht"
+                    style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 20, background: "rgba(245,158,11,0.18)", border: "1px solid rgba(245,158,11,0.35)", color: "#fcd34d" }}
+                  >
+                    korrigiert
+                  </span>
+                )}
+              </div>
+              {booking.guestCountManual && (
+                <button
+                  onClick={resetGuestCount}
+                  style={{ marginTop: 4, background: "none", border: "none", padding: 0, fontSize: 11, color: "rgba(255,255,255,0.40)", cursor: "pointer", textDecoration: "underline" }}
+                >
+                  Korrektur aufheben
+                </button>
+              )}
             </InfoRow>
             <InfoRow icon={<span style={{ fontSize: 13 }}>🐕</span>} label="Haustiere">
               <div style={{ display: "flex", alignItems: "center", gap: 6 }}>

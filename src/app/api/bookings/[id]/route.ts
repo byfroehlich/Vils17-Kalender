@@ -5,7 +5,9 @@ import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 
 const patchSchema = z.object({
-  petCount: z.number().int().min(0).max(99).nullable(),
+  petCount: z.number().int().min(0).max(99).nullable().optional(),
+  // null = Korrektur zurücknehmen, Gästezahl kommt wieder aus Smoobu
+  guestCount: z.number().int().min(1).max(99).nullable().optional(),
 });
 
 export async function PATCH(
@@ -31,9 +33,20 @@ export async function PATCH(
     return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
   }
 
+  const { petCount, guestCount } = parsed.data;
+
   const updated = await prisma.booking.update({
     where: { id: params.id },
-    data: { petCount: parsed.data.petCount },
+    data: {
+      ...(petCount !== undefined ? { petCount } : {}),
+      // Gästezahl gesetzt → als manuell markieren, damit der Sync sie in Ruhe lässt.
+      // Auf null gesetzt → Korrektur aufheben, nächster Sync liefert Smoobus Wert.
+      ...(guestCount !== undefined
+        ? guestCount === null
+          ? { guestCountManual: false }
+          : { guestCount, guestCountManual: true }
+        : {}),
+    },
   });
 
   return NextResponse.json({ success: true, booking: updated });
