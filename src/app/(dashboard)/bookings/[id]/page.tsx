@@ -41,5 +41,5 @@ export default async function BookingDetailPage({
 
   if (!booking) notFound();
 
-  return <BookingDetail booking={booking} cleaners={cleaners} />;
+  return <BookingDetail booking={booking} cleaners={cleaners} isAdmin={session.user.role === "ADMIN"} />;
 }

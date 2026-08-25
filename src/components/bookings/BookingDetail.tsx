@@ -26,6 +26,7 @@ interface Booking {
   guestName: string;
   guestEmail?: string | null;
   guestPhone?: string | null;
+  smoobuId?: number | null;
   guestCount: number;
   guestCountManual?: boolean;
   channelNotice?: string | null;
@@ -72,7 +73,7 @@ function calcLaundry(guestCount: number, apt: Apartment) {
   };
 }
 
-export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaners: Cleaner[] }) {
+export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking: Booking; cleaners: Cleaner[]; isAdmin?: boolean }) {
   const router = useRouter();
   const assignment = booking.cleaningAssignment;
 
@@ -84,6 +85,33 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
   const [laundryNotes, setLaundryNotes] = useState(assignment?.laundryNotes ?? "");
   const [petCount, setPetCount] = useState<number | null>(booking.petCount ?? null);
   const [guestCount, setGuestCount] = useState<number | "">(booking.guestCount);
+
+  // Portal-Rohdaten (nur Admin) — zeigt was Smoobu für diese Buchung wirklich liefert
+  type SmoobuRaw = { adults: number | null; children: number | null; notice?: string | null };
+  const [rawData, setRawData] = useState<{ felder: SmoobuRaw; alleFeldnamen: string[] } | null>(null);
+  const [rawLoading, setRawLoading] = useState(false);
+  const [rawError, setRawError] = useState("");
+
+  async function loadRawData() {
+    if (!booking.smoobuId) return;
+    setRawLoading(true);
+    setRawError("");
+    try {
+      const res = await fetch(`/api/debug/smoobu?id=${booking.smoobuId}`);
+      const data = await res.json();
+      if (!res.ok) { setRawError(data.error ?? `Fehler ${res.status}`); return; }
+      const treffer = data.buchungen?.[0];
+      if (!treffer) { setRawError("Smoobu kennt diese Buchung im Sync-Zeitraum nicht."); return; }
+      setRawData({
+        felder: { ...treffer.gaesteFelder, notice: treffer.roh?.notice ?? null },
+        alleFeldnamen: treffer.alleFeldnamen ?? [],
+      });
+    } catch {
+      setRawError("Netzwerkfehler");
+    } finally {
+      setRawLoading(false);
+    }
+  }
 
   async function saveGuestCount() {
     if (guestCount === "" || guestCount < 1) { setGuestCount(booking.guestCount); return; }
@@ -541,7 +569,74 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
           </div>
         </div>
       )}
+
+      {/* Portal-Rohdaten — zeigt was Smoobu für diese Buchung tatsächlich liefert */}
+      {isAdmin && booking.smoobuId && (
+        <div style={{ ...glass, padding: "16px 20px" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, flexWrap: "wrap" as const }}>
+            <div>
+              <p style={{ fontSize: 13, fontWeight: 700, color: "rgba(255,255,255,0.75)" }}>Portal-Rohdaten</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.40)", marginTop: 1 }}>
+                Was Smoobu zu dieser Buchung liefert · ID {booking.smoobuId}
+              </p>
+            </div>
+            <button
+              onClick={loadRawData}
+              disabled={rawLoading}
+              className="btn-secondary"
+              style={{ padding: "8px 14px", fontSize: 13 }}
+            >
+              {rawLoading ? "Wird geladen…" : rawData ? "Neu laden" : "Abrufen"}
+            </button>
+          </div>
+
+          {rawError && (
+            <p style={{ marginTop: 12, fontSize: 13, color: "#fca5a5" }}>{rawError}</p>
+          )}
+
+          {rawData && (
+            <div style={{ marginTop: 14, display: "flex", flexDirection: "column" as const, gap: 10 }}>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" as const }}>
+                <RawField label="adults" value={rawData.felder.adults} />
+                <RawField label="children" value={rawData.felder.children} />
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.40)", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 4 }}>
+                  Notiz von Smoobu
+                </p>
+                <p style={{ fontSize: 13, color: rawData.felder.notice ? "rgba(255,255,255,0.80)" : "rgba(255,255,255,0.35)", whiteSpace: "pre-wrap" as const }}>
+                  {rawData.felder.notice || "— leer —"}
+                </p>
+              </div>
+              <div>
+                <p style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.40)", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 4 }}>
+                  Alle Felder von Smoobu
+                </p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", lineHeight: 1.6, wordBreak: "break-word" as const }}>
+                  {rawData.alleFeldnamen.join(" · ")}
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
+  );
+}
+
+function RawField({ label, value }: { label: string; value: number | null }) {
+  const missing = value === null || value === undefined;
+  return (
+    <span style={{
+      display: "inline-flex", alignItems: "center", gap: 6,
+      padding: "5px 12px", borderRadius: 10, fontSize: 13,
+      background: missing ? "rgba(239,68,68,0.12)" : "rgba(16,185,129,0.14)",
+      border: missing ? "1px solid rgba(239,68,68,0.30)" : "1px solid rgba(16,185,129,0.30)",
+      color: missing ? "#fca5a5" : "#6ee7b7",
+    }}>
+      <span style={{ fontFamily: "ui-monospace, monospace", opacity: 0.75 }}>{label}</span>
+      <span style={{ fontWeight: 700 }}>{missing ? "fehlt" : value}</span>
+    </span>
   );
 }
 
