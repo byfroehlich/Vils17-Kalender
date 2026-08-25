@@ -30,6 +30,7 @@ export interface Assignment {
     checkIn: Date;
     arrivalTime?: string | null;
     departureTime?: string | null;
+    channelNotice?: string | null;
     apartment: { name: string; color?: string | null };
   };
 }
@@ -513,6 +514,14 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
             <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
           </div>
+          {/* Notiz aus dem Portal — Sonderwünsche wie Kinderbett, Haustiere */}
+          {b.channelNotice && (
+            <div style={{ padding: "10px 14px", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.28)", borderRadius: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#7dd3fc", marginBottom: 3 }}>Notiz vom Portal:</p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)", whiteSpace: "pre-wrap" as const }}>{b.channelNotice}</p>
+            </div>
+          )}
+
           {/* Hinweise — Admin kann bearbeiten, Reiniger sieht nur Text */}
           {!isCleaner && editingNotes ? (
             <div style={{ padding: "12px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.35)", borderRadius: 10 }}>

@@ -28,6 +28,7 @@ interface Booking {
   guestPhone?: string | null;
   guestCount: number;
   guestCountManual?: boolean;
+  channelNotice?: string | null;
   petCount?: number | null;
   checkIn: Date;
   checkOut: Date;
@@ -310,6 +311,18 @@ export function BookingDetail({ booking, cleaners }: { booking: Booking; cleaner
               </InfoRow>
             )}
           </div>
+
+          {/* Notiz aus dem Portal — Gastnachricht, Sonderwünsche, Haustier-Hinweise */}
+          {booking.channelNotice && (
+            <div style={{ marginTop: 18, padding: "12px 14px", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.30)", borderRadius: 12 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: "#7dd3fc", textTransform: "uppercase" as const, letterSpacing: "0.05em", marginBottom: 5 }}>
+                Notiz vom Portal{booking.channelName ? ` · ${booking.channelName}` : ""}
+              </p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", whiteSpace: "pre-wrap" as const }}>
+                {booking.channelNotice}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

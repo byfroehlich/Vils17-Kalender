@@ -21,6 +21,8 @@ export interface NormalizedReservation {
   channelName: string | null;
   price: number | null;
   currency: string | null;
+  /** Freitext-Notiz des Portals (Gastnachricht, Sonderwünsche, Haustiere …) */
+  notice: string | null;
   status: "confirmed" | "cancelled";
 }
 

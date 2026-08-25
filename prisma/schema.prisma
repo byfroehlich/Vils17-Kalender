@@ -135,7 +135,9 @@ model Booking {
   // true = Gästezahl wurde von Hand korrigiert; der Sync überschreibt sie dann
   // nicht mehr (Smoobu liefert für manche Kanäle keine Gästezahl)
   guestCountManual Boolean @default(false)
-  petCount   Int?    // Haustiere (manuell gepflegt, Smoobu liefert keine Daten)
+  petCount   Int?    // Haustiere (manuell gepflegt — kein Portal liefert dafür ein eigenes Feld)
+  // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
+  channelNotice String?
 
   checkIn       DateTime
   checkOut      DateTime

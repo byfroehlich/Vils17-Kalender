@@ -228,6 +228,9 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         channelName,
         price,
         currency,
+        // Sonderwünsche des Portals — dort landen Gastnachrichten, Kinderbett-
+        // und Haustier-Hinweise, für die Smoobu kein eigenes Feld hat
+        notice: extractString(r, "notice", "assistant-notice"),
         status: "confirmed",
       });
     }
