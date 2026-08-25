@@ -64,6 +64,16 @@ services:
         sync: false
       - key: DREAME_DEVICE_ID
         sync: false
+      - key: IMAP_HOST
+        sync: false
+      - key: IMAP_PORT
+        sync: false
+      - key: IMAP_USER
+        sync: false
+      - key: IMAP_PASS
+        sync: false
+      - key: IMAP_FOLDER
+        sync: false
 
   - type: cron
     name: smoobu-sync
@@ -77,6 +87,23 @@ services:
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json" && \
       curl -s --max-time 30 --connect-timeout 10 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/push-reminders" \
+        -H "x-cron-secret: ${CRON_SECRET}" \
+        -H "Content-Type: application/json"
+    envVars:
+      - key: NEXT_PUBLIC_APP_URL
+        sync: false
+      - key: CRON_SECRET
+        sync: false
+
+  - type: cron
+    name: email-import
+    env: node
+    region: frankfurt
+    plan: free
+    schedule: "*/30 * * * *"
+    buildCommand: echo "ready"
+    startCommand: |
+      curl -s --max-time 90 --connect-timeout 30 -X POST "${NEXT_PUBLIC_APP_URL}/api/cron/email-import" \
         -H "x-cron-secret: ${CRON_SECRET}" \
         -H "Content-Type: application/json"
     envVars:

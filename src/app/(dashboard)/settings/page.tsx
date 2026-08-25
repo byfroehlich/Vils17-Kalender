@@ -6,6 +6,7 @@ import { ApartmentSettings } from "@/components/settings/ApartmentSettings";
 import { CalendarViewSettings } from "@/components/settings/CalendarViewSettings";
 import { UserManagement } from "@/components/settings/UserManagement";
 import { AppLinkCard } from "@/components/settings/AppLinkCard";
+import { EmailImportCard } from "@/components/settings/EmailImportCard";
 
 export default async function SettingsPage() {
   const session = await getServerSession(authOptions);
@@ -42,6 +43,8 @@ export default async function SettingsPage() {
 
       {/* App-Link */}
       <AppLinkCard />
+
+      <EmailImportCard />
 
       <ApartmentSettings apartments={apartments} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />

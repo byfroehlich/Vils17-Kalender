@@ -169,6 +169,38 @@ Pflichtfelder erzeugen einen Warning-Log statt einen Crash.
 - **Webhook**: `POST /api/smoobu/webhook` empfängt Echtzeit-Events
 - **Manuell**: Admin kann Sync per Button auslösen
 
+### Portal-Mail-Import (`src/lib/email-import/`)
+
+Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für
+kein Portal Haustierangaben. Direkte APIs sind nicht verfügbar — Airbnb und
+Booking.com vergeben Zugang ausschließlich an zertifizierte Partner, nicht an
+einzelne Vermieter. Die Bestätigungsmails der Portale enthalten die Angaben
+dagegen im Klartext.
+
+```
+src/lib/email-import/
+  parse.ts   ← reine Parser (Booking.com + Airbnb, DE + EN) — testbar
+  match.ts   ← Zuordnung Mail → Buchung über Name, Anreisedatum, Kanal
+  imap.ts    ← holt ungelesene Mails, markiert sie als gelesen
+  run.ts     ← Ablauf: lesen → parsen → zuordnen → ergänzen → protokollieren
+```
+
+**Einrichtung:** Portalmails in ein Postfach weiterleiten, dann in Render
+`IMAP_HOST`, `IMAP_USER`, `IMAP_PASS` setzen (Gmail: App-Passwort, IMAP im Konto
+aktivieren). Cron `email-import` läuft alle 30 Minuten; in den Einstellungen gibt
+es zusätzlich „Jetzt prüfen" und ein Protokoll der letzten 25 Mails.
+
+**Regeln:**
+- Eine von Hand gesetzte Gästezahl wird nie überschrieben (`guestCountSource`
+  unterscheidet `"manual"` von `"email"`).
+- Ohne eindeutige Zuordnung wird nichts geändert, sondern als `UNMATCHED` bzw.
+  `AMBIGUOUS` protokolliert.
+- Jede Mail wird über ihre `messageId` genau einmal verarbeitet (`EmailImport`).
+
+**Parser prüfen:** `npm run test:mail` — 35 Prüfungen gegen realistische
+Mailtexte. Die Parser sind der fragile Teil: Ändern die Portale ihre Vorlagen,
+zuerst hier nachziehen und den Test erweitern.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {

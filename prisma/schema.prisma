@@ -46,10 +46,44 @@ model Organization {
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
-  users      User[]
-  apartments Apartment[]
+  users        User[]
+  apartments   Apartment[]
+  emailImports EmailImport[]
 
   @@map("organizations")
+}
+
+// ─── Portal-Mail-Import ───────────────────────────────────────────────────────
+// Booking.com und Airbnb nennen in ihren Mails Angaben, die Smoobu nicht
+// durchreicht (Erwachsene/Kinder, Haustiere). Jede verarbeitete Mail wird hier
+// protokolliert — als Schutz vor Doppelverarbeitung und als Nachweis für den Admin.
+
+model EmailImport {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  messageId  String    @unique
+  portal     String? // "booking.com" | "airbnb"
+  subject    String?
+  receivedAt DateTime?
+
+  // APPLIED | NO_CHANGE | UNMATCHED | AMBIGUOUS | NO_DATA | ERROR
+  status String
+  detail String?
+
+  bookingId String?
+  booking   Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  parsedGuestCount Int?
+  parsedAdults     Int?
+  parsedChildren   Int?
+  parsedPets       Int?
+
+  createdAt DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("email_imports")
 }
 
 // ─── Users ───────────────────────────────────────────────────────────────────
@@ -135,6 +169,8 @@ model Booking {
   // true = Gästezahl wurde von Hand korrigiert; der Sync überschreibt sie dann
   // nicht mehr (Smoobu liefert für manche Kanäle keine Gästezahl)
   guestCountManual Boolean @default(false)
+  // Woher die abweichende Gästezahl stammt: "manual" (Eingabe) oder "email" (Portal-Mail)
+  guestCountSource String?
   petCount   Int?    // Haustiere (manuell gepflegt — kein Portal liefert dafür ein eigenes Feld)
   // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
   channelNotice String?
@@ -154,6 +190,7 @@ model Booking {
   updatedAt DateTime @updatedAt
 
   cleaningAssignment CleaningAssignment?
+  emailImports       EmailImport[]
 
   @@index([organizationId, checkIn])
   @@index([organizationId, checkOut])
