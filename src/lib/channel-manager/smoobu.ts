@@ -190,6 +190,20 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         continue;
       }
 
+      // Gästezahl: Smoobu liefert adults/children getrennt. Fehlt "adults"
+      // komplett, können wir die echte Zahl nicht kennen — dann wird 1 als
+      // Notwert gesetzt UND das protokolliert, damit eine falsche Wäschemenge
+      // nicht unbemerkt bleibt.
+      const hasAdults = typeof r.adults === "number";
+      const guestCount = (hasAdults ? (r.adults as number) : 1) + (r.children ?? 0);
+      if (!hasAdults) {
+        console.warn(
+          `[SmoobuAdapter] Buchung ${r.id} ("${extractString(r, "guest-name", "firstname") ?? "?"}", ` +
+          `Kanal ${r.channel?.name ?? "?"}): Smoobu liefert kein "adults" — Gästezahl auf ${guestCount} gesetzt. ` +
+          `Vorhandene Felder: ${Object.keys(r).join(", ")}`
+        );
+      }
+
       // Kanalname aus dem verschachtelten channel-Objekt
       const channelName = r.channel?.name ?? null;
 
@@ -206,7 +220,7 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         guestName: extractString(r, "guest-name", "firstname") ?? "Unbekannt",
         guestEmail: (r.email as string | null) ?? null,
         guestPhone: (r.phone as string | null) ?? null,
-        guestCount: ((r.adults as number) ?? 1) + ((r.children as number) ?? 0),
+        guestCount,
         checkIn,
         checkOut,
         arrivalTime: extractString(r, "check-in") || null,
