@@ -169,6 +169,36 @@ Pflichtfelder erzeugen einen Warning-Log statt einen Crash.
 - **Webhook**: `POST /api/smoobu/webhook` empfängt Echtzeit-Events
 - **Manuell**: Admin kann Sync per Button auslösen
 
+### PWA (installierbar auf Android + iOS)
+
+Die App lässt sich auf dem Startbildschirm installieren und läuft dann ohne
+Adressleiste (`display: standalone`).
+
+```
+public/manifest.json            name, start_url "/", scope, standalone, Icons, Shortcuts
+public/icon-192.png             Android Startbildschirm
+public/icon-512.png             Splashscreen / App-Übersicht
+public/icon-maskable-512.png    Android adaptive Icons (Inhalt in sicherer Zone)
+public/apple-touch-icon.png     iOS (180px)
+public/sw.js                    Service Worker: Push + fetch-Handler + Offline
+public/offline.html             Anzeige ohne Verbindung
+src/components/pwa/ServiceWorkerRegistration.tsx   registriert sw.js auf allen Seiten
+src/components/pwa/InstallPrompt.tsx               Installieren-Knopf (Android) / Anleitung (iOS)
+```
+
+**Icons neu erzeugen** (nach Design-Änderung):
+```bash
+npm i --no-save sharp && node scripts/generate-icons.mjs
+```
+
+**Caching-Regel — wichtig:** Seiten und `/api/*` werden **nie** zwischengespeichert,
+weil sie kontoabhängige Daten enthalten. Gecacht werden nur `/_next/static/*`
+(unveränderlich, Hash im Namen) und die Offline-Seite. Diese Regel beim Erweitern
+des Service Workers beibehalten.
+
+**Service Worker aktualisieren:** `VERSION` in `public/sw.js` hochzählen — alte
+Caches werden beim Aktivieren automatisch gelöscht.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

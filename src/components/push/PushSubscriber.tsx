@@ -19,9 +19,8 @@ export function PushSubscriber() {
 
     async function subscribe() {
       try {
-        // Register service worker
-        const reg = await navigator.serviceWorker.register("/sw.js", { scope: "/" });
-        await navigator.serviceWorker.ready;
+        // Registrierung übernimmt ServiceWorkerRegistration (läuft auf allen Seiten)
+        const reg = await navigator.serviceWorker.ready;
 
         // Check existing subscription
         const existing = await reg.pushManager.getSubscription();
