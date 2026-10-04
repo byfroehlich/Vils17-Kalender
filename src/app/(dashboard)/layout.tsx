@@ -37,8 +37,10 @@ export default async function DashboardLayout({
       <Sidebar role={session.user.role} />
 
       {/* Hauptbereich */}
-      {/* min-w-0 + overflow-x clip: breite Inhalte dürfen die Seite nie über den Viewport hinausdrücken */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, overflowX: "clip" }}>
+      {/* min-w-0 + overflow-x clip: breite Inhalte dürfen die Seite nie über den Viewport hinausdrücken.
+          100dvh statt 100vh: folgt der tatsächlich sichtbaren Höhe (Tastatur, Safari-Leisten);
+          ältere Browser ignorieren den Wert und nutzen min-h-screen */}
+      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, overflowX: "clip", minHeight: "100dvh" }}>
         <Topbar userName={session.user.name ?? ""} role={session.user.role} />
         <PushSubscriber />
         <AutoRefresh />

@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { startOfDay, startOfMonth, endOfMonth, addDays, isWithinInterval } from "date-fns";
 
+import { ScrollLock } from "@/components/ui/ScrollLock";
 interface Assignment {
   id: string;
   status: string;
@@ -317,6 +318,7 @@ export function CleanerDashboard({
         if (!a) return null;
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
+            <ScrollLock />
             <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>

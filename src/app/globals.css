@@ -33,6 +33,9 @@
   html, body {
     overflow-x: clip;
     max-width: 100%;
+    /* Kein Nachfedern am Seitenrand: In der installierten iPhone-App verschiebt
+       das Federn die festen Leisten, danach bleibt die Ansicht hängen */
+    overscroll-behavior: none;
   }
 
   body {

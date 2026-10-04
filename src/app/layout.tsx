@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getMessages, getLocale } from "next-intl/server";
 import { Providers } from "./providers";
 import { ServiceWorkerRegistration } from "@/components/pwa/ServiceWorkerRegistration";
+import { IosViewportFix } from "@/components/pwa/IosViewportFix";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
@@ -52,6 +53,7 @@ export default async function RootLayout({
     <html lang={locale}>
       <body className={`${inter.variable} font-sans antialiased`}>
         <ServiceWorkerRegistration />
+        <IosViewportFix />
         <NextIntlClientProvider messages={messages}>
           <Providers>{children}</Providers>
         </NextIntlClientProvider>

@@ -6,6 +6,7 @@ import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingU
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
+import { ScrollLock } from "@/components/ui/ScrollLock";
 type NavItem = {
   href: string;
   label: string;
@@ -132,6 +133,7 @@ export function Sidebar({ role }: { role: string }) {
       {/* ── Mobile: Mehr-Popup ───────────────────────────────────────────── */}
       {moreOpen && (
         <>
+          <ScrollLock />
           {/* Backdrop */}
           <div
             className="lg:hidden fixed inset-0 z-40"
