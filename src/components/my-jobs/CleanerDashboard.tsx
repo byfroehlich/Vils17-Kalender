@@ -20,6 +20,8 @@ interface Assignment {
   cleanerUnavailableNote?: string | null;
   cleaner?: { name: string; cleanerRate: number } | null;
   nextGuestCount?: number | null;
+  /** Satz dieses Auftrags (lib/rates.ts) — kann je Auftrag abweichen */
+  rate?: number;
   booking: {
     id: string;
     guestCount: number;
@@ -196,10 +198,12 @@ export function CleanerDashboard({
 
       {/* Verdienst */}
       {isCleaner && (() => {
-        const rate = myAssignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
+        const baseRate = myAssignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
+        // Summe der einzelnen Sätze — Sondersatz-Aufträge (z.B. 70 €) zählen voll
+        const rateOf = (a: (typeof myAssignments)[number]) => a.rate ?? baseRate;
         const completed = myAssignments.filter((a) => a.status === "COMPLETED");
-        const totalEarned = completed.length * rate;
-        const paid = completed.filter((a) => a.paidOut).length * rate;
+        const totalEarned = completed.reduce((s, a) => s + rateOf(a), 0);
+        const paid = completed.filter((a) => a.paidOut).reduce((s, a) => s + rateOf(a), 0);
         const pending = totalEarned - paid;
         if (completed.length === 0) return null;
         return (

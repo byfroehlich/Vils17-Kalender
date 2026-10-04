@@ -5,18 +5,22 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react";
 import { CleanerList } from "./CleanerList";
+import { RateBadge } from "@/components/ui/RateBadge";
 
 interface Assignment {
   id: string;
   status: string;
   isSelfClean: boolean;
   laundryStatus: string;
+  cleanerId?: string | null;
   cleaner?: { name: string } | null;
   booking: {
     id: string;
     guestName: string;
     guestCount: number;
     checkOut: Date;
+    premiumRate?: number | null;
+    premiumRateCleanerId?: string | null;
     apartment: {
       name: string;
       color?: string | null;
@@ -86,7 +90,18 @@ function AssignmentRow({ a }: { a: Assignment }) {
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>Abreise</p>
       </div>
       <div style={{ flex: 1, minWidth: 0 }}>
-        <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.booking.guestName}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, minWidth: 0 }}>
+          <p style={{ fontSize: 13, fontWeight: 600, color: "rgba(255,255,255,0.9)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{a.booking.guestName}</p>
+          {a.booking.premiumRate != null && (
+            <RateBadge
+              rate={a.booking.premiumRate}
+              inactive={!!a.cleanerId && a.cleanerId !== a.booking.premiumRateCleanerId}
+              title={!!a.cleanerId && a.cleanerId !== a.booking.premiumRateCleanerId
+                ? "Sondersatz-Buchung — die Vertretung bekommt ihren eigenen Satz"
+                : `Sondersatz ${a.booking.premiumRate.toFixed(0)} € pro Reinigung`}
+            />
+          )}
+        </div>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{a.booking.apartment.name} · {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}</p>
         {a.isSelfClean
           ? <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)", marginTop: 1 }}>Selbstreinigung</p>

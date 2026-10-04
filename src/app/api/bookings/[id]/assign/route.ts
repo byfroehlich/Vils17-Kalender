@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { sendCleaningAssignmentMail } from "@/lib/mail";
 import { sendCleaningWhatsApp } from "@/lib/whatsapp";
 import { sendPushToUsers } from "@/lib/push";
+import { effectiveRate } from "@/lib/rates";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
 
@@ -55,7 +56,7 @@ export async function POST(
   // Aktuellen Status prüfen — COMPLETED bleibt erhalten beim Reiniger-Wechsel
   const existing = await prisma.cleaningAssignment.findUnique({
     where: { bookingId: params.id },
-    select: { status: true, declinedById: true },
+    select: { status: true, declinedById: true, cleanerId: true, rate: true },
   });
   const preserveCompleted = existing?.status === "COMPLETED";
   const newStatus = isSelfClean ? "SELF_CLEAN"
@@ -66,6 +67,13 @@ export async function POST(
   // "abgesagt · übernommen von X" — auch wenn ein Admin sie neu zuweist.
   // Gegenstandslos wird die Absage nur, wenn der Auftrag zurück an die absagende
   // Person geht oder die Reinigung auf Selbstreinigung umgestellt wird.
+  // Satz: Bei erledigten Reinigungen festgeschrieben. Wechselt dabei die
+  // Reinigungskraft, gilt deren Satz (Sondersatz nur, wenn er für sie vereinbart ist).
+  const rate =
+    newStatus !== "COMPLETED" || !cleaner ? null
+    : existing?.cleanerId === cleaner.id && existing.rate != null ? existing.rate
+    : effectiveRate({ rate: null, cleanerId: cleaner.id, cleaner, booking });
+
   const clearDecline =
     isSelfClean || !existing?.declinedById || existing.declinedById === cleanerId;
 
@@ -85,6 +93,7 @@ export async function POST(
       cleanerId: cleanerId ?? null,
       isSelfClean,
       status: newStatus,
+      rate,
       notes,
       assignedAt: new Date(),
       notifiedAt: null,

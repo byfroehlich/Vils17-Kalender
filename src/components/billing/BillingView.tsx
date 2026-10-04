@@ -3,13 +3,18 @@
 import { useState, useTransition } from "react";
 import { CheckCircle, Euro, Clock, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { RateBadge } from "@/components/ui/RateBadge";
 
 type Assignment = {
   id: string;
   paidOut: boolean;
   paidOutAt: Date | string | null;
-  booking: { checkOut: Date | string; guestName: string };
+  booking: { checkOut: Date | string; guestName: string; apartment?: { name: string } };
   cleaner: { id: string; name: string; cleanerRate: number } | null;
+  /** Satz dieses Auftrags (serverseitig über lib/rates.ts ermittelt) */
+  rate: number;
+  /** Sondersatz, z.B. 70 € Penthouse */
+  isPremium: boolean;
 };
 
 type MonthGroup = {
@@ -17,7 +22,6 @@ type MonthGroup = {
   month: number;
   cleanerId: string;
   cleanerName: string;
-  rate: number;
   jobs: Assignment[];
   allPaid: boolean;
 };
@@ -38,7 +42,6 @@ function groupByMonthAndCleaner(assignments: Assignment[]): MonthGroup[] {
         month,
         cleanerId: a.cleaner.id,
         cleanerName: a.cleaner.name,
-        rate: a.cleaner.cleanerRate,
         jobs: [],
         allPaid: true,
       });
@@ -53,6 +56,10 @@ function groupByMonthAndCleaner(assignments: Assignment[]): MonthGroup[] {
     return b.month - a.month;
   });
 }
+
+// Beträge immer als Summe der einzelnen Aufträge — Sätze können je Auftrag
+// verschieden sein (normaler Satz, Sondersatz, früherer festgeschriebener Satz)
+const sum = (jobs: Assignment[]) => jobs.reduce((s, j) => s + j.rate, 0);
 
 const MONTH_NAMES = [
   "Januar", "Februar", "März", "April", "Mai", "Juni",
@@ -76,14 +83,8 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
     ? allGroups
     : allGroups.filter((g) => g.cleanerId === selectedCleaner);
 
-  const totalUnpaid = groups.reduce(
-    (sum, g) => sum + (g.allPaid ? 0 : g.jobs.filter((j) => !j.paidOut).length * g.rate),
-    0
-  );
-  const totalPaid = groups.reduce(
-    (sum, g) => sum + g.jobs.filter((j) => j.paidOut).length * g.rate,
-    0
-  );
+  const totalUnpaid = groups.reduce((acc, g) => acc + sum(g.jobs.filter((j) => !j.paidOut)), 0);
+  const totalPaid = groups.reduce((acc, g) => acc + sum(g.jobs.filter((j) => j.paidOut)), 0);
 
   async function markPaid(group: MonthGroup) {
     const key = `${group.cleanerId}-${group.year}-${group.month}`;
@@ -188,9 +189,10 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
       <div className="space-y-3">
         {groups.map((group) => {
           const key = `${group.cleanerId}-${group.year}-${group.month}`;
-          const unpaidCount = group.jobs.filter((j) => !j.paidOut).length;
-          const total = group.jobs.length * group.rate;
-          const paidTotal = group.jobs.filter((j) => j.paidOut).length * group.rate;
+          const unpaidTotal = sum(group.jobs.filter((j) => !j.paidOut));
+          const total = sum(group.jobs);
+          const paidTotal = sum(group.jobs.filter((j) => j.paidOut));
+          const premiumCount = group.jobs.filter((j) => j.isPremium).length;
 
           return (
             <div
@@ -216,12 +218,12 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
                     )}
                   </div>
                   <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 2 }}>
-                    {group.cleanerName} · {group.jobs.length} Auftrag{group.jobs.length !== 1 ? "träge" : ""} · {group.rate} €/Stück
+                    {group.cleanerName} · {group.jobs.length} {group.jobs.length === 1 ? "Auftrag" : "Aufträge"}{premiumCount > 0 ? ` · davon ${premiumCount} mit Sondersatz` : ""}
                   </p>
                 </div>
                 <div className="text-right">
                   <p style={{ fontWeight: 700, color: group.allPaid ? "rgba(255,255,255,0.5)" : "#10b981", fontSize: 18 }}>
-                    {group.allPaid ? total.toFixed(0) : (unpaidCount * group.rate).toFixed(0)} €
+                    {group.allPaid ? total.toFixed(0) : unpaidTotal.toFixed(0)} €
                   </p>
                   {!group.allPaid && paidTotal > 0 && (
                     <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
@@ -235,7 +237,7 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
               <div className="mt-3 space-y-1.5">
                 {group.jobs.map((job) => (
                   <div key={job.id} className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2" style={{ minWidth: 0 }}>
                       {job.paidOut ? (
                         <CheckCircle style={{ width: 14, height: 14, color: "#10b981", flexShrink: 0 }} />
                       ) : (
@@ -244,13 +246,14 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
                       <span style={{ fontSize: 13, color: job.paidOut ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.7)" }}>
                         {job.booking.guestName}
                       </span>
+                      {job.isPremium && <RateBadge rate={job.rate} />}
                     </div>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
                         Abreise {new Date(job.booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" })}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600, color: job.paidOut ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.8)" }}>
-                        {group.rate.toFixed(0)} €
+                        {job.rate.toFixed(0)} €
                       </span>
                     </div>
                   </div>
@@ -280,7 +283,7 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
                   }}
                 >
                   <Euro style={{ width: 16, height: 16 }} />
-                  {paying === key ? "Wird gespeichert…" : `${(unpaidCount * group.rate).toFixed(0)} € als ausgezahlt markieren`}
+                  {paying === key ? "Wird gespeichert…" : `${unpaidTotal.toFixed(0)} € als ausgezahlt markieren`}
                 </button>
               )}
 

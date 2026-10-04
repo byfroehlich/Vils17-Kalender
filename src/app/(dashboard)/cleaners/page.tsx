@@ -38,6 +38,8 @@ export default async function CleanersPage() {
             guestName: true,
             guestCount: true,
             checkOut: true,
+            premiumRate: true,
+            premiumRateCleanerId: true,
             apartment: {
               select: {
                 name: true,

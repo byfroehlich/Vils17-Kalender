@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2, Pencil, Check, X, Bot } from "lucide-react";
+import { RateBadge } from "@/components/ui/RateBadge";
 
 const COLOR_OPTIONS = [
   "#3b82f6", // Blau
@@ -25,10 +26,24 @@ interface Apartment {
   laundryTowelsPerGuest: number;
   laundryKitchenCount: number;
   dreameEnabled: boolean;
+  cleaningRate?: number | null;
+  cleaningRateFrom?: Date | string | null;
+  cleaningRateCleanerId?: string | null;
   _count: { bookings: number };
 }
 
-export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
+interface CleanerOption {
+  id: string;
+  name: string;
+}
+
+export function ApartmentSettings({
+  apartments,
+  cleaners = [],
+}: {
+  apartments: Apartment[];
+  cleaners?: CleanerOption[];
+}) {
   const router = useRouter();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
@@ -36,6 +51,8 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
   const [editBedsDivisor, setEditBedsDivisor] = useState(2);
   const [editTowelsPerGuest, setEditTowelsPerGuest] = useState(1);
   const [editKitchenCount, setEditKitchenCount] = useState(1);
+  const [editRate, setEditRate] = useState<string>("");
+  const [editRateCleaner, setEditRateCleaner] = useState<string>("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [deleting, setDeleting] = useState<string | null>(null);
@@ -48,10 +65,30 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
     setEditBedsDivisor(apt.laundryBedsDivisor ?? 2);
     setEditTowelsPerGuest(apt.laundryTowelsPerGuest ?? 1);
     setEditKitchenCount(apt.laundryKitchenCount ?? 1);
+    setEditRate(apt.cleaningRate != null ? String(apt.cleaningRate) : "");
+    setEditRateCleaner(apt.cleaningRateCleanerId ?? "");
     setSaveError(null);
   }
 
   async function saveEdit(id: string) {
+    const apt = apartments.find((a) => a.id === id);
+    const rateNum = editRate.trim() === "" ? null : Number(editRate.replace(",", "."));
+    if (rateNum !== null && (isNaN(rateNum) || rateNum < 0)) {
+      setSaveError("Sondersatz: bitte einen gültigen Betrag eingeben");
+      return;
+    }
+    if (rateNum !== null && !editRateCleaner) {
+      setSaveError("Sondersatz: bitte die Reinigungskraft auswählen");
+      return;
+    }
+    const rateChanged =
+      rateNum !== (apt?.cleaningRate ?? null) ||
+      (rateNum !== null && editRateCleaner !== (apt?.cleaningRateCleanerId ?? ""));
+    if (rateChanged && rateNum !== null &&
+        !confirm(`Sondersatz ${rateNum.toFixed(0)} € gilt für alle Buchungen, die ab jetzt eingehen. Bestehende Buchungen behalten ihren Satz. Fortfahren?`)) {
+      return;
+    }
+
     setSaving(true);
     setSaveError(null);
     const res = await fetch(`/api/apartments/${id}`, {
@@ -63,10 +100,17 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
         laundryBedsDivisor: editBedsDivisor,
         laundryTowelsPerGuest: editTowelsPerGuest,
         laundryKitchenCount: editKitchenCount,
+        ...(rateChanged
+          ? { cleaningRate: rateNum, cleaningRateCleanerId: rateNum === null ? null : editRateCleaner }
+          : {}),
       }),
     });
     setSaving(false);
-    if (!res.ok) { setSaveError("Speichern fehlgeschlagen"); return; }
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setSaveError(data.error ?? "Speichern fehlgeschlagen");
+      return;
+    }
     setEditingId(null);
     router.refresh();
   }
@@ -193,6 +237,39 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                   </div>
                 </div>
 
+                {/* Sondersatz: z.B. 70 € pro Reinigung für Vanessa im Penthouse */}
+                <div>
+                  <label style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>
+                    Sondersatz pro Reinigung (optional)
+                  </label>
+                  <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      placeholder="z.B. 70"
+                      value={editRate}
+                      onChange={(e) => setEditRate(e.target.value)}
+                      className="form-input w-24 text-center"
+                    />
+                    <span style={{ fontSize: 13, color: "rgba(255,255,255,0.35)" }}>€ für</span>
+                    <select
+                      value={editRateCleaner}
+                      onChange={(e) => setEditRateCleaner(e.target.value)}
+                      className="form-input"
+                      style={{ width: "auto", minWidth: 140 }}
+                    >
+                      <option value="">— Reinigungskraft —</option>
+                      {cleaners.map((c) => (
+                        <option key={c.id} value={c.id}>{c.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>
+                    Gilt nur für Buchungen, die ab dem Speichern eingehen, und nur für diese Person —
+                    Vertretungen bekommen ihren eigenen Satz. Feld leeren entfernt den Sondersatz.
+                  </p>
+                </div>
+
                 {saveError && (
                   <p style={{ fontSize: 13, color: "#fca5a5" }}>{saveError}</p>
                 )}
@@ -232,6 +309,16 @@ export function ApartmentSettings({ apartments }: { apartments: Apartment[] }) {
                     <p className="text-xs text-zinc-400 mt-0.5">
                       🛏 1 Set/{apt.laundryBedsDivisor ?? 2} Gäste · 🛁 {apt.laundryTowelsPerGuest ?? 1}/Gast · 🍽 {apt.laundryKitchenCount ?? 1}/Buchung
                     </p>
+                    {apt.cleaningRate != null && (
+                      <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 4, flexWrap: "wrap" }}>
+                        <RateBadge rate={apt.cleaningRate} />
+                        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.45)" }}>
+                          für {cleaners.find((c) => c.id === apt.cleaningRateCleanerId)?.name ?? "—"}
+                          {apt.cleaningRateFrom &&
+                            ` · Buchungen ab ${new Date(apt.cleaningRateFrom).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", year: "numeric" })}`}
+                        </span>
+                      </div>
+                    )}
                     {apt.dreameEnabled && (
                       <p style={{ fontSize: 11, color: "#10b981", marginTop: 2 }}>
                         Roboter aktiv · ID: <span style={{ fontFamily: "monospace" }}>{apt.id}</span>

@@ -46,7 +46,10 @@ export default async function SettingsPage() {
 
       <EmailImportCard />
 
-      <ApartmentSettings apartments={apartments} />
+      <ApartmentSettings
+        apartments={apartments}
+        cleaners={users.filter((u) => u.role === "CLEANER").map((u) => ({ id: u.id, name: u.name }))}
+      />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />
       <UserManagement users={users} currentUserId={session.user.id} apartments={apartmentsBrief} />
       <hr style={{ borderColor: "rgba(255,255,255,0.08)" }} />

@@ -239,6 +239,34 @@ Datumslogik: Buchungsdaten liegen als UTC-Mitternacht des Kalendertags vor.
 Verglichen wird über den Kalendertag in Europe/Vienna (`viennaDateKey`), die
 Anzeige formatiert mit `timeZone: "UTC"`.
 
+### Reinigungssätze (`src/lib/rates.ts`)
+
+Ein Auftrag kostet nicht pauschal den Satz der Reinigungskraft. Es gibt einen
+**Sondersatz pro Wohnung** (z.B. 70 € für Vanessa im Penthouse), und Sätze
+werden beim Erledigen **festgeschrieben**.
+
+```
+Apartment.cleaningRate / cleaningRateCleanerId / cleaningRateFrom
+   → vereinbarter Sondersatz, für wen, gilt für Buchungen ab Zeitpunkt
+Booking.premiumRate / premiumRateCleanerId
+   → beim Eingang der Buchung von der Wohnung übernommen, danach unverändert
+      (= die Markierung „70-€-Buchung")
+CleaningAssignment.rate
+   → beim Erledigen festgeschrieben; gilt dann für immer
+```
+
+Regeln (`effectiveRate`): festgeschriebener Satz → sonst Sondersatz, wenn genau
+die vereinbarte Person reinigt → sonst normaler Satz der Reinigungskraft.
+**Vertretungen bekommen ihren eigenen Satz**, nicht den Sondersatz.
+
+- Sondersatz ändern (Einstellungen → Unterkunft bearbeiten) wirkt **nie
+  rückwirkend**: `cleaningRateFrom` wird auf „jetzt" gesetzt, bestehende
+  Buchungen behalten ihren Vermerk. Änderungen landen im Audit-Log.
+- Alle Ansichten bekommen `rate`/`isPremium` fertig vom Server — nie im Client
+  aus `cleaner.cleanerRate` rechnen, sonst stimmen Sondersatz und Historie nicht.
+- Markierung: `RateBadge` („70 €"); durchgestrichen, wenn eine Vertretung reinigt.
+- Prüfen: `npm run test:rates`
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

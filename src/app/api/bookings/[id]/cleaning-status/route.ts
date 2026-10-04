@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { sendPushToRole } from "@/lib/push";
+import { effectiveRate } from "@/lib/rates";
 
 const schema = z.object({
   status: z.enum(["UNASSIGNED", "SELF_CLEAN", "ASSIGNED", "COMPLETED"]),
@@ -45,6 +46,10 @@ export async function PATCH(
       organizationId: session.user.organizationId,
       ...cleanerFilter,
     },
+    include: {
+      cleaner: { select: { cleanerRate: true } },
+      booking: { select: { premiumRate: true, premiumRateCleanerId: true } },
+    },
   });
 
   if (!assignment) {
@@ -56,6 +61,13 @@ export async function PATCH(
     where: { id: assignment.id },
     data: {
       status: newStatus,
+      // Satz beim Erledigen festschreiben — spätere Satzänderungen verändern
+      // diese Abrechnung dann nicht mehr. Wird "erledigt" zurückgenommen, gilt
+      // wieder der laufende Satz.
+      rate: newStatus === "COMPLETED" && assignment.cleanerId
+        // schon erledigt → festgeschriebenen Satz behalten, nicht neu rechnen
+        ? effectiveRate({ ...assignment, rate: assignment.status === "COMPLETED" ? assignment.rate : null })
+        : null,
       // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
       ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
         ? { cleanerId: null, assignedAt: null, cleanerUnavailable: false, cleanerUnavailableNote: null, declinedById: null }

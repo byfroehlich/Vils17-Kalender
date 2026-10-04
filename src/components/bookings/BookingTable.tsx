@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { Users } from "lucide-react";
+import { RateBadge } from "@/components/ui/RateBadge";
 
 interface Booking {
   id: string;
@@ -9,8 +10,11 @@ interface Booking {
   checkIn: Date;
   checkOut: Date;
   channelName?: string | null;
+  premiumRate?: number | null;
+  premiumRateCleanerId?: string | null;
   apartment: { name: string; color?: string | null };
   cleaningAssignment?: {
+    cleanerId?: string | null;
     status: string;
     laundryStatus: string;
     cleaner?: { name: string } | null;
@@ -102,6 +106,17 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                         {booking.guestName}
                       </span>
                       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{booking.apartment.name}</span>
+                      {booking.premiumRate != null && (() => {
+                        const cid = booking.cleaningAssignment?.cleanerId;
+                        const other = !!cid && cid !== booking.premiumRateCleanerId;
+                        return (
+                          <RateBadge
+                            rate={booking.premiumRate}
+                            inactive={other}
+                            title={other ? "Sondersatz-Buchung — die Vertretung bekommt ihren eigenen Satz" : undefined}
+                          />
+                        );
+                      })()}
                     </div>
                     <div style={{ display: "flex", alignItems: "center", gap: "3px 12px", marginTop: 3, fontSize: 12, color: "rgba(255,255,255,0.60)", flexWrap: "wrap" as const }}>
                       <span style={{ display: "flex", alignItems: "center", gap: 4 }}>

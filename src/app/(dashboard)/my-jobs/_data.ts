@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { startOfDay } from "date-fns";
+import { effectiveRate, isPremiumFor } from "@/lib/rates";
 
 export async function getMyJobsData() {
   const session = await getServerSession(authOptions);
@@ -74,6 +75,9 @@ export async function getMyJobsData() {
           myAptIds.includes(a.booking.apartmentId)),
       // Fremde Absage in meiner Wohnung — kann von mir übernommen werden
       foreignDecline: a.cleanerUnavailable && a.cleanerId !== session.user.id,
+      // Satz + Sondersatz-Markierung (z.B. 70 € Penthouse), Regeln in lib/rates.ts
+      rate: effectiveRate(a),
+      isPremium: isPremiumFor(a.booking, a.cleanerId),
     }));
 
     const openAssignments = await prisma.cleaningAssignment.findMany({
@@ -95,7 +99,14 @@ export async function getMyJobsData() {
       },
     });
 
-    const enriched = await enrichWithNextGuests(orgId, myAssignments, openAssignments);
+    // Offene Aufträge: Markierung, wenn ICH beim Zusagen den Sondersatz bekäme
+    const openWithRate = openAssignments.map((a) => ({
+      ...a,
+      isPremium: isPremiumFor(a.booking, session.user.id),
+      premiumRate: a.booking.premiumRate,
+    }));
+
+    const enriched = await enrichWithNextGuests(orgId, myAssignments, openWithRate);
 
     return {
       myAssignments: enriched.my,
@@ -125,7 +136,11 @@ export async function getMyJobsData() {
     },
   });
 
-  const enriched = await enrichWithNextGuests(orgId, allAssignments, []);
+  const enriched = await enrichWithNextGuests(
+    orgId,
+    allAssignments.map((a) => ({ ...a, rate: effectiveRate(a), isPremium: isPremiumFor(a.booking, a.cleanerId) })),
+    []
+  );
 
   return {
     myAssignments: enriched.my,

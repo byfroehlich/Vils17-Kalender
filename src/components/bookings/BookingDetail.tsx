@@ -7,6 +7,7 @@ import { Users, Calendar, Globe, Phone, Mail, ArrowLeft, Sparkles, WashingMachin
 import Link from "next/link";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { RateBadge } from "@/components/ui/RateBadge";
 interface Cleaner {
   id: string;
   name: string;
@@ -31,6 +32,8 @@ interface Booking {
   guestCount: number;
   guestCountManual?: boolean;
   channelNotice?: string | null;
+  premiumRate?: number | null;
+  premiumRateCleanerId?: string | null;
   petCount?: number | null;
   checkIn: Date;
   checkOut: Date;
@@ -364,6 +367,23 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
           </h2>
           <StatusBadge type="cleaning" status={cleaningStatus} label={cleaningStatusLabel[cleaningStatus] ?? cleaningStatus} />
         </div>
+
+        {/* Sondersatz-Buchung (z.B. 70 € Penthouse) — für wen er gilt und ob er greift */}
+        {booking.premiumRate != null && (() => {
+          const forName = cleaners.find((c) => c.id === booking.premiumRateCleanerId)?.name ?? "die vereinbarte Reinigungskraft";
+          const assignedId = assignment?.cleaner?.id;
+          const other = !!assignedId && assignedId !== booking.premiumRateCleanerId;
+          return (
+            <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" as const, padding: "9px 12px", marginBottom: 12, borderRadius: 10, background: "rgba(245,158,11,0.08)", border: "1px solid rgba(245,158,11,0.25)" }}>
+              <RateBadge rate={booking.premiumRate} inactive={other} />
+              <p style={{ fontSize: 13, color: "rgba(255,255,255,0.70)" }}>
+                {other
+                  ? `Sondersatz gilt nur für ${forName} — die Vertretung bekommt ihren eigenen Satz.`
+                  : `Sondersatz für ${forName}.`}
+              </p>
+            </div>
+          );
+        })()}
 
         {assignment?.cleaner && (
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", background: "rgba(255,255,255,0.06)", borderRadius: 12, border: "1px solid rgba(255,255,255,0.1)", marginBottom: 12 }}>

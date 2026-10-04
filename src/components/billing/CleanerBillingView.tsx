@@ -1,6 +1,7 @@
 "use client";
 
 import { CheckCircle, Clock, Euro, AlertCircle } from "lucide-react";
+import { RateBadge } from "@/components/ui/RateBadge";
 
 type Assignment = {
   id: string;
@@ -11,12 +12,17 @@ type Assignment = {
     apartment: { name: string; color: string | null };
   };
   cleaner: { cleanerRate: number } | null;
+  /** Satz dieses Auftrags (serverseitig über lib/rates.ts ermittelt) */
+  rate: number;
+  /** Sondersatz, z.B. 70 € Penthouse */
+  isPremium: boolean;
 };
+
+const sum = (jobs: Assignment[]) => jobs.reduce((s, j) => s + j.rate, 0);
 
 type MonthGroup = {
   year: number;
   month: number;
-  rate: number;
   jobs: Assignment[];
   allPaid: boolean;
 };
@@ -28,7 +34,6 @@ const MONTH_NAMES = [
 
 function groupByMonth(assignments: Assignment[]): MonthGroup[] {
   const map = new Map<string, MonthGroup>();
-  const rate = assignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
 
   for (const a of assignments) {
     const d = new Date(a.booking.checkOut);
@@ -37,7 +42,7 @@ function groupByMonth(assignments: Assignment[]): MonthGroup[] {
     const key = `${year}-${month}`;
 
     if (!map.has(key)) {
-      map.set(key, { year, month, rate, jobs: [], allPaid: true });
+      map.set(key, { year, month, jobs: [], allPaid: true });
     }
     const group = map.get(key)!;
     group.jobs.push(a);
@@ -58,9 +63,11 @@ export function CleanerBillingView({
   cleanerName: string;
 }) {
   const groups = groupByMonth(assignments);
-  const rate = assignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
-  const totalEarned = assignments.length * rate;
-  const totalPaid = assignments.filter((a) => a.paidOut).length * rate;
+  // Grundsatz für die Kopfzeile; einzelne Aufträge können abweichen (Sondersatz)
+  const baseRate = assignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
+  const premiumCount = assignments.filter((a) => a.isPremium).length;
+  const totalEarned = sum(assignments);
+  const totalPaid = sum(assignments.filter((a) => a.paidOut));
   const totalPending = totalEarned - totalPaid;
 
   if (groups.length === 0) {
@@ -88,7 +95,7 @@ export function CleanerBillingView({
           Meine Abrechnung
         </h1>
         <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 2 }}>
-          {rate} € pro Reinigung · {assignments.length} erledigt
+          {baseRate} € pro Reinigung{premiumCount > 0 ? ` · ${premiumCount} mit Sondersatz` : ""} · {assignments.length} erledigt
         </p>
       </div>
 
@@ -150,7 +157,7 @@ export function CleanerBillingView({
                 </div>
                 <div style={{ textAlign: "right" }}>
                   <p style={{ fontWeight: 700, color: group.allPaid ? "rgba(255,255,255,0.45)" : "#10b981", fontSize: 18 }}>
-                    {group.jobs.length * group.rate} €
+                    {sum(group.jobs).toFixed(0)} €
                   </p>
                   {!group.allPaid && paidCount > 0 && (
                     <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>
@@ -176,13 +183,14 @@ export function CleanerBillingView({
                         <span style={{ fontSize: 13, color: job.paidOut ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.8)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                           {job.booking.apartment.name}
                         </span>
+                        {job.isPremium && <RateBadge rate={job.rate} />}
                       </div>
                       <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
                         <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
                           {new Date(job.booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" })}
                         </span>
                         <span style={{ fontSize: 13, fontWeight: 600, color: job.paidOut ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.85)" }}>
-                          {group.rate} €
+                          {job.rate.toFixed(0)} €
                         </span>
                       </div>
                     </div>

@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { getChannelManagerAdapter } from "./channel-manager";
 import { addDays, format, subDays } from "date-fns";
 import { sendPushToRole, sendPushToUsers } from "./push";
+import { premiumForNewBooking } from "./rates";
 
 export async function syncBookings(organizationId: string): Promise<{
   created: number;
@@ -38,6 +39,7 @@ export async function syncBookings(organizationId: string): Promise<{
     where: { organizationId, active: true, smoobuId: { not: null } },
     select: {
       id: true, smoobuId: true, name: true, preferredCleanerId: true,
+      cleaningRate: true, cleaningRateFrom: true, cleaningRateCleanerId: true,
     },
   });
 
@@ -124,6 +126,7 @@ export async function syncBookings(organizationId: string): Promise<{
     });
 
     if (!existing) {
+      const aptData = apartments.find((a) => a.id === apartmentId);
       const booking = await prisma.booking.create({
         data: {
           organizationId,
@@ -139,6 +142,8 @@ export async function syncBookings(organizationId: string): Promise<{
           departureTime: res.departureTime,
           channelName: res.channelName,
           channelNotice: res.notice,
+          // Sondersatz der Wohnung (z.B. 70 € Penthouse) für diese neue Buchung vormerken
+          ...premiumForNewBooking(aptData),
           price: res.price,
           currency: res.currency ?? "EUR",
           status: "confirmed",
@@ -146,7 +151,6 @@ export async function syncBookings(organizationId: string): Promise<{
         },
       });
       // CleaningAssignment automatisch anlegen — Reiniger aus Wohnungszuweisung
-      const aptData = apartments.find((a) => a.id === apartmentId);
       const preferredCleanerId = aptData?.preferredCleanerId ?? null;
       const assign = preferredCleanerId && res.checkIn >= now;
       await prisma.cleaningAssignment.create({

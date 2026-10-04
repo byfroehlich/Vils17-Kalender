@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { logAudit } from "@/lib/audit";
 
 const UpdateSchema = z.object({
   name: z.string().min(1).optional(),
@@ -13,6 +14,9 @@ const UpdateSchema = z.object({
   laundryKitchenCount: z.number().int().min(0).max(10).optional(),
   dreameEnabled: z.boolean().optional(),
   preferredCleanerId: z.string().nullable().optional(),
+  // Sondersatz pro Reinigung (null = entfernen) und für wen er gilt
+  cleaningRate: z.number().min(0).max(1000).nullable().optional(),
+  cleaningRateCleanerId: z.string().nullable().optional(),
 });
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
@@ -48,10 +52,59 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     }
   }
 
+  // Sondersatz: Reinigungskraft muss zur Organization gehören
+  if (parsed.data.cleaningRateCleanerId) {
+    const rateCleaner = await prisma.user.findFirst({
+      where: {
+        id: parsed.data.cleaningRateCleanerId,
+        organizationId: session.user.organizationId,
+        role: "CLEANER",
+      },
+      select: { id: true },
+    });
+    if (!rateCleaner) {
+      return NextResponse.json({ error: "Reinigungskraft für Sondersatz nicht gefunden" }, { status: 400 });
+    }
+  }
+
+  const { cleaningRate, cleaningRateCleanerId, ...rest } = parsed.data;
+  const data: Record<string, unknown> = { ...rest };
+
+  // Sondersatz ändern: gilt NIE rückwirkend, sondern für Buchungen, die ab
+  // jetzt eingehen. Bestehende Buchungen behalten ihren Vermerk.
+  if (cleaningRate !== undefined || cleaningRateCleanerId !== undefined) {
+    const nextRate = cleaningRate !== undefined ? cleaningRate : apt.cleaningRate;
+    const nextCleaner = cleaningRateCleanerId !== undefined ? cleaningRateCleanerId : apt.cleaningRateCleanerId;
+
+    if (nextRate == null || !nextCleaner) {
+      data.cleaningRate = null;
+      data.cleaningRateCleanerId = null;
+      data.cleaningRateFrom = null;
+    } else if (nextRate !== apt.cleaningRate || nextCleaner !== apt.cleaningRateCleanerId) {
+      data.cleaningRate = nextRate;
+      data.cleaningRateCleanerId = nextCleaner;
+      data.cleaningRateFrom = new Date();
+    }
+  }
+
   const updated = await prisma.apartment.update({
     where: { id: params.id },
-    data: parsed.data,
+    data,
   });
+
+  if ("cleaningRate" in data) {
+    await logAudit({
+      organizationId: session.user.organizationId,
+      userId: session.user.id,
+      action: "apartment.cleaningRate.changed",
+      entityType: "Apartment",
+      entityId: apt.id,
+      details: {
+        before: { rate: apt.cleaningRate, cleanerId: apt.cleaningRateCleanerId },
+        after: { rate: data.cleaningRate, cleanerId: data.cleaningRateCleanerId },
+      },
+    });
+  }
 
   return NextResponse.json(updated);
 }

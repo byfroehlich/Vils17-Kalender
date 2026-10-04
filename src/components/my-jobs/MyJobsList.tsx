@@ -12,6 +12,7 @@ import { de } from "date-fns/locale";
 import { format } from "date-fns";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { RateBadge } from "@/components/ui/RateBadge";
 export interface Assignment {
   id: string;
   status: string;
@@ -24,6 +25,10 @@ export interface Assignment {
   foreignDecline?: boolean;
   cleaner?: { name: string } | null;
   nextGuestCount?: number | null;
+  /** Satz dieses Auftrags (lib/rates.ts) */
+  rate?: number;
+  /** Sondersatz, z.B. 70 € Penthouse */
+  isPremium?: boolean;
   booking: {
     id: string;
     guestCount: number;
@@ -32,6 +37,7 @@ export interface Assignment {
     arrivalTime?: string | null;
     departureTime?: string | null;
     channelNotice?: string | null;
+    premiumRate?: number | null;
     apartment: { name: string; color?: string | null };
   };
 }
@@ -39,6 +45,9 @@ export interface Assignment {
 export interface OpenAssignment {
   id: string;
   nextGuestCount?: number | null;
+  /** Sondersatz, den ICH beim Zusagen bekäme */
+  isPremium?: boolean;
+  premiumRate?: number | null;
   booking: {
     id: string;
     guestCount: number;
@@ -396,6 +405,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
             <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
+            {assignment.isPremium && assignment.premiumRate != null && <RateBadge rate={assignment.premiumRate} title="Sondersatz für dich, wenn du übernimmst" />}
             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
           </div>
         </div>
@@ -472,6 +482,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
             <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
+            {assignment.isPremium && assignment.rate != null && <RateBadge rate={assignment.rate} />}
             {!isCleaner && assignment.cleaner && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {assignment.cleaner.name}</span>}
           </div>
           {isDone && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}><CheckCircle style={{ width: 16, height: 16 }} /> Erledigt</span>}

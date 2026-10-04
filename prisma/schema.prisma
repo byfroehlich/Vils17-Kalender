@@ -116,6 +116,7 @@ model User {
   declinedAssignments    CleaningAssignment[] @relation("AssignmentDeclinedBy")
   pushSubscriptions      PushSubscription[]
   preferredForApartments Apartment[]          @relation("ApartmentPreferredCleaner")
+  rateForApartments      Apartment[]          @relation("ApartmentRateCleaner")
 
   @@unique([email, organizationId])
   @@index([organizationId])
@@ -146,6 +147,14 @@ model Apartment {
   // Feste Reinigungskraft-Zuweisung
   preferredCleanerId String?
   preferredCleaner   User?   @relation("ApartmentPreferredCleaner", fields: [preferredCleanerId], references: [id], onDelete: SetNull)
+
+  // Vereinbarter Sondersatz pro Reinigung, z.B. 70 € für Vanessa im Penthouse.
+  // Gilt nur für Buchungen, die ab cleaningRateFrom ins System kommen, und nur
+  // für die genannte Reinigungskraft — Vertretungen bekommen ihren eigenen Satz.
+  cleaningRate          Float?
+  cleaningRateFrom      DateTime?
+  cleaningRateCleanerId String?
+  cleaningRateCleaner   User?     @relation("ApartmentRateCleaner", fields: [cleaningRateCleanerId], references: [id], onDelete: SetNull)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -179,6 +188,10 @@ model Booking {
   petCount   Int?    // Haustiere (manuell gepflegt — kein Portal liefert dafür ein eigenes Feld)
   // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
   channelNotice String?
+  // Sondersatz-Vermerk, beim Eingang der Buchung von der Wohnung übernommen und
+  // danach nie mehr verändert ("70-€-Buchung für Vanessa")
+  premiumRate          Float?
+  premiumRateCleanerId String?
 
   checkIn       DateTime
   checkOut      DateTime
@@ -238,6 +251,10 @@ model CleaningAssignment {
   laundryOrderStatus String? // "pending", "confirmed", "error"
   // Menge: { beds: 3, towels: 6, kitchen: 1 }
   laundryQuantity    Json?
+
+  // Satz dieses Auftrags — beim Erledigen festgeschrieben, damit spätere
+  // Satzänderungen alte Abrechnungen nicht rückwirkend verändern
+  rate Float?
 
   // Auszahlung
   paidOut   Boolean   @default(false)
