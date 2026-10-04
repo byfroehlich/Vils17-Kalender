@@ -219,6 +219,11 @@ direkt aus einem Tipp angefragt werden — deshalb fragt nur die Glocke
 `await`. `PushSubscriber` fragt nie selbst, er hält nur bestehende Anmeldungen
 mit dem Server synchron.
 
+**Testen:** Bei aktiven Benachrichtigungen öffnet ein Tipp auf die Glocke ein
+Menü mit „Testnachricht senden" (`POST /api/push/test`, nur an die eigenen
+Geräte) und „Ausschalten". Die Antwort sagt, woran es hängt: VAPID fehlt,
+Gerät nicht angemeldet, Anmeldung abgelaufen oder Versand fehlgeschlagen.
+
 | Ereignis | Empfänger | Auslöser |
 |---|---|---|
 | Reinigung erledigt | Admin/Verwaltung | `cleaning-status` |

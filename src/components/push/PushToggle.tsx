@@ -38,6 +38,7 @@ export function PushToggle() {
   const [subscribed, setSubscribed] = useState<boolean | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{ text: string; ok?: boolean } | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
@@ -111,7 +112,7 @@ export function PushToggle() {
       if (!res.ok) throw new Error("Anmeldung beim Server fehlgeschlagen");
 
       setSubscribed(true);
-      setMessage({ text: "Benachrichtigungen sind aktiv.", ok: true });
+      setMessage({ text: "Benachrichtigungen sind aktiv. Tipp erneut auf die Glocke, um eine Testnachricht zu schicken.", ok: true });
     } catch (err) {
       setMessage({ text: err instanceof Error ? err.message : "Push konnte nicht aktiviert werden." });
     } finally {
@@ -119,7 +120,52 @@ export function PushToggle() {
     }
   }
 
+  async function sendTest() {
+    setMenuOpen(false);
+    setLoading(true);
+    try {
+      // Anmeldung vorher erneut an den Server geben — falls die DB sie verloren hat
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (!sub) {
+        setSubscribed(false);
+        setMessage({ text: "Dieses Gerät ist nicht mehr angemeldet. Bitte die Glocke erneut einschalten." });
+        return;
+      }
+      const keys = sub.toJSON().keys as { p256dh: string; auth: string };
+      await fetch("/api/push/subscribe", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ endpoint: sub.endpoint, keys }),
+      });
+
+      const res = await fetch("/api/push/test", { method: "POST" });
+      if (!res.ok) throw new Error("Test konnte nicht gesendet werden.");
+      const r: { notConfigured: boolean; devices: number; sent: number; failed: number; removed: number } = await res.json();
+
+      if (r.notConfigured) {
+        setMessage({ text: "Push ist auf dem Server noch nicht eingerichtet (VAPID-Schlüssel fehlen in Render)." });
+      } else if (r.sent > 0) {
+        setMessage({
+          ok: true,
+          text: `Testnachricht verschickt${r.devices > 1 ? ` an ${r.sent} Geräte` : ""} — sie sollte in wenigen Sekunden erscheinen.` +
+            (isIos() ? " Falls nicht: App kurz in den Hintergrund wischen." : ""),
+        });
+      } else if (r.removed > 0) {
+        setSubscribed(false);
+        setMessage({ text: "Die Anmeldung dieses Geräts war abgelaufen. Bitte die Glocke erneut einschalten." });
+      } else {
+        setMessage({ text: "Versand fehlgeschlagen. Bitte Glocke aus- und wieder einschalten und erneut testen." });
+      }
+    } catch (err) {
+      setMessage({ text: err instanceof Error ? err.message : "Test konnte nicht gesendet werden." });
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function disable() {
+    setMenuOpen(false);
     setLoading(true);
     try {
       const reg = await navigator.serviceWorker.ready;
@@ -144,9 +190,13 @@ export function PushToggle() {
   function toggle() {
     if (loading) return;
     setMessage(null);
+    // Aktiv → Menü mit Test und Ausschalten (kein versehentliches Abschalten mehr)
+    if (subscribed) {
+      setMenuOpen((o) => !o);
+      return;
+    }
     // Kein await davor — enable() muss die Erlaubnis noch im Tipp anfragen
-    if (subscribed) void disable();
-    else void enable();
+    void enable();
   }
 
   if (subscribed === null) return null;
@@ -156,8 +206,9 @@ export function PushToggle() {
       <button
         onClick={toggle}
         disabled={loading}
-        title={subscribed ? "Benachrichtigungen deaktivieren" : "Benachrichtigungen aktivieren"}
-        aria-label={subscribed ? "Benachrichtigungen deaktivieren" : "Benachrichtigungen aktivieren"}
+        title={subscribed ? "Benachrichtigungen: testen oder ausschalten" : "Benachrichtigungen aktivieren"}
+        aria-label={subscribed ? "Benachrichtigungen: testen oder ausschalten" : "Benachrichtigungen aktivieren"}
+        aria-expanded={subscribed ? menuOpen : undefined}
         style={{
           background: "none",
           border: "none",
@@ -175,6 +226,53 @@ export function PushToggle() {
           : <BellOff style={{ width: 18, height: 18 }} />
         }
       </button>
+      {menuOpen && (
+        <>
+          {/* Tipp daneben schließt das Menü */}
+          <div onClick={() => setMenuOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 59 }} />
+          <div
+            role="menu"
+            style={{
+              position: "absolute",
+              top: "calc(100% + 8px)",
+              right: -40,
+              width: 230,
+              background: "rgba(10,50,45,0.98)",
+              border: "1px solid rgba(255,255,255,0.18)",
+              borderRadius: 12,
+              padding: 6,
+              zIndex: 60,
+              boxShadow: "0 8px 24px rgba(0,0,0,0.35)",
+            }}
+          >
+            {[
+              { label: "Testnachricht senden", onClick: sendTest, color: "#5eead4" },
+              { label: "Benachrichtigungen ausschalten", onClick: disable, color: "rgba(255,255,255,0.65)" },
+            ].map((item) => (
+              <button
+                key={item.label}
+                role="menuitem"
+                onClick={() => void item.onClick()}
+                style={{
+                  display: "block",
+                  width: "100%",
+                  textAlign: "left",
+                  padding: "10px 12px",
+                  background: "none",
+                  border: "none",
+                  borderRadius: 8,
+                  color: item.color,
+                  fontSize: 13.5,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                }}
+              >
+                {item.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
       {message && (
         <div
           role="status"

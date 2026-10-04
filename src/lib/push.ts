@@ -23,13 +23,26 @@ async function removeExpiredSub(id: string) {
   await prisma.pushSubscription.delete({ where: { id } }).catch(() => null);
 }
 
-export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
+export type PushResult = {
+  /** Push-Dienst nicht eingerichtet (VAPID-Schlüssel fehlen) */
+  notConfigured: boolean;
+  /** angemeldete Geräte */
+  devices: number;
+  sent: number;
+  failed: number;
+  /** abgelaufene Anmeldungen, die entfernt wurden */
+  removed: number;
+};
+
+export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<PushResult> {
   init();
-  if (!initialized) return;
+  const result: PushResult = { notConfigured: !initialized, devices: 0, sent: 0, failed: 0, removed: 0 };
+  if (!initialized) return result;
 
   const subs = await prisma.pushSubscription.findMany({
     where: { userId: { in: userIds } },
   });
+  result.devices = subs.length;
 
   await Promise.allSettled(
     subs.map(async (sub) => {
@@ -38,14 +51,21 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload) {
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify(payload)
         );
+        result.sent++;
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode;
         if (status === 410 || status === 404) {
           await removeExpiredSub(sub.id);
+          result.removed++;
+        } else {
+          result.failed++;
+          console.error("[push] Versand fehlgeschlagen:", status, (err as Error).message);
         }
       }
     })
   );
+
+  return result;
 }
 
 export async function sendPushToRole(
