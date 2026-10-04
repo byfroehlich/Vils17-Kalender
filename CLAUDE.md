@@ -210,6 +210,35 @@ des Service Workers beibehalten.
 **Service Worker aktualisieren:** `VERSION` in `public/sw.js` hochzählen — alte
 Caches werden beim Aktivieren automatisch gelöscht.
 
+### Push-Benachrichtigungen
+
+**iPhone (iOS 16.4+):** Push funktioniert nur in der über „Teilen → Zum
+Home-Bildschirm" installierten App, nicht im Safari-Tab. Die Erlaubnis muss
+direkt aus einem Tipp angefragt werden — deshalb fragt nur die Glocke
+(`PushToggle`), und dort ist `Notification.requestPermission()` das erste
+`await`. `PushSubscriber` fragt nie selbst, er hält nur bestehende Anmeldungen
+mit dem Server synchron.
+
+| Ereignis | Empfänger | Auslöser |
+|---|---|---|
+| Reinigung erledigt | Admin/Verwaltung | `cleaning-status` |
+| Reinigung abgesagt / wieder frei | Admin/Verwaltung + Reiniger | `cleaner-unavailable` |
+| Reinigung zugesagt | Admin/Verwaltung | `claim` |
+| Neuer Auftrag / zugewiesen | betroffene Reinigungskraft | Sync, `assign` |
+| Tagesstatus (ab 7 Uhr, 1× täglich) | Admin/Verwaltung: alle heutigen; Reiniger: eigene | `src/lib/notifications.ts` |
+| Reinigung frei (≤ 10 Tage) | Reiniger | `runReminders` |
+| Ohne Reinigungskraft (≤ 7 Tage) | Admin/Verwaltung | `runReminders` |
+| Wäsche nicht bestellt (≤ 3 Tage) | Admin/Verwaltung | `runReminders` |
+
+Warnungen werden gebündelt (eine Nachricht pro Art) und pro Auftrag nur einmal
+verschickt (`*ReminderSentAt`). `runReminders` und `maybeSendDailyStatus` laufen
+im Cron `push-reminders` **und** als Rückfallebene in `/api/sync/auto` — beides
+ist idempotent.
+
+Datumslogik: Buchungsdaten liegen als UTC-Mitternacht des Kalendertags vor.
+Verglichen wird über den Kalendertag in Europe/Vienna (`viennaDateKey`), die
+Anzeige formatiert mit `timeZone: "UTC"`.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

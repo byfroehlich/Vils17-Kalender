@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { runSyncIfStale } from "@/lib/sync-runner";
+import { runReminders, maybeSendDailyStatus } from "@/lib/notifications";
 
 export const maxDuration = 60;
 
@@ -21,7 +22,17 @@ export async function POST() {
   }
 
   try {
-    const result = await runSyncIfStale(session.user.organizationId, MAX_AGE_MS);
+    const orgId = session.user.organizationId;
+    const result = await runSyncIfStale(orgId, MAX_AGE_MS);
+
+    // Rückfallebene für den Cron: Hat ein Sync stattgefunden (höchstens alle
+    // 10 Min), auch Warnungen und Tagesstatus prüfen. Beides ist idempotent —
+    // läuft der Cron, passiert hier schlicht nichts doppelt.
+    if (result.synced) {
+      await runReminders(orgId).catch((e) => console.error("[sync/auto] Warnungen:", e));
+      await maybeSendDailyStatus(orgId).catch((e) => console.error("[sync/auto] Tagesstatus:", e));
+    }
+
     return NextResponse.json(result);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Unbekannter Fehler";

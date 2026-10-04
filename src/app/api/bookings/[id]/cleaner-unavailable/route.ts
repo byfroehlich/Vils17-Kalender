@@ -52,10 +52,11 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   if (isDecline) {
     const booking = await prisma.booking.findUnique({
       where: { id: params.id },
-      select: { checkOut: true, apartment: { select: { name: true } } },
+      select: { checkIn: true, apartment: { select: { name: true } } },
     });
     if (booking) {
-      const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+      // Reinigungstag = Anreisetag der nächsten Gäste (UTC-Mitternacht gespeichert)
+      const cleaningDay = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" });
       const apt = booking.apartment.name;
       const orgId = session.user.organizationId;
       const cleanerName = session.user.name;
@@ -63,14 +64,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // Admin/Manager: Vanessa hat abgesagt
       sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
         title: "Reinigung abgesagt",
-        body: `${cleanerName} kann ${apt} am ${checkOut} nicht — Job wieder offen`,
+        body: `${cleanerName} kann ${apt} am ${cleaningDay} nicht — Job wieder offen`,
         url: `/bookings/${params.id}`,
       }).catch(() => null);
 
       // Alle anderen Reiniger: Job ist wieder frei
       sendPushToRole(orgId, ["CLEANER"], {
         title: "Reinigung wieder frei",
-        body: `${apt} am ${checkOut} — hat jemand Interesse?`,
+        body: `${apt} am ${cleaningDay} — hat jemand Interesse?`,
         url: "/my-jobs/list",
       }, [session.user.id]).catch(() => null);
     }

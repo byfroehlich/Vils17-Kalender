@@ -65,24 +65,25 @@ export async function PATCH(
 
   const booking = await prisma.booking.findUnique({
     where: { id: params.id },
-    select: { checkOut: true, apartment: { select: { name: true } } },
+    select: { checkIn: true, apartment: { select: { name: true } } },
   });
   const orgId = session.user.organizationId;
 
   if (booking) {
-    const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+    // Reinigungstag = Anreisetag der nächsten Gäste (UTC-Mitternacht gespeichert)
+    const cleaningDay = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" });
     const apt = booking.apartment.name;
 
     if (newStatus === "COMPLETED") {
       sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
         title: "Reinigung erledigt",
-        body: `${session.user.name}: ${apt} am ${checkOut} ist fertig`,
+        body: `${session.user.name}: ${apt} am ${cleaningDay} ist fertig`,
         url: `/bookings/${params.id}`,
       }).catch(() => null);
     } else if (newStatus === "UNASSIGNED") {
       sendPushToRole(orgId, ["CLEANER"], {
         title: "Reinigung wieder verfügbar",
-        body: `${apt} am ${checkOut} ist wieder frei — jetzt zusagen!`,
+        body: `${apt} am ${cleaningDay} ist wieder frei — jetzt zusagen!`,
         url: "/my-jobs/list",
       }).catch(() => null);
     }

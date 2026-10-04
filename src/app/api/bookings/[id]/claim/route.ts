@@ -39,13 +39,14 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   // Push an Admin/Manager: Auftrag zugesagt
   const booking = await prisma.booking.findUnique({
     where: { id: params.id },
-    select: { checkOut: true, apartment: { select: { name: true } } },
+    select: { checkIn: true, apartment: { select: { name: true } } },
   });
   if (booking) {
-    const checkOut = new Date(booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" });
+    // Reinigungstag = Anreisetag der nächsten Gäste (UTC-Mitternacht gespeichert)
+    const cleaningDay = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" });
     sendPushToRole(session.user.organizationId, ["ADMIN", "MANAGER"], {
       title: "Reinigung zugesagt",
-      body: `${session.user.name} übernimmt die Reinigung am ${checkOut} (${booking.apartment.name})`,
+      body: `${session.user.name} übernimmt die Reinigung am ${cleaningDay} (${booking.apartment.name})`,
       url: `/bookings/${params.id}`,
     }).catch(() => null);
   }

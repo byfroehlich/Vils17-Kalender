@@ -46,6 +46,8 @@ model Organization {
   // Zeitpunkt des letzten erfolgreichen Smoobu-Syncs — steuert die
   // Selbstaktualisierung der App und zeigt, ob der Cron wirklich läuft
   lastSyncAt       DateTime?
+  // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem der Tagesstatus verschickt wurde
+  dailyStatusSentOn String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -244,6 +246,7 @@ model CleaningAssignment {
   // Push-Erinnerungen (Cron-Tracking)
   cleanerReminderSentAt DateTime?
   adminReminderSentAt   DateTime?
+  laundryReminderSentAt DateTime?
 
   // Dreame Saugroboter
   dreameStartedAt DateTime?
