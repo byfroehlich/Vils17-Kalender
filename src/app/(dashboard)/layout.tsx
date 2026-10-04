@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/layout/Sidebar";
 import { Topbar } from "@/components/layout/Topbar";
 import { PushSubscriber } from "@/components/push/PushSubscriber";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
+import { AutoRefresh } from "@/components/pwa/AutoRefresh";
 
 export default async function DashboardLayout({
   children,
@@ -40,6 +41,7 @@ export default async function DashboardLayout({
       <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, overflowX: "clip" }}>
         <Topbar userName={session.user.name ?? ""} role={session.user.role} />
         <PushSubscriber />
+        <AutoRefresh />
         <main className="flex-1 px-4 pt-6 pb-32 lg:px-8 lg:pt-8 lg:pb-8">
           <InstallPrompt />
           {children}

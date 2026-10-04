@@ -26,6 +26,11 @@ export default async function DashboardPage() {
   const in14Days = addDays(now, 14);
   const tomorrow = addDays(now, 1);
 
+  const orgInfo = await prisma.organization.findUnique({
+    where: { id: orgId },
+    select: { lastSyncAt: true },
+  });
+
   const [
     activeNow,
     checkoutsToday,
@@ -171,7 +176,7 @@ export default async function DashboardPage() {
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.72)", marginTop: 3 }}>{dateStr}</p>
           </div>
           <div className="flex items-center gap-3 mt-1">
-            <SyncButton />
+            <SyncButton lastSyncAt={orgInfo?.lastSyncAt?.toISOString() ?? null} />
             <div
               style={{
                 width: 40, height: 40, borderRadius: "50%",

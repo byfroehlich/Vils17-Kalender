@@ -1,143 +1,82 @@
 import { NextRequest, NextResponse } from "next/server";
+import { timingSafeEqual } from "crypto";
 import { verifySmoobuWebhook } from "@/lib/smoobu";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
+import { runSync } from "@/lib/sync-runner";
+
+export const maxDuration = 60;
+
+/**
+ * Smoobu-Webhook → stößt einen vollständigen Sync an.
+ *
+ * Authentifizierung (eines von beiden):
+ *  - `?token=<SMOOBU_WEBHOOK_SECRET>` in der Webhook-URL — so in Smoobu eintragen:
+ *      https://<app>/api/smoobu/webhook?token=<SMOOBU_WEBHOOK_SECRET>
+ *  - HMAC-Signatur im Header `x-smoobu-signature` (falls Smoobu signiert)
+ *
+ * Bewusst ein voller Sync statt eines Teil-Updates: Nur der Sync legt den
+ * Reinigungsauftrag an, weist die Wohnungs-Reinigerin zu, verschickt Push und
+ * erkennt Stornierungen. Ein Teil-Update aus dem Webhook hätte all das
+ * übersprungen.
+ */
+function tokenMatches(token: string | null): boolean {
+  const secret = process.env.SMOOBU_WEBHOOK_SECRET;
+  if (!secret || !token) return false;
+  const a = Buffer.from(token);
+  const b = Buffer.from(secret);
+  return a.length === b.length && timingSafeEqual(a, b);
+}
 
 export async function POST(req: NextRequest) {
   const payload = await req.text();
   const signature = req.headers.get("x-smoobu-signature") ?? "";
+  const token = req.nextUrl.searchParams.get("token");
 
-  // Webhook-Signatur prüfen — schlägt fehl wenn Secret nicht konfiguriert
-  if (!verifySmoobuWebhook(payload, signature)) {
-    return NextResponse.json({ error: "Ungültige Signatur" }, { status: 401 });
+  if (!tokenMatches(token) && !verifySmoobuWebhook(payload, signature)) {
+    console.warn("[webhook] Abgelehnt — weder gültiger Token noch gültige Signatur");
+    return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  let raw: Record<string, unknown>;
+  // Organization über die Smoobu-Wohnung bestimmen (Multi-Tenant-fähig)
+  let organizationId: string | null = null;
   try {
-    raw = JSON.parse(payload);
+    const raw = JSON.parse(payload) as Record<string, unknown>;
+    const res = (raw.object as Record<string, unknown>) ?? (raw.data as Record<string, unknown>) ?? raw;
+    const smoobuApartmentId =
+      ((res.apartment as { id?: number } | undefined)?.id) ?? (res["apartment-id"] as number | undefined) ?? null;
+    if (smoobuApartmentId) {
+      const apt = await prisma.apartment.findFirst({
+        where: { smoobuId: smoobuApartmentId },
+        select: { organizationId: true },
+      });
+      organizationId = apt?.organizationId ?? null;
+    }
   } catch {
-    return NextResponse.json({ error: "Ungültiges JSON" }, { status: 400 });
+    // Kein JSON oder unbekanntes Format — dann unten auf die einzige Organization zurückfallen
   }
 
-  // Smoobu sendet entweder { action, object } oder direkt das Reservierungs-Objekt
-  // Beide Formate normalisieren
-  const action = (raw.action as string | undefined) ?? (raw.type as string | undefined) ?? "";
-  const res: Record<string, unknown> = (raw.object as Record<string, unknown>) ?? raw;
-
-  // Wohnung ermitteln (aus Smoobu-Apartment-ID)
-  const smoobuApartmentId =
-    (res.apartment as any)?.id ?? (res["apartment-id"] as number) ?? null;
-
-  if (!smoobuApartmentId) {
-    return NextResponse.json({ received: true });
+  if (!organizationId) {
+    // V1: genau eine Organization
+    const org = await prisma.organization.findFirst({ select: { id: true } });
+    organizationId = org?.id ?? null;
+  }
+  if (!organizationId) {
+    return NextResponse.json({ received: true, skipped: "keine Organization" });
   }
 
-  const apartment = await prisma.apartment.findFirst({
-    where: { smoobuId: smoobuApartmentId, active: true },
-  });
-
-  if (!apartment) {
-    return NextResponse.json({ received: true });
-  }
-
-  const orgId = apartment.organizationId;
-  const smoobuId = res.id as number;
-
-  // Stornierung
-  const isCancelled =
-    action === "reservation.cancelled" ||
-    action === "cancelReservation" ||
-    (res.type as string) === "cancellation" ||
-    (res["is-blocked-booking"] as boolean) === true;
-
-  if (isCancelled && smoobuId) {
-    await prisma.booking.updateMany({
-      where: { smoobuId, organizationId: orgId },
-      data: { status: "cancelled" },
-    });
-    await logAudit({ organizationId: orgId, action: "booking.webhook.cancelled", entityId: String(smoobuId) });
-    return NextResponse.json({ received: true });
-  }
-
-  // Neue oder geänderte Buchung
-  const isReservation =
-    action === "reservation.created" ||
-    action === "reservation.modified" ||
-    action === "newReservation" ||
-    action === "modifyReservation" ||
-    action === "" ||
-    (res.type as string) === "reservation";
-
-  if (isReservation && smoobuId) {
-    // Smoobu nutzt "arrival"/"departure" für Datum
-    // "check-in"/"check-out" sind Uhrzeiten (oft leer)
-    const checkInStr = (res.arrival as string) ?? (res["check-in"] as string);
-    const checkOutStr = (res.departure as string) ?? (res["check-out"] as string);
-
-    if (!checkInStr || !checkOutStr) {
-      console.warn("[webhook] Kein Datum gefunden für Buchung", smoobuId, "Felder:", Object.keys(res).join(", "));
-      return NextResponse.json({ received: true });
-    }
-
-    const checkIn = new Date(checkInStr);
-    const checkOut = new Date(checkOutStr);
-
-    if (isNaN(checkIn.getTime()) || isNaN(checkOut.getTime())) {
-      console.warn("[webhook] Ungültiges Datum für Buchung", smoobuId, checkInStr, checkOutStr);
-      return NextResponse.json({ received: true });
-    }
-
-    const channelName = (res.channel as any)?.name ?? (res["channel-name"] as string) ?? null;
-    const guestName = (res["guest-name"] as string) ?? (res.firstname as string) ?? "Unbekannt";
-
-    // Von Hand korrigierte Gästezahl nicht überschreiben
-    const existingBooking = await prisma.booking.findUnique({
-      where: { smoobuId },
-      select: { guestCountManual: true },
-    });
-    const guestCountFromSmoobu =
-      ((res.adults as number) ?? 1) + ((res.children as number) ?? 0);
-
-    await prisma.booking.upsert({
-      where: { smoobuId },
-      create: {
-        organizationId: orgId,
-        smoobuId,
-        apartmentId: apartment.id,
-        guestName,
-        guestEmail: (res.email as string) ?? null,
-        guestPhone: (res.phone as string) ?? null,
-        guestCount: guestCountFromSmoobu,
-        checkIn,
-        checkOut,
-        arrivalTime: (res["check-in"] as string) || null,
-        departureTime: (res["check-out"] as string) || null,
-        channelName,
-        channelNotice: (res.notice as string) ?? null,
-        status: "confirmed",
-        syncedAt: new Date(),
-      },
-      update: {
-        guestName,
-        ...(existingBooking?.guestCountManual ? {} : { guestCount: guestCountFromSmoobu }),
-        checkIn,
-        checkOut,
-        arrivalTime: (res["check-in"] as string) || null,
-        departureTime: (res["check-out"] as string) || null,
-        channelName,
-        channelNotice: (res.notice as string) ?? null,
-        status: "confirmed",
-        syncedAt: new Date(),
-      },
-    });
-
+  try {
+    const stats = await runSync(organizationId);
     await logAudit({
-      organizationId: orgId,
-      action: `booking.webhook.${action || "upsert"}`,
-      entityType: "Booking",
-      entityId: String(smoobuId),
+      organizationId,
+      action: "booking.webhook.sync",
+      details: stats as unknown as Record<string, unknown>,
     });
+    return NextResponse.json({ received: true, ...stats });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Unbekannter Fehler";
+    console.error("[webhook] Sync fehlgeschlagen:", msg);
+    // 500 → Smoobu versucht es erneut
+    return NextResponse.json({ error: msg }, { status: 500 });
   }
-
-  return NextResponse.json({ received: true });
 }

@@ -166,8 +166,19 @@ Pflichtfelder erzeugen einen Warning-Log statt einen Crash.
 
 ### Smoobu Sync
 - **Cron**: alle 15 Min ruft Render Cron `POST /api/bookings/sync` auf
-- **Webhook**: `POST /api/smoobu/webhook` empfängt Echtzeit-Events
+- **Webhook**: `POST /api/smoobu/webhook?token=<SMOOBU_WEBHOOK_SECRET>` — stößt
+  einen vollständigen Sync an. In Smoobu genau diese URL inkl. `token` eintragen
+  (Smoobu signiert Webhooks nicht; ohne Token wird jeder Aufruf abgelehnt).
+- **Selbstaktualisierung**: Jede geöffnete App ruft `POST /api/sync/auto` beim
+  Öffnen, beim Zurückholen aus dem Hintergrund und alle 3 Min auf
+  (`src/components/pwa/AutoRefresh.tsx`). Der Server synchronisiert nur, wenn
+  der letzte Lauf älter als 10 Min ist — die Daten bleiben damit aktuell, auch
+  wenn der Cron ausfällt.
 - **Manuell**: Admin kann Sync per Button auslösen
+- Alle Wege laufen über `src/lib/sync-runner.ts`: höchstens ein Sync pro
+  Organization gleichzeitig, `Organization.lastSyncAt` wird gesetzt. Das
+  Dashboard zeigt „vor X Min aktualisiert" — gelb ab 30 Min, dann läuft der
+  Cron nicht.
 
 ### PWA (installierbar auf Android + iOS)
 

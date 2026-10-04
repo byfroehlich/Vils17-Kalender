@@ -4,7 +4,21 @@ import { useState } from "react";
 import { RefreshCw } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-export function SyncButton() {
+/** "vor 4 Min" — zeigt auf einen Blick, ob der automatische Sync läuft */
+function formatAge(iso: string | null): { text: string; stale: boolean } {
+  if (!iso) return { text: "noch nie synchronisiert", stale: true };
+  const min = Math.round((Date.now() - new Date(iso).getTime()) / 60000);
+  // Cron läuft alle 15 Min — deutlich älter heißt: er läuft nicht
+  const stale = min > 30;
+  if (min < 1) return { text: "gerade aktualisiert", stale };
+  if (min < 60) return { text: `vor ${min} Min aktualisiert`, stale };
+  const h = Math.round(min / 60);
+  if (h < 48) return { text: `vor ${h} Std aktualisiert`, stale };
+  return { text: `vor ${Math.round(h / 24)} Tagen aktualisiert`, stale };
+}
+
+export function SyncButton({ lastSyncAt = null }: { lastSyncAt?: string | null }) {
+  const age = formatAge(lastSyncAt);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const router = useRouter();
@@ -58,8 +72,15 @@ export function SyncButton() {
 
   return (
     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-      {message && (
+      {message ? (
         <span style={{ fontSize: 12, color: "#14B8A6", fontWeight: 600 }}>{message}</span>
+      ) : (
+        <span
+          title={age.stale ? "Der automatische Sync scheint nicht zu laufen — Cron in Render prüfen" : "Automatischer Sync läuft"}
+          style={{ fontSize: 11, color: age.stale ? "#fcd34d" : "rgba(255,255,255,0.45)" }}
+        >
+          {age.text}
+        </span>
       )}
       <button
         onClick={handleSync}

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { syncBookings } from "@/lib/sync";
+import { runSync } from "@/lib/sync-runner";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 
@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
     // Cron-Job: alle Organizationen syncen
     const orgs = await prisma.organization.findMany({ select: { id: true } });
     const results = await Promise.all(
-      orgs.map((org) => syncBookings(org.id))
+      orgs.map((org) => runSync(org.id))
     );
     return NextResponse.json({ success: true, results });
   }
@@ -30,7 +30,7 @@ export async function POST(req: NextRequest) {
   userId = session.user.id;
 
   try {
-    const stats = await syncBookings(organizationId);
+    const stats = await runSync(organizationId);
 
     await logAudit({
       organizationId,
