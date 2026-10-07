@@ -3,44 +3,50 @@
 import { useEffect } from "react";
 
 /**
- * Behebt ein bekanntes WebKit-Problem installierter Web-Apps auf dem iPhone:
- * Nach dem Schließen der Tastatur bleibt die Ansicht manchmal verschoben —
- * Topbar und Menü sind nach oben gerutscht, und die Seite lässt sich nicht
- * mehr scrollen, bis man die App neu startet.
+ * Setzt das Fenster auf dem iPhone zurück, wenn iOS es verschoben hat.
  *
- * Ein Scroll auf die aktuelle Position zwingt Safari, die Ansicht neu zu
- * berechnen. Kostet nichts und hat auf anderen Geräten keine Wirkung.
+ * Beim Öffnen der Tastatur schiebt iOS das ganze Fenster nach oben und setzt es
+ * in installierten Web-Apps nach dem Schließen teils nicht zurück — Topbar und
+ * Menü bleiben dann verrutscht. Im App-Rahmen (#app-scroll) scrollt das Fenster
+ * nie; jede Verschiebung ist also ein Fehler und wird auf 0 zurückgesetzt.
  */
 export function IosViewportFix() {
   useEffect(() => {
     const isIos = /iphone|ipad|ipod/i.test(navigator.userAgent);
     if (!isIos) return;
 
-    const isField = (el: EventTarget | null) =>
+    const isField = (el: Element | null) =>
       el instanceof HTMLElement && /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName);
+
+    const reset = () => {
+      // Nur im App-Rahmen — auf Seiten mit normal scrollendem Fenster nichts tun
+      if (!document.getElementById("app-scroll")) return;
+      // Solange ein Eingabefeld aktiv ist, darf iOS verschieben (Tastatur offen)
+      if (isField(document.activeElement)) return;
+      if (window.scrollY !== 0 || window.scrollX !== 0) window.scrollTo(0, 0);
+    };
 
     let timer: number | undefined;
     const settle = () => {
       window.clearTimeout(timer);
-      timer = window.setTimeout(() => {
-        // Wechselt der Fokus nur zum nächsten Feld, bleibt die Tastatur offen
-        if (isField(document.activeElement)) return;
-        window.scrollTo(window.scrollX, window.scrollY);
-      }, 120);
+      // nach der Schließ-Animation der Tastatur
+      timer = window.setTimeout(reset, 150);
     };
 
-    const onFocusOut = (e: FocusEvent) => {
-      if (isField(e.target)) settle();
-    };
-
-    document.addEventListener("focusout", onFocusOut);
-    // Tastatur zu → sichtbare Höhe ändert sich
+    document.addEventListener("focusout", settle);
     window.visualViewport?.addEventListener("resize", settle);
+    window.addEventListener("scroll", settle, { passive: true });
+    window.addEventListener("pageshow", settle);
+    document.addEventListener("visibilitychange", settle);
+    settle();
 
     return () => {
       window.clearTimeout(timer);
-      document.removeEventListener("focusout", onFocusOut);
+      document.removeEventListener("focusout", settle);
       window.visualViewport?.removeEventListener("resize", settle);
+      window.removeEventListener("scroll", settle);
+      window.removeEventListener("pageshow", settle);
+      document.removeEventListener("visibilitychange", settle);
     };
   }, []);
 

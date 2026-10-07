@@ -210,6 +210,19 @@ des Service Workers beibehalten.
 **Service Worker aktualisieren:** `VERSION` in `public/sw.js` hochzählen — alte
 Caches werden beim Aktivieren automatisch gelöscht.
 
+**App-Rahmen — das Fenster scrollt nie:** Das Dashboard-Layout ist ein fester
+Rahmen in Bildschirmgröße (`position: fixed; inset: 0`). Gescrollt wird nur der
+Inhaltsbereich `<main id="app-scroll">`. Grund: Scrollt das Fenster, verschiebt
+iOS es beim Öffnen der Tastatur und setzt es in der installierten App teils nicht
+zurück — Topbar und Menüleiste bleiben dann verrutscht. Weil das Fenster immer
+auf 0 stehen muss, setzt `IosViewportFix` jede Verschiebung zurück.
+- Scroll-Sperre für Dialoge: `<ScrollLock />` sperrt `#app-scroll` (nicht den Body).
+- Scroll-Position: `ScrollMemory` setzt neue Seiten nach oben und stellt beim
+  Zurückgehen die alte Position wieder her (das übernimmt der Browser bei einem
+  inneren Scroll-Bereich nicht mehr selbst).
+- Nie `window.scrollTo` / `window.scrollY` für Inhalte verwenden — immer
+  `document.getElementById("app-scroll")`.
+
 ### Push-Benachrichtigungen
 
 **iPhone (iOS 16.4+):** Push funktioniert nur in der über „Teilen → Zum

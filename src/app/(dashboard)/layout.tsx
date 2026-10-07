@@ -6,7 +6,17 @@ import { Topbar } from "@/components/layout/Topbar";
 import { PushSubscriber } from "@/components/push/PushSubscriber";
 import { InstallPrompt } from "@/components/pwa/InstallPrompt";
 import { AutoRefresh } from "@/components/pwa/AutoRefresh";
+import { ScrollMemory } from "@/components/layout/ScrollMemory";
 
+/**
+ * App-Rahmen wie bei einer nativen App: Der Rahmen ist fest in Bildschirmgröße,
+ * das Fenster selbst scrollt NIE — nur der Inhaltsbereich (#app-scroll).
+ *
+ * Warum: Scrollt das ganze Fenster, verschiebt iOS es beim Öffnen der Tastatur
+ * und setzt es in der installierten App teils nicht zurück. Topbar, Menü und
+ * Hintergrund bleiben dann nach oben verrutscht hängen. Da das Fenster hier
+ * immer auf 0 stehen muss, kann IosViewportFix es gefahrlos zurücksetzen.
+ */
 export default async function DashboardLayout({
   children,
 }: {
@@ -16,12 +26,12 @@ export default async function DashboardLayout({
   if (!session) redirect("/login");
 
   return (
-    <div className="flex">
+    <div className="flex" style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
       {/* Hintergrund-Gradient — hinter allem, alle Seiten */}
       <div
         aria-hidden
         style={{
-          position: "fixed",
+          position: "absolute",
           inset: 0,
           zIndex: 0,
           background: [
@@ -36,15 +46,24 @@ export default async function DashboardLayout({
       {/* Sidebar – auf Mobilgerät versteckt */}
       <Sidebar role={session.user.role} />
 
-      {/* Hauptbereich */}
-      {/* min-w-0 + overflow-x clip: breite Inhalte dürfen die Seite nie über den Viewport hinausdrücken.
-          100dvh statt 100vh: folgt der tatsächlich sichtbaren Höhe (Tastatur, Safari-Leisten);
-          ältere Browser ignorieren den Wert und nutzen min-h-screen */}
-      <div className="flex-1 flex flex-col min-h-screen lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, overflowX: "clip", minHeight: "100dvh" }}>
+      {/* Hauptbereich: Topbar fest oben, darunter der einzige scrollende Bereich */}
+      <div className="flex-1 flex flex-col lg:ml-60 min-w-0" style={{ position: "relative", zIndex: 1, height: "100%" }}>
         <Topbar userName={session.user.name ?? ""} role={session.user.role} />
         <PushSubscriber />
         <AutoRefresh />
-        <main className="flex-1 px-4 pt-6 pb-32 lg:px-8 lg:pt-8 lg:pb-8">
+        <ScrollMemory />
+        <main
+          id="app-scroll"
+          className="flex-1 px-4 pt-6 pb-32 lg:px-8 lg:pt-8 lg:pb-8"
+          style={{
+            overflowY: "auto",
+            overflowX: "hidden",
+            // Nachfedern bleibt im Inhaltsbereich — Leisten bewegen sich nicht mit
+            overscrollBehavior: "contain",
+            WebkitOverflowScrolling: "touch",
+            minHeight: 0,
+          }}
+        >
           <InstallPrompt />
           {children}
         </main>

@@ -13,8 +13,9 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.16)",
-        position: "sticky",
-        top: 0,
+        // Fester Teil des App-Rahmens (scrollt nicht mit — gescrollt wird nur #app-scroll)
+        flexShrink: 0,
+        position: "relative",
         zIndex: 20,
         paddingTop: "max(env(safe-area-inset-top), 14px)",
         paddingBottom: 12,

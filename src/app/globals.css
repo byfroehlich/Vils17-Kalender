@@ -36,10 +36,14 @@
     /* Kein Nachfedern am Seitenrand: In der installierten iPhone-App verschiebt
        das Federn die festen Leisten, danach bleibt die Ansicht hängen */
     overscroll-behavior: none;
+    /* Falls iOS doch einmal etwas verschiebt: dunkelgrün statt heller Fläche */
+    background-color: #0c3d38;
   }
 
   body {
-    background-color: hsl(var(--background));
+    /* Dunkelgrün wie der App-Hintergrund — eine helle Fläche würde jede
+       Verschiebung auf dem iPhone sofort sichtbar machen */
+    background-color: #0c3d38;
     color: hsl(var(--foreground));
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     font-size: 1.0625rem;
