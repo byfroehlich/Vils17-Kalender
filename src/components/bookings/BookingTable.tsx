@@ -105,7 +105,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                       <span style={{ fontWeight: 600, color: "rgba(255,255,255,0.95)", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>
                         {booking.guestName}
                       </span>
-                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{booking.apartment.name}</span>
+                      <span style={{ fontSize: 12, color: "rgba(255,255,255,0.60)", minWidth: 0, flexShrink: 6, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{booking.apartment.name}</span>
                       {booking.premiumRate != null && (() => {
                         const cid = booking.cleaningAssignment?.cleanerId;
                         const other = !!cid && cid !== booking.premiumRateCleanerId;
@@ -113,7 +113,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                           <RateBadge
                             rate={booking.premiumRate}
                             inactive={other}
-                            title={other ? "Sondersatz-Buchung — die Vertretung bekommt ihren eigenen Satz" : undefined}
+                            title={other ? "Vertretung reinigt — es gilt ihr eigener Satz" : undefined}
                           />
                         );
                       })()}

@@ -192,7 +192,13 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
           const unpaidTotal = sum(group.jobs.filter((j) => !j.paidOut));
           const total = sum(group.jobs);
           const paidTotal = sum(group.jobs.filter((j) => j.paidOut));
-          const premiumCount = group.jobs.filter((j) => j.isPremium).length;
+          const premiumJobs = group.jobs.filter((j) => j.isPremium);
+          const premiumCount = premiumJobs.length;
+          // "2 × 70 €" — bei gemischten Beträgen nur die Anzahl
+          const premiumRates = Array.from(new Set(premiumJobs.map((j) => j.rate)));
+          const premiumLabel = premiumRates.length === 1
+            ? `${premiumCount} × ${premiumRates[0].toFixed(0)} €`
+            : `${premiumCount} mit eigenem Betrag`;
 
           return (
             <div
@@ -218,7 +224,7 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
                     )}
                   </div>
                   <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 2 }}>
-                    {group.cleanerName} · {group.jobs.length} {group.jobs.length === 1 ? "Auftrag" : "Aufträge"}{premiumCount > 0 ? ` · davon ${premiumCount} mit Sondersatz` : ""}
+                    {group.cleanerName} · {group.jobs.length} {group.jobs.length === 1 ? "Auftrag" : "Aufträge"}{premiumCount > 0 ? ` · davon ${premiumLabel}` : ""}
                   </p>
                 </div>
                 <div className="text-right">

@@ -97,8 +97,8 @@ function AssignmentRow({ a }: { a: Assignment }) {
               rate={a.booking.premiumRate}
               inactive={!!a.cleanerId && a.cleanerId !== a.booking.premiumRateCleanerId}
               title={!!a.cleanerId && a.cleanerId !== a.booking.premiumRateCleanerId
-                ? "Sondersatz-Buchung — die Vertretung bekommt ihren eigenen Satz"
-                : `Sondersatz ${a.booking.premiumRate.toFixed(0)} € pro Reinigung`}
+                ? "Vertretung reinigt — es gilt ihr eigener Satz"
+                : `${a.booking.premiumRate.toFixed(0)} € pro Reinigung`}
             />
           )}
         </div>

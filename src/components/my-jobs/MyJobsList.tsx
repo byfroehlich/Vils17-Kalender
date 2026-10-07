@@ -405,7 +405,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
             <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
-            {assignment.isPremium && assignment.premiumRate != null && <RateBadge rate={assignment.premiumRate} title="Sondersatz für dich, wenn du übernimmst" />}
+            {assignment.isPremium && assignment.premiumRate != null && <RateBadge rate={assignment.premiumRate} title={`${assignment.premiumRate.toFixed(0)} € für dich, wenn du übernimmst`} />}
             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
           </div>
         </div>

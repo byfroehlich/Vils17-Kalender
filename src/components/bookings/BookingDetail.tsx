@@ -378,8 +378,8 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
               <RateBadge rate={booking.premiumRate} inactive={other} />
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.70)" }}>
                 {other
-                  ? `Sondersatz gilt nur für ${forName} — die Vertretung bekommt ihren eigenen Satz.`
-                  : `Sondersatz für ${forName}.`}
+                  ? `${booking.premiumRate.toFixed(0)} € gilt nur für ${forName} — die Vertretung bekommt ihren eigenen Satz.`
+                  : `${booking.premiumRate.toFixed(0)} € pro Reinigung für ${forName}.`}
               </p>
             </div>
           );

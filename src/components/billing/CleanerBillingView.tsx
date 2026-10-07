@@ -65,7 +65,13 @@ export function CleanerBillingView({
   const groups = groupByMonth(assignments);
   // Grundsatz für die Kopfzeile; einzelne Aufträge können abweichen (Sondersatz)
   const baseRate = assignments.find((a) => a.cleaner?.cleanerRate != null)?.cleaner?.cleanerRate ?? 50;
-  const premiumCount = assignments.filter((a) => a.isPremium).length;
+  const premiumJobs = assignments.filter((a) => a.isPremium);
+  const premiumCount = premiumJobs.length;
+  // "3 × 70 €" — bei gemischten Beträgen nur die Anzahl
+  const premiumRates = Array.from(new Set(premiumJobs.map((a) => a.rate)));
+  const premiumLabel = premiumRates.length === 1
+    ? `${premiumCount} × ${premiumRates[0].toFixed(0)} €`
+    : `${premiumCount} mit eigenem Betrag`;
   const totalEarned = sum(assignments);
   const totalPaid = sum(assignments.filter((a) => a.paidOut));
   const totalPending = totalEarned - totalPaid;
@@ -95,7 +101,7 @@ export function CleanerBillingView({
           Meine Abrechnung
         </h1>
         <p style={{ color: "rgba(255,255,255,0.45)", fontSize: 13, marginTop: 2 }}>
-          {baseRate} € pro Reinigung{premiumCount > 0 ? ` · ${premiumCount} mit Sondersatz` : ""} · {assignments.length} erledigt
+          {baseRate} € pro Reinigung{premiumCount > 0 ? ` · ${premiumLabel}` : ""} · {assignments.length} erledigt
         </p>
       </div>
 

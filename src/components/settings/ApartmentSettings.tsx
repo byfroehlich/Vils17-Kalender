@@ -74,18 +74,18 @@ export function ApartmentSettings({
     const apt = apartments.find((a) => a.id === id);
     const rateNum = editRate.trim() === "" ? null : Number(editRate.replace(",", "."));
     if (rateNum !== null && (isNaN(rateNum) || rateNum < 0)) {
-      setSaveError("Sondersatz: bitte einen gültigen Betrag eingeben");
+      setSaveError("Bitte einen gültigen Betrag pro Reinigung eingeben");
       return;
     }
     if (rateNum !== null && !editRateCleaner) {
-      setSaveError("Sondersatz: bitte die Reinigungskraft auswählen");
+      setSaveError("Bitte die Reinigungskraft für den Betrag auswählen");
       return;
     }
     const rateChanged =
       rateNum !== (apt?.cleaningRate ?? null) ||
       (rateNum !== null && editRateCleaner !== (apt?.cleaningRateCleanerId ?? ""));
     if (rateChanged && rateNum !== null &&
-        !confirm(`Sondersatz ${rateNum.toFixed(0)} € gilt für alle Buchungen, die ab jetzt eingehen. Bestehende Buchungen behalten ihren Satz. Fortfahren?`)) {
+        !confirm(`${rateNum.toFixed(0)} € pro Reinigung gilt für alle Buchungen, die ab jetzt eingehen. Bestehende Buchungen behalten ihren Satz. Fortfahren?`)) {
       return;
     }
 
@@ -240,7 +240,7 @@ export function ApartmentSettings({
                 {/* Sondersatz: z.B. 70 € pro Reinigung für Vanessa im Penthouse */}
                 <div>
                   <label style={{ fontSize: 11, fontWeight: 500, color: "rgba(255,255,255,0.4)", marginBottom: 6, display: "block" }}>
-                    Sondersatz pro Reinigung (optional)
+                    Eigener Betrag pro Reinigung (optional)
                   </label>
                   <div className="flex items-center gap-2" style={{ flexWrap: "wrap" }}>
                     <input
@@ -266,7 +266,7 @@ export function ApartmentSettings({
                   </div>
                   <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)", marginTop: 6 }}>
                     Gilt nur für Buchungen, die ab dem Speichern eingehen, und nur für diese Person —
-                    Vertretungen bekommen ihren eigenen Satz. Feld leeren entfernt den Sondersatz.
+                    Vertretungen bekommen ihren eigenen Satz. Feld leeren entfernt den Betrag.
                   </p>
                 </div>
 

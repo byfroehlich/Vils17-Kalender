@@ -14,7 +14,7 @@ export function RateBadge({
 }) {
   return (
     <span
-      title={title ?? `Sondersatz: ${rate.toFixed(0)} € pro Reinigung`}
+      title={title ?? `${rate.toFixed(0)} € pro Reinigung`}
       style={{
         display: "inline-flex",
         alignItems: "center",

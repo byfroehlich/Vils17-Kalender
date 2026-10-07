@@ -63,7 +63,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       select: { id: true },
     });
     if (!rateCleaner) {
-      return NextResponse.json({ error: "Reinigungskraft für Sondersatz nicht gefunden" }, { status: 400 });
+      return NextResponse.json({ error: "Reinigungskraft für den Betrag nicht gefunden" }, { status: 400 });
     }
   }
 
