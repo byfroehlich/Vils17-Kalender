@@ -1,14 +1,9 @@
 import { z } from "zod";
+import { smoobuGet } from "../smoobu-auth";
 import type { ChannelManagerAdapter, NormalizedApartment, NormalizedReservation } from "./types";
 
 const SMOOBU_API_BASE = "https://login.smoobu.com/api";
 
-function getHeaders() {
-  return {
-    "Api-Key": process.env.SMOOBU_API_KEY ?? "",
-    "Content-Type": "application/json",
-  };
-}
 
 // ─── Zod-Schemas für rohe Smoobu-Antworten ───────────────────────────────────
 // Smoobu-Feldnamen sind mit Bindestrichen (check-in, guest-name, etc.)
@@ -82,9 +77,7 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
   readonly name = "Smoobu";
 
   async fetchApartments(): Promise<NormalizedApartment[]> {
-    const res = await fetch(`${SMOOBU_API_BASE}/apartments`, {
-      headers: getHeaders(),
-    });
+    const res = await smoobuGet(`${SMOOBU_API_BASE}/apartments`);
 
     if (!res.ok) {
       throw new Error(`Smoobu Apartments API ${res.status}: ${res.statusText}`);
@@ -130,7 +123,7 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
       url.searchParams.set("pageSize", String(pageSize));
       url.searchParams.set("page", String(page));
 
-      const res = await fetch(url.toString(), { headers: getHeaders() });
+      const res = await smoobuGet(url.toString());
       if (!res.ok) {
         throw new Error(`Smoobu Reservations API ${res.status}: ${res.statusText}`);
       }

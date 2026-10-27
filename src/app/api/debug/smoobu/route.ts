@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { smoobuGet } from "@/lib/smoobu-auth";
 import { format, subDays, addDays } from "date-fns";
 
 // Debug-Endpunkt – gibt die ROHE Smoobu-Antwort zurück, nur für ADMIN.
@@ -25,10 +26,6 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "SMOOBU_API_KEY nicht gesetzt" });
   }
 
-  const headers = {
-    "Api-Key": apiKey,
-    "Content-Type": "application/json",
-  };
 
   const guestQuery = req.nextUrl.searchParams.get("guest");
   const idQuery = req.nextUrl.searchParams.get("id");
@@ -45,7 +42,7 @@ export async function GET(req: NextRequest) {
 
     while (page <= 30) {
       const url = `https://login.smoobu.com/api/reservations?from=${from}&to=${to}&pageSize=100&page=${page}`;
-      const res = await fetch(url, { headers });
+      const res = await smoobuGet(url);
       if (!res.ok) {
         return NextResponse.json({ error: `Smoobu API ${res.status}`, page }, { status: 502 });
       }
@@ -91,13 +88,13 @@ export async function GET(req: NextRequest) {
   }
 
   // ─── Standard: Überblick ───────────────────────────────────────────────────
-  const aptRes = await fetch("https://login.smoobu.com/api/apartments", { headers });
+  const aptRes = await smoobuGet("https://login.smoobu.com/api/apartments");
   const aptRaw = await aptRes.json();
 
   const from = format(subDays(new Date(), 30), "yyyy-MM-dd");
   const to = format(addDays(new Date(), 30), "yyyy-MM-dd");
   const url = `https://login.smoobu.com/api/reservations?from=${from}&to=${to}&pageSize=3&page=1`;
-  const resRes = await fetch(url, { headers });
+  const resRes = await smoobuGet(url);
   const resRaw = await resRes.json();
 
   return NextResponse.json({

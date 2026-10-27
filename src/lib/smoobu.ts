@@ -1,3 +1,5 @@
+import { smoobuGet } from "./smoobu-auth";
+
 const SMOOBU_API_BASE = "https://login.smoobu.com/api";
 
 interface SmoobuReservation {
@@ -21,12 +23,6 @@ interface SmoobuApartment {
   name: string;
 }
 
-function getHeaders() {
-  return {
-    "Api-Key": process.env.SMOOBU_API_KEY ?? "",
-    "Content-Type": "application/json",
-  };
-}
 
 export async function fetchSmoobuReservations(params: {
   from: string; // YYYY-MM-DD
@@ -40,7 +36,7 @@ export async function fetchSmoobuReservations(params: {
   url.searchParams.set("pageSize", String(params.pageSize ?? 100));
   url.searchParams.set("page", String(params.page ?? 1));
 
-  const res = await fetch(url.toString(), { headers: getHeaders() });
+  const res = await smoobuGet(url.toString());
 
   if (!res.ok) {
     throw new Error(`Smoobu API error: ${res.status} ${res.statusText}`);
@@ -51,9 +47,7 @@ export async function fetchSmoobuReservations(params: {
 }
 
 export async function fetchSmoobuApartments(): Promise<SmoobuApartment[]> {
-  const res = await fetch(`${SMOOBU_API_BASE}/apartments`, {
-    headers: getHeaders(),
-  });
+  const res = await smoobuGet(`${SMOOBU_API_BASE}/apartments`);
 
   if (!res.ok) {
     throw new Error(`Smoobu API error: ${res.status} ${res.statusText}`);
