@@ -7,13 +7,32 @@ Technische Details und Konventionen stehen in [CLAUDE.md](CLAUDE.md).
 ## Claude-Schnittstelle (MCP)
 
 Claude kann Belegung, An-/Abreisen, Reinigung, Wäsche und Umsätze direkt abfragen
-und — nach Bestätigung — Reinigungen zuweisen. Adresse:
+und — nach Bestätigung — Reinigungen zuweisen. Zwei Wege: **claude.ai mit Anmeldung
+(OAuth)** für Handy, Web und Cloud — oder ein **Token** für Claude Desktop/Claude Code. Adresse:
 
 ```
 https://vils17-kalender.onrender.com/api/mcp
 ```
 
-### 1. Token anlegen
+### claude.ai (Handy, Web, Cloud ohne Mac) — empfohlen
+
+1. claude.ai → **Einstellungen → Connectoren → Eigenen Connector hinzufügen**
+2. Name „Vils17-Kalender“, URL `https://vils17-kalender.onrender.com/api/mcp`, Felder für
+   Client-ID/Secret leer lassen → **Hinzufügen** → **Verbinden**
+3. Es öffnet sich die Anmeldung der App → mit dem **Admin-Konto** anmelden
+4. Zustimmungsseite: Bereiche prüfen (`cleaning:write` abwählen, wenn Claude nur lesen soll) → **Zulassen**
+
+Danach steht der Connector in allen Claude-Apps desselben Kontos bereit (auch in der
+Handy-App). Kein Token zu kopieren. Trennen: **Einstellungen → Claude-Schnittstelle →
+Trennen** (sperrt sofort alle Token dieser Verbindung).
+
+Technik: OAuth 2.1 mit PKCE (S256), Dynamic Client Registration und
+Client-ID-Metadaten-Dokumenten. Das Zugriffstoken ist intern ein normales `v17_`-Token
+(Hash in der DB) mit 1 h Laufzeit; das Refresh-Token (30 Tage) wird bei jeder Erneuerung
+getauscht — taucht ein altes wieder auf, wird die ganze Verbindung gesperrt. Zustimmen
+kann nur ein aktives Admin-Konto; Rücksprung nur zu claude.ai/claude.com oder Loopback.
+
+### 1. Token anlegen (Claude Desktop, Claude Code)
 
 In der App: **Einstellungen → Claude-Schnittstelle → Neues Token**. Bereiche ankreuzen:
 
@@ -42,7 +61,8 @@ Datei `~/Library/Application Support/Claude/claude_desktop_config.json`, unter `
 Danach Claude Desktop neu starten. Die Tools stehen dann auch in Cloud-Sitzungen
 zur Verfügung, solange der Mac verbunden ist.
 
-claude.ai (Handy, Cloud ohne Mac) braucht OAuth — das ist Stufe 3 und noch nicht gebaut.
+Claude Code geht auch ohne Token: `claude mcp add --transport http vils17 https://vils17-kalender.onrender.com/api/mcp`
+— die Anmeldung läuft dann wie bei claude.ai über den Browser.
 
 ### Tools
 
@@ -72,6 +92,10 @@ Smoobu-Änderungen und keine Nachrichten an Gäste.
 - Jeder Aufruf im Audit-Log (`mcp.<tool>`, Token, Ziel-Buchung, Parameter ohne Freitexte, Status, Dauer).
 - 60 Aufrufe pro Minute und Token, danach 429 mit `Retry-After`.
 - `/api/mcp` läuft nicht über die Login-Middleware, hat eigene Token-Prüfung und kein CORS.
+  Ohne gültiges Token: 401 mit `WWW-Authenticate: Bearer resource_metadata=…` (dort findet claude.ai die Anmeldung).
+- OAuth-Endpunkte: `/.well-known/oauth-protected-resource`, `/.well-known/oauth-authorization-server`,
+  `/oauth/register`, `/oauth/authorize`, `/oauth/token`, `/oauth/revoke`. Registrierung 10/min, Token 30/min pro IP.
+- Jede Zustimmung, Ablehnung, Verbindung und Sperre steht im Audit-Log (`oauth.*`).
 
 ### Prüfen
 

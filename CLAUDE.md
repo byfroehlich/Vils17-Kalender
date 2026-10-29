@@ -309,7 +309,22 @@ Regeln:
 - Antworten: Geld via `money()`, Kalendertage `YYYY-MM-DD`, Zeitpunkte `viennaIso()`,
   Listen mit `limit`/`cursor`.
 - Tests: `npm test` (vitest gegen PGlite, `tests/`), `npm run mcp:pruefen` gegen eine laufende App.
-- Stufe 3 (OAuth 2.1 für claude.ai) ist noch offen.
+
+**OAuth 2.1 für claude.ai (`src/lib/oauth/`)** — die App ist zugleich Autorisierungsserver:
+```
+config.ts     TTLs, publicOrigin (NEXT_PUBLIC_APP_URL), erlaubte Rücksprung-Adressen, CIMD-Hosts
+clients.ts    Dynamic Client Registration + Client-ID-Metadaten-Dokumente (nur claude.ai/claude.com)
+authorize.ts  Prüfung der Anfrage; vor geprüfter redirect_uri nie weiterleiten
+flow.ts       signierte Zustimmung, Code (PKCE S256), Token-Paar, Rotation, Verbindung trennen
+app/.well-known/…, app/oauth/{authorize,authorize/approve,register,token,revoke}
+```
+- Zugriffstoken = normales `McpToken` mit `expiresAt` (1 h), `resource` (Zielgruppe) und
+  `oauthFamilyId` (Verbindung). `verifyToken` prüft Ablauf und Zielgruppe.
+- Nur ein aktiver ADMIN darf zustimmen; auch Erneuerungen prüfen das erneut.
+- Code doppelt eingelöst oder altes Refresh-Token wiederverwendet → ganze Verbindung gesperrt.
+- CORS nur für Metadaten/Register/Token/Revoke — nie für `/api/mcp`.
+- OAuth-Token erscheinen nicht in der Token-Liste, sondern als „Verbindung“ mit „Trennen“.
+- Tests: `tests/oauth.test.ts` (kompletter Ablauf, PKCE, Wiederverwendung, Zielgruppe, Rollen).
 
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
