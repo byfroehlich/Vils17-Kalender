@@ -285,6 +285,32 @@ die vereinbarte Person reinigt → sonst normaler Satz der Reinigungskraft.
 - Markierung: `RateBadge` („70 €"); durchgestrichen, wenn eine Vertretung reinigt.
 - Prüfen: `npm run test:rates`
 
+### MCP-Schnittstelle (`/api/mcp`, `src/lib/mcp/`)
+
+Claude greift per MCP (Streamable HTTP, zustandslos, JSON-Antworten) direkt zu.
+Bedienung und Einbindung: [README.md](README.md).
+
+```
+src/app/api/mcp/route.ts      POST, eigene Bearer-Prüfung, 60/min pro Token, kein CORS
+src/lib/mcp/tokens.ts         Token v17_…, SHA-256-Hash, Scopes
+src/lib/mcp/tool.ts           defineTool, runTool (Scope, zod strict, Audit mcp.<tool>)
+src/lib/mcp/server.ts         McpServer pro Anfrage, nur Tools der Token-Scopes
+src/lib/mcp/tools/*.ts        bookings, cleaning, finance (lesen), write (schreiben)
+src/lib/booking-actions.ts    assignCleaner / setAssignmentNotes / setGuestCount —
+                              gemeinsam für App-Routen UND MCP
+/settings/schnittstelle       Token anlegen (Klartext einmalig), widerrufen
+```
+
+Regeln:
+- Neue Fachlogik nie im Tool selbst, sondern als Server-Funktion, die auch die
+  App-Route nutzt (siehe `booking-actions.ts`, `runAutoSync`).
+- Schreib-Tools: `write: true`, Parameter `bestaetigt`; ohne `true` nur `preview(…)`.
+- Kein Löschen, keine Preis-/Smoobu-Änderungen, keine Gästenachrichten.
+- Antworten: Geld via `money()`, Kalendertage `YYYY-MM-DD`, Zeitpunkte `viennaIso()`,
+  Listen mit `limit`/`cursor`.
+- Tests: `npm test` (vitest gegen PGlite, `tests/`), `npm run mcp:pruefen` gegen eine laufende App.
+- Stufe 3 (OAuth 2.1 für claude.ai) ist noch offen.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für
