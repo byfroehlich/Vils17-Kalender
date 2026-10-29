@@ -8,6 +8,7 @@ import Link from "next/link";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { RateBadge } from "@/components/ui/RateBadge";
+import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
 interface Cleaner {
   id: string;
   name: string;
@@ -69,13 +70,6 @@ const glassAmber = {
   padding: "16px",
 } as React.CSSProperties;
 
-function calcLaundry(guestCount: number, apt: Apartment) {
-  return {
-    beds: Math.ceil(guestCount / (apt.laundryBedsDivisor ?? 2)),
-    towels: guestCount * (apt.laundryTowelsPerGuest ?? 1),
-    kitchen: apt.laundryKitchenCount ?? 1,
-  };
-}
 
 export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking: Booking; cleaners: Cleaner[]; isAdmin?: boolean }) {
   const router = useRouter();
@@ -149,7 +143,7 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const qty = calcLaundry(booking.guestCount, booking.apartment);
+  const qty = calculateLaundryQuantity(booking.guestCount, booking.apartment);
   const cleaningStatus = assignment?.status ?? "UNASSIGNED";
   const laundryStatus  = assignment?.laundryStatus ?? "OPEN";
   const cleanerName    = assignment?.cleaner?.name;

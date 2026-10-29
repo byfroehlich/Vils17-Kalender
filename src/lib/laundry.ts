@@ -1,8 +1,5 @@
-export interface LaundryQuantity {
-  beds: number;
-  towels: number;
-  kitchen: number;
-}
+import type { LaundryQuantity } from "./laundry-quantity";
+export { calculateLaundryQuantity, type LaundryQuantity } from "./laundry-quantity";
 
 export interface LaundryOrderParams {
   bookingId: string;
@@ -15,17 +12,6 @@ export interface LaundryOrderResult {
   success: boolean;
   orderId?: string;
   message?: string;
-}
-
-// Mengenberechnung basierend auf Gästeanzahl
-export function calculateLaundryQuantity(
-  guestCount: number
-): LaundryQuantity {
-  return {
-    beds: guestCount,
-    towels: guestCount * 2,
-    kitchen: 1,
-  };
 }
 
 // Phase 1: Mock-Adapter (nur Status setzen, kein echter API-Aufruf)

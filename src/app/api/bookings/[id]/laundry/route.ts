@@ -65,7 +65,8 @@ export async function POST(
 
   if (parsed.data.action === "order") {
     // Wäsche bestellen
-    const quantity = calculateLaundryQuantity(booking.guestCount);
+    // Gleiche Mengen wie in der Anzeige — nach Wäsche-Konfiguration der Wohnung
+    const quantity = calculateLaundryQuantity(booking.guestCount, booking.apartment);
 
     const result = await orderLaundry({
       bookingId: booking.id,

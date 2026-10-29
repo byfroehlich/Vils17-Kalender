@@ -89,3 +89,8 @@ export function decodeCursor(cursor: string | undefined | null): number {
     return 0;
   }
 }
+
+/** Minuten seit einem Zeitpunkt (null wenn unbekannt) */
+export function minutesSince(d: Date | null, now = new Date()): number | null {
+  return d ? Math.round((now.getTime() - d.getTime()) / 60_000) : null;
+}

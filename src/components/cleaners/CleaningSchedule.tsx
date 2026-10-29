@@ -7,6 +7,7 @@ import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react"
 import { CleanerList } from "./CleanerList";
 import { RateBadge } from "@/components/ui/RateBadge";
 
+import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
 interface Assignment {
   id: string;
   status: string;
@@ -71,13 +72,6 @@ const rowGlass: React.CSSProperties = {
   textDecoration: "none",
 };
 
-function calcLaundry(guestCount: number, apt: Assignment["booking"]["apartment"]) {
-  return {
-    beds: Math.ceil(guestCount / (apt.laundryBedsDivisor ?? 2)),
-    towels: guestCount * (apt.laundryTowelsPerGuest ?? 1),
-    kitchen: apt.laundryKitchenCount ?? 1,
-  };
-}
 
 function AssignmentRow({ a }: { a: Assignment }) {
   const effectiveStatus = a.isSelfClean && a.status === "UNASSIGNED" ? "SELF_CLEAN" : a.status;
@@ -118,7 +112,7 @@ function AssignmentRow({ a }: { a: Assignment }) {
 }
 
 function LaundryRow({ a }: { a: Assignment }) {
-  const qty = calcLaundry(a.booking.guestCount, a.booking.apartment);
+  const qty = calculateLaundryQuantity(a.booking.guestCount, a.booking.apartment);
   const badge = laundryBadge[a.laundryStatus] ?? { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" };
   return (
     <Link href={`/bookings/${a.booking.id}`} style={rowGlass}>
