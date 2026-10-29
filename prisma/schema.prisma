@@ -54,8 +54,32 @@ model Organization {
   users        User[]
   apartments   Apartment[]
   emailImports EmailImport[]
+  mcpTokens    McpToken[]
 
   @@map("organizations")
+}
+
+// ─── MCP-Schnittstelle ────────────────────────────────────────────────────────
+// Zugangstoken für Claude (MCP-Server unter /api/mcp). Gespeichert wird nur der
+// SHA-256-Hash; das Klartext-Token wird beim Anlegen genau einmal angezeigt.
+
+model McpToken {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  name   String
+  hash   String   @unique // SHA-256 (hex) des Tokens
+  prefix String // erste Zeichen zur Wiedererkennung, z.B. "v17_Ab3x"
+  scopes String[] // bookings:read, cleaning:read, cleaning:write, finance:read
+
+  createdById String?
+  createdAt   DateTime  @default(now())
+  lastUsedAt  DateTime?
+  revokedAt   DateTime?
+
+  @@index([organizationId])
+  @@map("mcp_tokens")
 }
 
 // ─── Portal-Mail-Import ───────────────────────────────────────────────────────

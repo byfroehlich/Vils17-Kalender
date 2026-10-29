@@ -13,10 +13,12 @@
     "db:studio": "prisma studio",
     "db:seed": "tsx prisma/seed.ts",
     "test:mail": "tsx scripts/test-email-parser.ts",
-    "test:rates": "tsx scripts/test-rates.ts"
+    "test:rates": "tsx scripts/test-rates.ts",
+    "test": "vitest run"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.7.4",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@prisma/client": "^5.22.0",
     "@radix-ui/react-alert-dialog": "^1.1.4",
     "@radix-ui/react-avatar": "^1.1.2",
@@ -45,9 +47,11 @@
     "tailwindcss-animate": "^1.0.7",
     "twilio": "^5.3.7",
     "web-push": "^3.6.7",
-    "zod": "^3.24.1"
+    "zod": "^3.25.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.13",
+    "@electric-sql/pglite-socket": "^0.2.16",
     "@types/bcryptjs": "^2.4.6",
     "@types/mailparser": "^3.4.6",
     "@types/node": "^20.17.9",
@@ -62,6 +66,8 @@
     "prisma": "^5.22.0",
     "tailwindcss": "^3.4.17",
     "tsx": "^4.19.2",
-    "typescript": "^5.7.2"
+    "typescript": "^5.7.2",
+    "vite": "^6.4.5",
+    "vitest": "^3.2.7"
   }
 }
