@@ -78,10 +78,12 @@ export async function auditCall(
       data: {
         organizationId: ctx.organizationId,
         action: `mcp.${tool}`,
-        entityType: "McpToken",
-        entityId: ctx.tokenId,
+        // Ziel des Aufrufs: die betroffene Buchung, sonst das Token selbst
+        entityType: typeof args?.buchung_id === "string" ? "Booking" : "McpToken",
+        entityId: typeof args?.buchung_id === "string" ? args.buchung_id : ctx.tokenId,
         details: {
           token: ctx.tokenName,
+          token_id: ctx.tokenId,
           tool,
           parameter: sanitizeForAudit(args),
           status,

@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { setGuestCount } from "@/lib/booking-actions";
 
 const patchSchema = z.object({
   petCount: z.number().int().min(0).max(99).nullable().optional(),
@@ -27,6 +28,7 @@ export async function PATCH(
 
   const booking = await prisma.booking.findFirst({
     where: { id: params.id, organizationId: session.user.organizationId },
+    select: { id: true },
   });
 
   if (!booking) {
@@ -35,19 +37,20 @@ export async function PATCH(
 
   const { petCount, guestCount } = parsed.data;
 
-  const updated = await prisma.booking.update({
-    where: { id: params.id },
-    data: {
-      ...(petCount !== undefined ? { petCount } : {}),
-      // Gästezahl gesetzt → als manuell markieren, damit der Sync sie in Ruhe lässt.
-      // Auf null gesetzt → Korrektur aufheben, nächster Sync liefert Smoobus Wert.
-      ...(guestCount !== undefined
-        ? guestCount === null
-          ? { guestCountManual: false }
-          : { guestCount, guestCountManual: true }
-        : {}),
-    },
-  });
+  if (petCount !== undefined) {
+    await prisma.booking.update({ where: { id: params.id }, data: { petCount } });
+  }
+  // Gästezahl: gemeinsame Logik mit der MCP-Schnittstelle (lib/booking-actions)
+  if (guestCount !== undefined) {
+    await setGuestCount({
+      organizationId: session.user.organizationId,
+      bookingId: params.id,
+      guestCount,
+      actor: { userId: session.user.id },
+    });
+  }
+
+  const updated = await prisma.booking.findUnique({ where: { id: params.id } });
 
   return NextResponse.json({ success: true, booking: updated });
 }

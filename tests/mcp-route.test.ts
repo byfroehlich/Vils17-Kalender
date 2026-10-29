@@ -78,6 +78,18 @@ describe("/api/mcp", () => {
     expect(res.body.result?.isError ?? true).toBe(true);
   });
 
+  it("Schreib-Tools erscheinen nur mit cleaning:write — und sind als schreibend markiert", async () => {
+    const org = await (await import("@/lib/prisma")).prisma.organization.findFirstOrThrow();
+    const writeToken = await createToken(org.id, ["cleaning:write"], "Schreiben");
+    const list = await call("tools/list", {}, writeToken);
+    const tools = list.body.result.tools;
+    expect(tools.map((t: any) => t.name).sort()).toEqual(["buchung_notiz", "gaestezahl_korrigieren", "reinigung_zuweisen", "sync_ausloesen"]);
+    for (const t of tools) {
+      expect(t.annotations.readOnlyHint).toBe(false);
+      expect(Object.keys(t.inputSchema.properties)).toContain("bestaetigt");
+    }
+  });
+
   it("liefert Tool-Fehler als {error} mit isError", async () => {
     const res = await call("tools/call", { name: "buchungen_list", arguments: { wohnung: "Chalet" } });
     expect(res.body.result.isError).toBe(true);

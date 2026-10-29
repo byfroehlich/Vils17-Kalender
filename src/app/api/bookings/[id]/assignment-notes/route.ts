@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+import { setAssignmentNotes, ActionError } from "@/lib/booking-actions";
 import { z } from "zod";
 
 const schema = z.object({
@@ -22,15 +22,16 @@ export async function PATCH(
   const parsed = schema.safeParse(body);
   if (!parsed.success) return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
 
-  const assignment = await prisma.cleaningAssignment.findFirst({
-    where: { bookingId: params.id, organizationId: session.user.organizationId },
-  });
-  if (!assignment) return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
-
-  await prisma.cleaningAssignment.update({
-    where: { id: assignment.id },
-    data: { notes: parsed.data.notes.trim() || null },
-  });
-
-  return NextResponse.json({ success: true });
+  try {
+    await setAssignmentNotes({
+      organizationId: session.user.organizationId,
+      bookingId: params.id,
+      notes: parsed.data.notes,
+      actor: { userId: session.user.id },
+    });
+    return NextResponse.json({ success: true });
+  } catch (err) {
+    if (err instanceof ActionError) return NextResponse.json({ error: err.message }, { status: err.status });
+    throw err;
+  }
 }

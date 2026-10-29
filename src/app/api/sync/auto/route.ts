@@ -1,13 +1,9 @@
 import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { runSyncIfStale } from "@/lib/sync-runner";
-import { runReminders, maybeSendDailyStatus } from "@/lib/notifications";
+import { runAutoSync } from "@/lib/sync-runner";
 
 export const maxDuration = 60;
-
-// Älter als das → beim Öffnen der App neu bei Smoobu abfragen
-const MAX_AGE_MS = 10 * 60 * 1000;
 
 /**
  * Selbstaktualisierung: Jede geöffnete App (Admin wie Reinigungskraft) ruft das
@@ -22,16 +18,8 @@ export async function POST() {
   }
 
   try {
-    const orgId = session.user.organizationId;
-    const result = await runSyncIfStale(orgId, MAX_AGE_MS);
-
-    // Rückfallebene für den Cron: Hat ein Sync stattgefunden (höchstens alle
-    // 10 Min), auch Warnungen und Tagesstatus prüfen. Beides ist idempotent —
-    // läuft der Cron, passiert hier schlicht nichts doppelt.
-    if (result.synced) {
-      await runReminders(orgId).catch((e) => console.error("[sync/auto] Warnungen:", e));
-      await maybeSendDailyStatus(orgId).catch((e) => console.error("[sync/auto] Tagesstatus:", e));
-    }
+    // Gleiche Logik wie das MCP-Tool sync_ausloesen (lib/sync-runner)
+    const result = await runAutoSync(session.user.organizationId);
 
     return NextResponse.json(result);
   } catch (err) {

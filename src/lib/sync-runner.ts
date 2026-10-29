@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { syncBookings } from "./sync";
+import { runReminders, maybeSendDailyStatus } from "./notifications";
 
 type SyncStats = Awaited<ReturnType<typeof syncBookings>>;
 
@@ -49,4 +50,24 @@ export async function runSyncIfStale(
 
   await runSync(organizationId);
   return { synced: true, lastSyncAt: new Date() };
+}
+
+/** Älter als das → bei Smoobu neu abfragen (Selbstaktualisierung, MCP) */
+export const AUTO_SYNC_MAX_AGE_MS = 10 * 60 * 1000;
+
+/**
+ * Selbstaktualisierung wie beim Öffnen der App: synchronisiert nur, wenn der
+ * letzte Lauf älter als 10 Min ist (oder `force`). Nach einem Sync laufen auch
+ * Warnungen und Tagesstatus — beides idempotent, nichts kommt doppelt.
+ */
+export async function runAutoSync(organizationId: string, force = false) {
+  const result = force
+    ? (await runSync(organizationId), { synced: true, lastSyncAt: new Date() })
+    : await runSyncIfStale(organizationId, AUTO_SYNC_MAX_AGE_MS);
+
+  if (result.synced) {
+    await runReminders(organizationId).catch((e) => console.error("[sync] Warnungen:", e));
+    await maybeSendDailyStatus(organizationId).catch((e) => console.error("[sync] Tagesstatus:", e));
+  }
+  return result;
 }

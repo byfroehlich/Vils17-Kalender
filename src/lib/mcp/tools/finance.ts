@@ -165,15 +165,24 @@ export const ortstaxe = defineTool({
   name: "ortstaxe",
   title: "Ortstaxe",
   description:
-    "Ortstaxe (Aufenthaltsabgabe) je Monat: Nächte × Personen × Satz (Vorgabe 3,50 €). Für die Monatsmeldung an die Gemeinde. " +
-    "Vorgabe: alle Gäste zählen. Mit kinder_zaehlen=false werden nur Erwachsene gezählt, soweit die Portal-Mail die Aufteilung " +
-    "geliefert hat — sonst alle Gäste (diese Buchungen werden als unsicher gemeldet).",
+    "Ortstaxe (Aufenthaltsabgabe) je Monat: Nächte × Erwachsene × 3,50 €. Für die Monatsmeldung an die Gemeinde. " +
+    "Die App kennt nur die Gesamtzahl der Gäste — Vorgabe ist daher: alle Gäste zählen. Kinder lassen sich je Buchung abziehen " +
+    "(kinder: [{buchung_id, anzahl}]). Mit kinder_zaehlen=false werden zusätzlich, wo bekannt, nur die Erwachsenen aus der " +
+    "Portal-Mail gezählt; Buchungen ohne Aufteilung werden gemeldet.",
   scope: "finance:read",
   input: {
     ...monthPeriodFields,
     wohnung: wohnungFilter,
     satz: z.number().min(0).max(50).optional().describe("Euro pro Person und Nacht (Vorgabe 3,50)"),
-    kinder_zaehlen: z.boolean().optional().describe("Kinder mitzählen (Vorgabe: true)"),
+    kinder: z
+      .array(z.object({ buchung_id: z.string().min(1), anzahl: z.number().int().min(0).max(20) }))
+      .max(500)
+      .optional()
+      .describe("Kinder je Buchung abziehen, z.B. [{\"buchung_id\": \"…\", \"anzahl\": 2}]. Hat Vorrang vor der Portal-Mail."),
+    kinder_zaehlen: z
+      .boolean()
+      .optional()
+      .describe("false = Erwachsene aus der Portal-Mail verwenden, wo vorhanden (Vorgabe: true = alle Gäste zählen)"),
   },
   async handler(args, ctx) {
     const { start, end, months } = resolveMonths(args);
@@ -203,10 +212,20 @@ export const ortstaxe = defineTool({
       for (const i of imports) if (i.bookingId && i.parsedAdults != null) adults.set(i.bookingId, i.parsedAdults);
     }
 
+    // Ausdrücklich angegebene Kinder je Buchung
+    const children = new Map((args.kinder ?? []).map((k) => [k.buchung_id, k.anzahl]));
+    const known = new Set(bookings.map((b) => b.id));
+    const unbekannt = Array.from(children.keys()).filter((id) => !known.has(id));
+
     const rows = new Map(months.map((m) => [m, { buchungen: new Set<string>(), naechte: 0, personen_naechte: 0, unsicher: new Set<string>() }]));
     for (const b of bookings) {
-      const persons = kinder ? b.guestCount : adults.get(b.id) ?? b.guestCount;
-      const unsure = !kinder && !adults.has(b.id);
+      // Vorrang: angegebene Kinder → Erwachsene aus der Portal-Mail → alle Gäste
+      const persons = children.has(b.id)
+        ? Math.max(0, b.guestCount - children.get(b.id)!)
+        : kinder
+          ? b.guestCount
+          : adults.get(b.id) ?? b.guestCount;
+      const unsure = !kinder && !children.has(b.id) && !adults.has(b.id);
       for (const [m, n] of Object.entries(nightsPerMonth(b.checkIn, b.checkOut, start, end))) {
         const r = rows.get(m);
         if (!r) continue;
@@ -231,15 +250,21 @@ export const ortstaxe = defineTool({
 
     return {
       satz: money(satz),
-      kinder_gezaehlt: kinder,
+      kinder_gezaehlt: kinder && children.size === 0,
+      kinder_abgezogen_bei_buchungen: children.size - unbekannt.length,
+      ...(unbekannt.length ? { unbekannte_buchung_ids: unbekannt } : {}),
       gesamt: {
         personen_naechte: monate.reduce((s, m) => s + m.personen_naechte, 0),
         betrag: money(monate.reduce((s, m) => s + m.personen_naechte, 0) * satz),
       },
       monate,
-      hinweis: kinder
-        ? "Alle Gäste gezählt. Kinder können je nach Regelung der Gemeinde ausgenommen sein — dann mit kinder_zaehlen=false neu abfragen und prüfen."
-        : "Nur Erwachsene, soweit die Portal-Mail die Aufteilung enthielt; bei Buchungen ohne Aufteilung wurden alle Gäste gezählt (buchungen_ohne_aufteilung).",
+      hinweis:
+        "Gezählt wird pro Nacht und Erwachsenem. Die App kennt nur die Gesamtzahl der Gäste" +
+        (children.size
+          ? `; bei ${children.size - unbekannt.length} Buchung(en) wurden die angegebenen Kinder abgezogen.`
+          : kinder
+            ? " — Kinder sind hier mitgezählt. Kinder je Buchung mit dem Parameter kinder abziehen."
+            : "; wo die Portal-Mail die Aufteilung enthielt, zählen nur Erwachsene, sonst alle Gäste (buchungen_ohne_aufteilung)."),
     };
   },
 });
