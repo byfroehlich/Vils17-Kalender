@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { KeyRound, Copy, Check, ShieldOff, Plus, AlertTriangle } from "lucide-react";
+import { KeyRound, Copy, Check, ShieldOff, Plus, AlertTriangle, Link2 } from "lucide-react";
 
 interface TokenRow {
   id: string;
@@ -12,6 +12,14 @@ interface TokenRow {
   createdAt: string;
   lastUsedAt: string | null;
   revokedAt: string | null;
+}
+
+interface ConnectionRow {
+  id: string;
+  client: string;
+  scopes: string[];
+  createdAt: string;
+  lastUsedAt: string | null;
 }
 
 const card: React.CSSProperties = {
@@ -43,11 +51,25 @@ function CopyButton({ text, label = "Kopieren" }: { text: string; label?: string
   );
 }
 
+function ScopeChips({ scopes }: { scopes: string[] }) {
+  return (
+    <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
+      {scopes.map((s) => (
+        <span key={s} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.08)", color: s.endsWith(":write") ? "#fcd34d" : "#99f6e4" }}>
+          {s}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 export function McpTokenManager({
   initialTokens,
+  connections,
   scopes,
 }: {
   initialTokens: TokenRow[];
+  connections: ConnectionRow[];
   scopes: { id: string; label: string }[];
 }) {
   const router = useRouter();
@@ -95,6 +117,17 @@ export function McpTokenManager({
     else alert("Widerrufen fehlgeschlagen");
   }
 
+  async function disconnect(c: ConnectionRow) {
+    if (!confirm(`Verbindung „${c.client}" trennen? Claude muss sich danach neu verbinden.`)) return;
+    const res = await fetch(`/api/oauth-connections/${encodeURIComponent(c.id)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ trennen: true }),
+    });
+    if (res.ok) router.refresh();
+    else alert("Trennen fehlgeschlagen");
+  }
+
   const desktopConfig = (token: string) =>
     JSON.stringify(
       {
@@ -118,6 +151,36 @@ export function McpTokenManager({
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 6, flexWrap: "wrap" }}>
           <code style={{ fontSize: 13, color: "rgba(255,255,255,0.85)", wordBreak: "break-all" }}>{endpoint}</code>
           {origin && <CopyButton text={endpoint} />}
+        </div>
+      </div>
+
+      {/* claude.ai (OAuth) */}
+      <div style={card}>
+        <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: 8 }}>
+          <Link2 style={{ width: 15, height: 15 }} /> claude.ai (Handy, Web) — ohne Token
+        </p>
+        <p style={{ fontSize: 12.5, color: "rgba(255,255,255,0.55)", marginTop: 6, lineHeight: 1.55 }}>
+          In claude.ai: Einstellungen → Connectoren → Eigenen Connector hinzufügen → Adresse oben einfügen → Verbinden.
+          Danach hier anmelden und die Bereiche bestätigen. Nur das Admin-Konto kann zustimmen.
+        </p>
+        <div className="space-y-2" style={{ marginTop: 12 }}>
+          {connections.length === 0 && (
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.4)" }}>Keine aktive Verbindung.</p>
+          )}
+          {connections.map((c) => (
+            <div key={c.id} style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10, paddingTop: 8, borderTop: "1px solid rgba(255,255,255,0.08)" }}>
+              <div style={{ minWidth: 0 }}>
+                <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)" }}>{c.client}</p>
+                <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
+                  verbunden {fmt(c.createdAt)} · zuletzt benutzt {fmt(c.lastUsedAt)}
+                </p>
+                <ScopeChips scopes={c.scopes} />
+              </div>
+              <button type="button" onClick={() => disconnect(c)} className="btn-secondary" style={{ padding: "6px 10px", fontSize: 12, display: "inline-flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+                <ShieldOff style={{ width: 13, height: 13 }} /> Trennen
+              </button>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -150,7 +213,7 @@ export function McpTokenManager({
       {/* Anlegen */}
       <div style={card}>
         <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)", display: "flex", alignItems: "center", gap: 8 }}>
-          <Plus style={{ width: 15, height: 15 }} /> Neues Token
+          <Plus style={{ width: 15, height: 15 }} /> Neues Token (Claude Desktop, Claude Code)
         </p>
         <label style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.5)", marginTop: 12, marginBottom: 6 }}>Name</label>
         <input className="form-input" value={name} onChange={(e) => setName(e.target.value)} maxLength={60} />
@@ -194,13 +257,7 @@ export function McpTokenManager({
                 <p style={{ fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 3 }}>
                   <code>{t.prefix}…</code> · angelegt {fmt(t.createdAt)} · zuletzt benutzt {fmt(t.lastUsedAt)}
                 </p>
-                <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginTop: 6 }}>
-                  {t.scopes.map((s) => (
-                    <span key={s} style={{ fontSize: 11, padding: "2px 8px", borderRadius: 20, background: "rgba(255,255,255,0.08)", color: s.endsWith(":write") ? "#fcd34d" : "#99f6e4" }}>
-                      {s}
-                    </span>
-                  ))}
-                </div>
+                <ScopeChips scopes={t.scopes} />
               </div>
               {!t.revokedAt && (
                 <button type="button" onClick={() => revoke(t)} className="btn-secondary" style={{ padding: "6px 10px", fontSize: 12, display: "inline-flex", gap: 6, alignItems: "center", flexShrink: 0 }}>

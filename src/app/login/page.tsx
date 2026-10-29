@@ -29,7 +29,11 @@ export default function LoginPage() {
       return;
     }
 
-    router.push("/");
+    // Zurück zur aufrufenden Seite (z.B. OAuth-Zustimmung) — nur Pfade
+    // innerhalb der App, damit der Login keine offene Weiterleitung wird
+    const target = new URLSearchParams(window.location.search).get("callbackUrl");
+    const safe = target && target.startsWith("/") && !target.startsWith("//") && !target.startsWith("/\\") ? target : "/";
+    router.push(safe);
     router.refresh();
   }
 

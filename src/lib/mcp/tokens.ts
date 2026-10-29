@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "crypto";
 import { prisma } from "../prisma";
+import { sameResource } from "../oauth/resource";
 
 // ─── Zugangstoken für die MCP-Schnittstelle ───────────────────────────────────
 // Klartext nur beim Anlegen; in der DB liegt der SHA-256-Hash.
@@ -38,17 +39,24 @@ export interface McpAuth {
 }
 
 /**
- * Prüft ein Bearer-Token. Liefert null bei unbekanntem oder widerrufenem Token.
+ * Prüft ein Bearer-Token. Liefert null bei unbekanntem, widerrufenem oder
+ * abgelaufenem Token. OAuth-Token (claude.ai) gelten zudem nur für die
+ * Adresse, für die sie ausgestellt wurden (`resource`, RFC 8707).
  * Aktualisiert lastUsedAt höchstens einmal pro Minute (spart DB-Schreibzugriffe).
  */
-export async function verifyToken(raw: string | null | undefined): Promise<McpAuth | null> {
+export async function verifyToken(raw: string | null | undefined, resource?: string): Promise<McpAuth | null> {
   if (!raw || !raw.startsWith(TOKEN_PREFIX) || raw.length < TOKEN_PREFIX.length + 40) return null;
 
   const row = await prisma.mcpToken.findUnique({
     where: { hash: hashToken(raw) },
-    select: { id: true, name: true, organizationId: true, scopes: true, revokedAt: true, lastUsedAt: true },
+    select: {
+      id: true, name: true, organizationId: true, scopes: true, revokedAt: true, lastUsedAt: true,
+      expiresAt: true, resource: true,
+    },
   });
   if (!row || row.revokedAt) return null;
+  if (row.expiresAt && row.expiresAt.getTime() <= Date.now()) return null;
+  if (row.resource && (!resource || !sameResource(row.resource, resource))) return null;
 
   if (!row.lastUsedAt || Date.now() - row.lastUsedAt.getTime() > 60_000) {
     await prisma.mcpToken

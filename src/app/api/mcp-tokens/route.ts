@@ -21,8 +21,9 @@ export async function GET() {
   const session = await requireAdmin();
   if (!session) return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
 
+  // OAuth-Zugriffstoken (stündlich neu) erscheinen gebündelt als Verbindung, nicht hier
   const tokens = await prisma.mcpToken.findMany({
-    where: { organizationId: session.user.organizationId },
+    where: { organizationId: session.user.organizationId, oauthFamilyId: null },
     orderBy: { createdAt: "desc" },
     select: { id: true, name: true, prefix: true, scopes: true, createdAt: true, lastUsedAt: true, revokedAt: true },
   });

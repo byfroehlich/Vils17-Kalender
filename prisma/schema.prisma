@@ -78,8 +78,68 @@ model McpToken {
   lastUsedAt  DateTime?
   revokedAt   DateTime?
 
+  // Nur bei Token aus dem OAuth-Ablauf (claude.ai): Ablauf, Zielgruppe
+  // (Adresse dieser MCP-Schnittstelle) und die Verbindung, zu der es gehört
+  expiresAt     DateTime?
+  resource      String?
+  oauthFamilyId String?
+
   @@index([organizationId])
+  @@index([oauthFamilyId])
   @@map("mcp_tokens")
+}
+
+// ─── OAuth 2.1 für claude.ai ──────────────────────────────────────────────────
+// Die App ist ihr eigener Autorisierungsserver. Access-Token sind normale
+// McpToken (mit Ablauf); Refresh-Token werden bei jeder Erneuerung getauscht.
+
+model OAuthClient {
+  id           String    @id @default(cuid())
+  clientId     String    @unique // zufällig (DCR) oder HTTPS-URL (Client-ID-Metadaten-Dokument)
+  kind         String // "dcr" | "cimd"
+  name         String?
+  redirectUris String[]
+  createdAt    DateTime  @default(now())
+  fetchedAt    DateTime? // CIMD: wann das Metadaten-Dokument zuletzt geladen wurde
+  lastUsedAt   DateTime?
+
+  @@map("oauth_clients")
+}
+
+model OAuthCode {
+  id             String    @id @default(cuid())
+  codeHash       String    @unique
+  clientId       String
+  organizationId String
+  userId         String
+  redirectUri    String
+  codeChallenge  String
+  scopes         String[]
+  resource       String
+  expiresAt      DateTime
+  usedAt         DateTime?
+  familyId       String // Verbindung, die mit diesem Code entsteht
+  createdAt      DateTime  @default(now())
+
+  @@map("oauth_codes")
+}
+
+model OAuthRefreshToken {
+  id             String    @id @default(cuid())
+  hash           String    @unique
+  familyId       String // alle Refresh-Token einer Verbindung
+  clientId       String
+  organizationId String
+  userId         String
+  scopes         String[]
+  resource       String
+  expiresAt      DateTime
+  usedAt         DateTime? // ausgetauscht — erneute Verwendung = Diebstahl → Familie sperren
+  revokedAt      DateTime?
+  createdAt      DateTime  @default(now())
+
+  @@index([familyId])
+  @@map("oauth_refresh_tokens")
 }
 
 // ─── Portal-Mail-Import ───────────────────────────────────────────────────────
