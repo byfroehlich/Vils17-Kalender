@@ -12,7 +12,7 @@ Daten kommen aus Smoobu (Buchungen) und der App selbst (Reinigung, Wäsche, Abre
 - Schreib-Tools ändern nur mit "bestaetigt": true. Erst ohne aufrufen, Mathias die Vorschau zeigen, nach seiner Zustimmung mit true ausführen.
 - Auszahlungsdaten der Portale sind Schätzungen.
 - Gästenachrichten: gast_antworten sendet erst mit "bestaetigt": true — Mathias muss den genauen Text vorher freigeben.
-- Wäsche wird auf der Website der Wäscherei bestellt; waesche_status hält nur den Stand in der App fest. Bestellmenge: waesche_bedarf (Vorgabe 14 Tage).
+- Wäsche wird auf der Website der Wäscherei bestellt; waesche_status hält nur den Stand in der App fest. Bestellmenge: waesche_bedarf (Vorgabe 14 Tage). Spannbettlaken je Bettgröße 90/180/200 nach waesche_betten.
 - Hunde: 15 € pro Hund und Nacht. Airbnb kassiert selbst; bei Booking.com/Direkt per hundegebuehr_anfordern (Text vorher freigeben). hunde_pruefen durchsucht die Chats.`;
 
 /**

@@ -88,15 +88,38 @@ describe("Smoobu-Automatik", () => {
 describe("Wäschemenge pro Anreise", () => {
   it("Regel 30.10.2026: 3 Gäste", () => {
     expect(calculateLaundryQuantity(3, { laundryBedsDivisor: 2, laundryTowelsPerGuest: 1, laundryKitchenCount: 1 })).toEqual({
-      beds: 2, duvetCovers: 3, pillowCases: 3, towels: 3, handTowels: 3, washcloths: 3, bathMats: 1, kitchen: 1,
+      beds: 2, sheets90: 0, sheets200: 0, duvetCovers: 3, pillowCases: 3, towels: 3, handTowels: 3, washcloths: 3, bathMats: 1, kitchen: 1,
     });
+  });
+
+  // Penthouse (Mathias 30.10.2026): SZ1 200×200, SZ2 180×200, Büro-Schlafcouch 100×200 → 90er Laken
+  const penthouse = { laundryBeds: [{ width: 200, persons: 2 }, { width: 180, persons: 2 }, { width: 90, persons: 1 }] };
+  const sheets = (g: number, apt: object) => {
+    const q = calculateLaundryQuantity(g, apt);
+    return [q.sheets200, q.beds, q.sheets90];
+  };
+  it("Spannbettlaken nach Betten in Belegungsreihenfolge", () => {
+    expect(sheets(1, penthouse)).toEqual([1, 0, 0]);
+    expect(sheets(2, penthouse)).toEqual([1, 0, 0]);
+    expect(sheets(3, penthouse)).toEqual([1, 1, 0]);
+    expect(sheets(4, penthouse)).toEqual([1, 1, 0]);
+    expect(sheets(5, penthouse)).toEqual([1, 1, 1]);
+    expect(sheets(0, penthouse)).toEqual([0, 0, 0]);
+  });
+  it("mehr Gäste als Schlafplätze → zusätzliche 180er", () => {
+    expect(sheets(7, penthouse)).toEqual([1, 2, 1]);
+  });
+  it("ohne oder mit ungültiger Bettenliste: Vorgabe 180er je 2 Gäste", () => {
+    expect(sheets(3, {})).toEqual([0, 2, 0]);
+    expect(sheets(3, { laundryBeds: [{ width: 140, persons: 2 }] })).toEqual([0, 2, 0]);
+    expect(sheets(3, { laundryBeds: [] })).toEqual([0, 2, 0]);
   });
 });
 
 describe("planLaundry (Bestand, Reserve, Lieferungen)", () => {
   const apt = { laundryBedsDivisor: 2, laundryTowelsPerGuest: 1, laundryKitchenCount: 1 };
   const arr = (ci: string, n: number, id = "L") => ({ apartmentId: id, apartmentName: id, guestName: "G", checkIn: d(ci), guestCount: n, apartment: apt });
-  const q = (o: Partial<Record<string, number>>) => ({ beds: 0, towels: 0, kitchen: 0, handTowels: 0, pillowCases: 0, duvetCovers: 0, bathMats: 0, washcloths: 0, ...o });
+  const q = (o: Partial<Record<string, number>>) => ({ beds: 0, sheets90: 0, sheets200: 0, towels: 0, kitchen: 0, handTowels: 0, pillowCases: 0, duvetCovers: 0, bathMats: 0, washcloths: 0, ...o });
   const arrivals = [arr("2026-10-28", 2), arr("2026-11-01", 4), arr("2026-11-05", 2, "P"), arr("2026-11-20", 5)];
 
   it("ohne Bestand: Bedarf + Reserve, Reserve bei jedem Teil", () => {
@@ -263,14 +286,14 @@ describe("wochenplan & waesche_bedarf", () => {
     // Anreisen ab 30.10.: b2 Lodge 4 P., b5 Penthouse 5 P., b3 Lodge 3 P. — b6 storniert
     expect(r.result.anreisen).toBe(3);
     expect(r.result.gaeste).toBe(12);
-    expect(r.result.bestellmenge["Spannbettlaken"]).toBe(2 + 3 + 2 + DEFAULT_RESERVE.beds);
+    expect(r.result.bestellmenge["Spannbettlaken 180"]).toBe(2 + 3 + 2 + DEFAULT_RESERVE.beds);
     expect(r.result.hinweis_bestand).toMatch(/kein Bestand/);
 
     const v = await call("waesche_bestand_erfassen", { mengen: { spannbettlaken: 20, badvorleger: 1 } });
     expect(v.result.vorschau).toBe(true);
     await call("waesche_bestand_erfassen", { gezaehlt_am: "2026-10-29", mengen: { spannbettlaken: 20, badvorleger: 1 }, bestaetigt: true });
     const r2 = await call("waesche_bedarf", {});
-    expect(r2.result.bestellmenge["Spannbettlaken"]).toBe(0);
+    expect(r2.result.bestellmenge["Spannbettlaken 180"]).toBe(0);
     expect(r2.result.bestellmenge["Badvorleger"]).toBe(3 + DEFAULT_RESERVE.bathMats - 1);
 
     await call("waesche_lieferung_erfassen", { liefertag: "2026-11-02", mengen: { badvorleger: 4 }, bestaetigt: true });
@@ -281,6 +304,27 @@ describe("wochenplan & waesche_bedarf", () => {
     await call("waesche_reserve", { mengen: { badvorleger: 5 }, bestaetigt: true });
     const r4 = await call("waesche_bedarf", {});
     expect(r4.result.reserve["Badvorleger"]).toBe(5);
-    expect(r4.result.reserve["Spannbettlaken"]).toBe(DEFAULT_RESERVE.beds);
+    expect(r4.result.reserve["Spannbettlaken 180"]).toBe(DEFAULT_RESERVE.beds);
+  });
+});
+
+describe("waesche_betten", () => {
+  it("Vorschau, Speichern, Wirkung auf waesche_bedarf", async () => {
+    const betten = [{ breite: 200, personen: 2 }, { breite: 180, personen: 2 }, { breite: 90, personen: 1 }];
+    const v = await call("waesche_betten", { wohnung: "Penthouse", betten });
+    expect(v.result.vorschau).toBe(true);
+    expect(v.result.spannbettlaken["5 Gäste"]).toBe("1 Spannbettlaken 200, 1 Spannbettlaken 180, 1 Spannbettlaken 90");
+
+    await call("waesche_betten", { wohnung: "Penthouse", betten, bestaetigt: true });
+    const r = await call("waesche_betten", { wohnung: "Penthouse" });
+    expect(r.result.betten).toEqual(betten);
+
+    // b5 Penthouse 5 P. → je ein 200er/180er/90er; Lodge ohne Liste → 180er je 2 Gäste (b2 4 P. = 2, b3 3 P. = 2)
+    const b = await call("waesche_bedarf", {});
+    expect(b.result.bedarf["Spannbettlaken 200"]).toBe(1);
+    expect(b.result.bedarf["Spannbettlaken 90"]).toBe(1);
+    expect(b.result.bedarf["Spannbettlaken 180"]).toBe(1 + 2 + 2);
+    const audit = await prisma.auditLog.findFirstOrThrow({ where: { action: "apartment.laundry_beds" } });
+    expect(audit.entityType).toBe("Apartment");
   });
 });

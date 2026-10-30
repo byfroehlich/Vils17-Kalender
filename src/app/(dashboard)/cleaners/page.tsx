@@ -46,7 +46,7 @@ export default async function CleanersPage() {
                 color: true,
                 laundryBedsDivisor: true,
                 laundryTowelsPerGuest: true,
-                laundryKitchenCount: true,
+                laundryKitchenCount: true, laundryBeds: true,
               },
             },
           },

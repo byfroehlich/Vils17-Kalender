@@ -24,7 +24,7 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
     orderBy: { checkIn: "asc" },
     select: {
       id: true, guestName: true, guestCount: true, checkIn: true, apartmentId: true,
-      apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true } },
+      apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
       cleaningAssignment: { select: { laundryStatus: true } },
     },
   });
@@ -35,7 +35,8 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
     deliveries: deliveries.map((d) => ({ deliveryOn: d.deliveryOn, quantities: normalizeQuantity(d.quantities) })),
     today,
     end,
-    reserve: org.laundryReserve ? normalizeQuantity(org.laundryReserve) : DEFAULT_RESERVE,
+    // Teile, die in einer älteren gespeicherten Reserve fehlen (z.B. neue Spannbettlaken-Größen), bekommen die Vorgabe
+    reserve: org.laundryReserve ? normalizeQuantity({ ...DEFAULT_RESERVE, ...(org.laundryReserve as object) }) : DEFAULT_RESERVE,
   });
 
   return {

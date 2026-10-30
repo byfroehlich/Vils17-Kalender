@@ -16,7 +16,9 @@ import { calculateLaundryQuantity, emptyLaundryQuantity, LAUNDRY_ITEMS, type Lau
 
 /** Vorgabe-Reserve je Teil (Vorschlag; in der App änderbar). */
 export const DEFAULT_RESERVE: LaundryQuantity = {
-  beds: 3,
+  beds: 2,
+  sheets90: 1,
+  sheets200: 1,
   duvetCovers: 2,
   pillowCases: 2,
   towels: 3,

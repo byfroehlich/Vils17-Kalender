@@ -7,7 +7,7 @@ import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react"
 import { CleanerList } from "./CleanerList";
 import { RateBadge } from "@/components/ui/RateBadge";
 
-import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
+import { calculateLaundryQuantity, fittedSheetsTotal } from "@/lib/laundry-quantity";
 interface Assignment {
   id: string;
   status: string;
@@ -28,6 +28,7 @@ interface Assignment {
       laundryBedsDivisor?: number | null;
       laundryTowelsPerGuest?: number | null;
       laundryKitchenCount?: number | null;
+      laundryBeds?: unknown;
     };
   };
 }
@@ -122,7 +123,7 @@ function LaundryRow({ a }: { a: Assignment }) {
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{a.booking.apartment.name}</p>
       </div>
       <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
-        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛏 {qty.beds}</span>
+        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛏 {fittedSheetsTotal(qty)}</span>
         <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛁 {qty.towels}</span>
         <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🍽 {qty.kitchen}</span>
       </div>
