@@ -51,11 +51,14 @@ function validateMetadata(raw: unknown): { name?: string; redirectUris: string[]
   if (m.token_endpoint_auth_method && m.token_endpoint_auth_method !== "none") {
     throw new OAuthError("invalid_client_metadata", "Nur öffentliche Clients (token_endpoint_auth_method \"none\")");
   }
-  if (m.grant_types && m.grant_types.some((g) => g !== "authorization_code" && g !== "refresh_token")) {
-    throw new OAuthError("invalid_client_metadata", "Nur authorization_code und refresh_token");
+  // Zusätzliche Grant-Typen (claude.ai meldet z.B. jwt-bearer) werden ignoriert, nicht
+  // abgelehnt: ausgegeben wird ohnehin nur authorization_code + refresh_token, und der
+  // Token-Endpunkt weist alles andere zurück. Pflicht ist nur, dass "code" dabei ist.
+  if (m.grant_types && !m.grant_types.includes("authorization_code")) {
+    throw new OAuthError("invalid_client_metadata", "grant_types muss authorization_code enthalten");
   }
-  if (m.response_types && m.response_types.some((r) => r !== "code")) {
-    throw new OAuthError("invalid_client_metadata", "Nur response_type \"code\"");
+  if (m.response_types && !m.response_types.includes("code")) {
+    throw new OAuthError("invalid_client_metadata", "response_types muss \"code\" enthalten");
   }
   return { name: m.client_name, redirectUris: m.redirect_uris };
 }

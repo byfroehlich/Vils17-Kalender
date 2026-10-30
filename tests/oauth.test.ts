@@ -425,4 +425,41 @@ describe("Client-ID-Metadaten-Dokument (CIMD)", () => {
     await expect(getClient("https://claude.ai/oauth/zweiter")).rejects.toThrow(/stimmt nicht/);
     fetchMock.mockRestore();
   });
+
+  it("nimmt das echte claude.ai-Dokument an (zusätzlicher Grant-Typ jwt-bearer)", async () => {
+    // Stand 30.10.2026, wörtlich von https://claude.ai/oauth/mcp-oauth-client-metadata
+    const url = "https://claude.ai/oauth/mcp-oauth-client-metadata";
+    const doc = {
+      client_id: url, client_name: "Claude", client_uri: "https://claude.ai",
+      redirect_uris: [CALLBACK],
+      grant_types: ["authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer"],
+      response_types: ["code"], token_endpoint_auth_method: "none",
+    };
+    const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(new Response(JSON.stringify(doc)));
+    expect(await getClient(url)).toMatchObject({ kind: "cimd", name: "Claude", redirectUris: [CALLBACK] });
+    fetchMock.mockRestore();
+  });
+});
+
+describe("Registrierung: Grant-Typen", () => {
+  it("ignoriert zusätzliche Grant-Typen, verlangt aber authorization_code", async () => {
+    const extra = await register(json(`${ORIGIN}/oauth/register`, {
+      redirect_uris: [CALLBACK],
+      grant_types: ["authorization_code", "refresh_token", "urn:ietf:params:oauth:grant-type:jwt-bearer"],
+    }));
+    expect(extra.status).toBe(201);
+    expect((await extra.json()).grant_types).toEqual(["authorization_code", "refresh_token"]);
+
+    const ohne = await register(json(`${ORIGIN}/oauth/register`, { redirect_uris: [CALLBACK], grant_types: ["client_credentials"] }));
+    expect(ohne.status).toBe(400);
+  });
+
+  it("Token-Endpunkt lehnt fremde Grant-Typen weiter ab", async () => {
+    const { body: client } = await registerClient();
+    const res = await token(form(`${ORIGIN}/oauth/token`, {
+      grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer", client_id: client.client_id, assertion: "x",
+    }));
+    expect(res.status).toBe(400);
+    expect((await res.json()).error).toBe("unsupported_grant_type");
+  });
 });
