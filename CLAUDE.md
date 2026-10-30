@@ -349,7 +349,7 @@ Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, Küchentücher (Einstellun
 je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug.
 - **Spannbettlaken nach Größe** (90 / 180 / 200, wie bei Laundrix): `Apartment.laundryBeds` = Betten in
   Belegungsreihenfolge, je belegtem Bett ein Laken. Penthouse: 200×200 (2 P.), 180×200 (2 P.), Büro-Couch
-  100×200 (1 P., 90er Laken). Ohne Liste: ein 180er je 2 Gäste. Setzen per MCP `waesche_betten`.
+  100×200 (1 P., 90er Laken). Lodge: Kingsize 180×200 + Ecksofa 180 (je 2 P.). Ohne Liste: ein 180er je 2 Gäste. Gesetzt per Migration `20261030235000_laundry_beds_vils17`, ändern per MCP `waesche_betten`.
 - **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
   die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
 - **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),
