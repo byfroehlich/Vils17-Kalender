@@ -118,7 +118,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Re
               <span>
                 {SCOPE_LABELS[s]}
                 <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                  {s}{s === "cleaning:write" ? " · ändert nur nach ausdrücklicher Bestätigung" : ""}
+                  {s}{s.endsWith(":write") ? " · ändert nur nach ausdrücklicher Bestätigung" : ""}
                 </span>
               </span>
             </label>

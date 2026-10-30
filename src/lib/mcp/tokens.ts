@@ -7,14 +7,16 @@ import { sameResource } from "../oauth/resource";
 
 export const TOKEN_PREFIX = "v17_";
 
-export const SCOPES = ["bookings:read", "cleaning:read", "cleaning:write", "finance:read"] as const;
+export const SCOPES = ["bookings:read", "cleaning:read", "cleaning:write", "finance:read", "messages:read", "messages:write"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABELS: Record<Scope, string> = {
   "bookings:read": "Buchungen, Belegung, An-/Abreisen lesen",
   "cleaning:read": "Reinigungen und Wäsche lesen",
-  "cleaning:write": "Reinigungen zuweisen, Notizen, Gästezahl, Sync auslösen",
+  "cleaning:write": "Reinigungen zuweisen, Status, Wäschestatus, Notizen, Gästezahl, Sync auslösen",
   "finance:read": "Umsatz, Ortstaxe, Auszahlungen Reinigung lesen",
+  "messages:read": "Gästenachrichten (Smoobu) lesen",
+  "messages:write": "Gästen antworten (nur nach Bestätigung)",
 };
 
 export function isScope(s: string): s is Scope {

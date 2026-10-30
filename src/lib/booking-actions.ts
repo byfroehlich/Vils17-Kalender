@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { sendCleaningAssignmentMail } from "./mail";
 import { sendCleaningWhatsApp } from "./whatsapp";
-import { sendPushToUsers } from "./push";
+import { sendPushToUsers, sendPushToRole } from "./push";
 import { effectiveRate } from "./rates";
 import { logAudit } from "./audit";
 
@@ -234,4 +234,147 @@ export async function setGuestCount(params: {
     });
   }
   return { before: booking, booking: updated };
+}
+
+// ─── Reinigungsstatus setzen ──────────────────────────────────────────────────
+
+export type CleaningStatusValue = "UNASSIGNED" | "SELF_CLEAN" | "ASSIGNED" | "COMPLETED";
+
+/**
+ * Setzt den Status eines Reinigungsauftrags — gleiche Regeln wie „Als erledigt
+ * markieren“ in der App: Beim Erledigen wird der Satz festgeschrieben, beim
+ * Zurücksetzen auf offen/Selbstreinigung wird die Zuweisung aufgehoben.
+ * onlyCleanerId: Reinigungskräfte dürfen nur eigene Aufträge ändern.
+ */
+export async function setCleaningStatus(params: {
+  organizationId: string;
+  bookingId: string;
+  status: CleaningStatusValue;
+  actor: Actor;
+  /** Name für die Push-Nachricht („Kerstin: … ist fertig“) */
+  actorName: string;
+  onlyCleanerId?: string;
+}) {
+  const assignment = await prisma.cleaningAssignment.findFirst({
+    where: {
+      bookingId: params.bookingId,
+      organizationId: params.organizationId,
+      ...(params.onlyCleanerId ? { cleanerId: params.onlyCleanerId } : {}),
+    },
+    include: {
+      cleaner: { select: { cleanerRate: true } },
+      booking: { select: { premiumRate: true, premiumRateCleanerId: true } },
+    },
+  });
+  if (!assignment) throw new ActionError("Nicht gefunden", 404);
+
+  const newStatus = params.status;
+
+  const updated = await prisma.cleaningAssignment.update({
+    where: { id: assignment.id },
+    data: {
+      status: newStatus,
+      // Satz beim Erledigen festschreiben — spätere Satzänderungen verändern
+      // diese Abrechnung dann nicht mehr. Wird "erledigt" zurückgenommen, gilt
+      // wieder der laufende Satz.
+      rate: newStatus === "COMPLETED" && assignment.cleanerId
+        // schon erledigt → festgeschriebenen Satz behalten, nicht neu rechnen
+        ? effectiveRate({ ...assignment, rate: assignment.status === "COMPLETED" ? assignment.rate : null })
+        : null,
+      // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
+      ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
+        ? { cleanerId: null, assignedAt: null, cleanerUnavailable: false, cleanerUnavailableNote: null, declinedById: null }
+        : {}),
+    },
+  });
+
+  const booking = await prisma.booking.findUnique({
+    where: { id: params.bookingId },
+    select: { checkIn: true, apartment: { select: { name: true } } },
+  });
+
+  if (booking) {
+    // Reinigungstag = Anreisetag der nächsten Gäste (UTC-Mitternacht gespeichert)
+    const cleaningDay = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" });
+    const apt = booking.apartment.name;
+
+    if (newStatus === "COMPLETED") {
+      sendPushToRole(params.organizationId, ["ADMIN", "MANAGER"], {
+        title: "Reinigung erledigt",
+        body: `${params.actorName}: ${apt} am ${cleaningDay} ist fertig`,
+        url: `/bookings/${params.bookingId}`,
+      }).catch(() => null);
+    } else if (newStatus === "UNASSIGNED") {
+      sendPushToRole(params.organizationId, ["CLEANER"], {
+        title: "Reinigung wieder verfügbar",
+        body: `${apt} am ${cleaningDay} ist wieder frei — jetzt zusagen!`,
+        url: "/my-jobs/list",
+      }).catch(() => null);
+    }
+  }
+
+  if (params.actor.via) {
+    await logAudit({
+      organizationId: params.organizationId,
+      userId: params.actor.userId,
+      action: "assignment.status.updated",
+      entityType: "CleaningAssignment",
+      entityId: assignment.id,
+      details: { bookingId: params.bookingId, vorher: assignment.status, nachher: newStatus, via: params.actor.via },
+    });
+  }
+  return { previous: assignment.status, assignment: updated };
+}
+
+// ─── Wäschestatus setzen ──────────────────────────────────────────────────────
+
+export type LaundryStatusValue = "OPEN" | "ORDERED" | "AVAILABLE";
+
+/**
+ * Setzt den Wäschestatus (offen / bestellt / vorhanden) und optional die Notiz.
+ * Legt den Reinigungsauftrag an, falls er fehlt — wie die App. Bei „bestellt“
+ * werden Zeitpunkt und Mengen festgehalten, damit später nachvollziehbar ist,
+ * was wann bestellt wurde. Eine Bestellung beim Lieferanten löst das NICHT aus.
+ */
+export async function setLaundryStatus(params: {
+  organizationId: string;
+  bookingId: string;
+  status: LaundryStatusValue;
+  notes?: string | null;
+  quantity?: object | null;
+  actor: Actor;
+}) {
+  const booking = await prisma.booking.findFirst({
+    where: { id: params.bookingId, organizationId: params.organizationId },
+    select: { id: true },
+  });
+  if (!booking) throw new ActionError("Buchung nicht gefunden", 404);
+
+  const assignment =
+    (await prisma.cleaningAssignment.findUnique({ where: { bookingId: booking.id } })) ??
+    (await prisma.cleaningAssignment.create({ data: { organizationId: params.organizationId, bookingId: booking.id } }));
+
+  const updated = await prisma.cleaningAssignment.update({
+    where: { id: assignment.id },
+    data: {
+      laundryStatus: params.status,
+      ...(params.notes !== undefined ? { laundryNotes: params.notes?.trim() || null } : {}),
+      ...(params.status === "ORDERED"
+        ? { laundryOrderedAt: new Date(), ...(params.quantity ? { laundryQuantity: params.quantity } : {}) }
+        : {}),
+      ...(params.status === "OPEN" ? { laundryOrderedAt: null } : {}),
+    },
+  });
+
+  if (params.actor.via) {
+    await logAudit({
+      organizationId: params.organizationId,
+      userId: params.actor.userId,
+      action: "laundry.status.updated",
+      entityType: "CleaningAssignment",
+      entityId: assignment.id,
+      details: { bookingId: booking.id, vorher: assignment.laundryStatus, nachher: params.status, via: params.actor.via },
+    });
+  }
+  return { previous: assignment.laundryStatus, assignment: updated };
 }

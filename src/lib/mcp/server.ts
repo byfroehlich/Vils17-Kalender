@@ -10,7 +10,9 @@ Daten kommen aus Smoobu (Buchungen) und der App selbst (Reinigung, Wäsche, Abre
 - Datumsangaben JJJJ-MM-TT, Zeitpunkte in Europe/Vienna. Geld als Zahl in Euro und als Text.
 - Der Reinigungstag ist der Anreisetag der nächsten Gäste.
 - Schreib-Tools ändern nur mit "bestaetigt": true. Erst ohne aufrufen, Mathias die Vorschau zeigen, nach seiner Zustimmung mit true ausführen.
-- Auszahlungsdaten der Portale sind Schätzungen.`;
+- Auszahlungsdaten der Portale sind Schätzungen.
+- Gästenachrichten: gast_antworten sendet erst mit "bestaetigt": true — Mathias muss den genauen Text vorher freigeben.
+- Wäsche wird auf der Website der Wäscherei bestellt; waesche_status hält nur den Stand in der App fest.`;
 
 /**
  * Baut pro Anfrage einen zustandslosen MCP-Server. Angemeldet werden nur die

@@ -2,7 +2,7 @@ import { z } from "zod";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "../../prisma";
 import { defineTool, ToolError } from "../tool";
-import { day, addDays, viennaIso, minutesSince } from "../format";
+import { day, addDays, viennaIso, minutesSince, todayVienna } from "../format";
 import { datum, wohnungFilter, pagingFields, resolveApartmentId, resolveDays, paging, page } from "../shared";
 import { calculateLaundryQuantity } from "../../laundry-quantity";
 import { isImapConfigured } from "../../email-import/imap";
@@ -171,6 +171,96 @@ export const syncStatus = defineTool({
         letzte_7_tage: Object.fromEntries(counts.map((c) => [c.status, c._count._all])),
         probleme: problems.map((p) => ({ am: viennaIso(p.createdAt), status: p.status, portal: p.portal, detail: p.detail })),
       },
+    };
+  },
+});
+
+// ─── wochenplan ───────────────────────────────────────────────────────────────
+
+export const wochenplan = defineTool({
+  name: "wochenplan",
+  title: "Wochenplan mit Warnungen",
+  description:
+    "Planungsübersicht für die nächsten N Tage (Vorgabe 7): je Tag An- und Abreisen, Reinigungen mit Reinigungskraft und Wäschestatus, " +
+    "dazu eine Liste mit Warnungen — Reinigung ohne Reinigungskraft, abgesagte Reinigung, Wäsche noch offen (ab 3 Tage vorher), " +
+    "Wechseltag (Ab- und Anreise am selben Tag in derselben Wohnung). Für „Was steht an?“ und den Wochenstart.",
+  scope: "cleaning:read",
+  input: {
+    tage: z.number().int().min(1).max(31).optional().describe("Anzahl Tage ab heute (Vorgabe 7)"),
+    wohnung: wohnungFilter,
+  },
+  async handler(args, ctx) {
+    const start = todayVienna();
+    const tage = args.tage ?? 7;
+    const end = addDays(start, tage);
+    const apartmentId = await resolveApartmentId(ctx.organizationId, args.wohnung);
+
+    const rows = await prisma.booking.findMany({
+      where: {
+        organizationId: ctx.organizationId,
+        status: "confirmed",
+        ...(apartmentId ? { apartmentId } : {}),
+        OR: [{ checkIn: { gte: start, lt: end } }, { checkOut: { gte: start, lt: end } }],
+      },
+      orderBy: [{ checkIn: "asc" }],
+      include: {
+        apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true } },
+        cleaningAssignment: {
+          select: { status: true, isSelfClean: true, cleanerUnavailable: true, laundryStatus: true, cleaner: { select: { name: true } } },
+        },
+      },
+    });
+
+    const warnungen: { datum: string; art: string; text: string; buchung_id: string }[] = [];
+    const days = [];
+    for (let d = new Date(start); d < end; d = addDays(d, 1)) {
+      const key = day(d);
+      const inTagen = Math.round((d.getTime() - start.getTime()) / 86_400_000);
+      const anreisen = rows.filter((b) => day(b.checkIn) === key);
+      const abreisen = rows.filter((b) => day(b.checkOut) === key);
+
+      const reinigungen = anreisen.map((b) => {
+        const a = b.cleaningAssignment;
+        const selbst = !!a && (a.isSelfClean || a.status === "SELF_CLEAN");
+        const zugewiesen = !!a && (selbst || ((a.status === "ASSIGNED" || a.status === "COMPLETED") && !a.cleanerUnavailable));
+        const waesche = a?.laundryStatus ?? "OPEN";
+        const wechsel = abreisen.some((x) => x.apartmentId === b.apartmentId);
+        const wo = `${b.apartment.name} (${b.guestName})`;
+
+        if (a?.cleanerUnavailable) warnungen.push({ datum: key, art: "abgesagt", text: `Reinigung ${wo} abgesagt — neu zuweisen`, buchung_id: b.id });
+        else if (!zugewiesen) warnungen.push({ datum: key, art: "ohne_reinigungskraft", text: `Reinigung ${wo} hat keine Reinigungskraft`, buchung_id: b.id });
+        if (!selbst && waesche === "OPEN" && inTagen <= 3) warnungen.push({ datum: key, art: "waesche_offen", text: `Wäsche für ${wo} noch nicht bestellt`, buchung_id: b.id });
+        if (wechsel) warnungen.push({ datum: key, art: "wechseltag", text: `Wechseltag ${b.apartment.name}: Abreise und Anreise am selben Tag`, buchung_id: b.id });
+
+        const menge = calculateLaundryQuantity(b.guestCount, b.apartment);
+        return {
+          buchung_id: b.id,
+          wohnung: b.apartment.name,
+          anreise_gast: b.guestName,
+          personen: b.guestCount,
+          haustiere: b.petCount,
+          anreise_ab: b.arrivalTime,
+          wechsel,
+          reinigung: selbst ? "Selbstreinigung" : a?.cleanerUnavailable ? "abgesagt" : a?.cleaner?.name ?? "offen",
+          reinigung_status: a ? STATUS_TEXT[a.isSelfClean ? "SELF_CLEAN" : a.status] : "kein Auftrag",
+          waesche: LAUNDRY_TEXT[waesche],
+          waesche_menge: { bettsets: menge.beds, handtuecher: menge.towels, kuechentuecher: menge.kitchen },
+        };
+      });
+
+      days.push({
+        datum: key,
+        anreisen: reinigungen,
+        abreisen: abreisen.map((b) => ({ buchung_id: b.id, wohnung: b.apartment.name, gast: b.guestName, abreise_bis: b.departureTime })),
+      });
+    }
+
+    return {
+      zeitraum: { von: day(start), bis: day(addDays(end, -1)) },
+      warnungen_gesamt: warnungen.length,
+      warnungen,
+      tage: days.filter((t) => t.anreisen.length || t.abreisen.length),
+      ruhige_tage: days.filter((t) => !t.anreisen.length && !t.abreisen.length).map((t) => t.datum),
     };
   },
 });
