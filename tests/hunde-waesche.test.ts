@@ -12,7 +12,7 @@ import { findTool } from "@/lib/mcp/registry";
 import { SCOPES } from "@/lib/mcp/tokens";
 import { detectDogs, petFee, petFeeMessage } from "@/lib/pets";
 import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
-import { proposeLaundryOrder } from "@/lib/laundry-order";
+import { planLaundry, DEFAULT_RESERVE } from "@/lib/laundry-order";
 import { isAutomationMessage } from "@/lib/guest-messages";
 import { resetDb, seedWorld } from "./fixtures";
 
@@ -93,25 +93,52 @@ describe("Wäschemenge pro Anreise", () => {
   });
 });
 
-describe("Bestellvorschlag", () => {
+describe("planLaundry (Bestand, Reserve, Lieferungen)", () => {
   const apt = { laundryBedsDivisor: 2, laundryTowelsPerGuest: 1, laundryKitchenCount: 1 };
-  it("summiert Anreisen und rechnet Puffer", () => {
-    const p = proposeLaundryOrder([
-      { apartmentId: "L", apartmentName: "Lodge", guestName: "A", checkIn: d("2026-11-01"), guestCount: 4, apartment: apt },
-      { apartmentId: "P", apartmentName: "Penthouse", guestName: "B", checkIn: d("2026-11-05"), guestCount: 2, apartment: apt },
-      { apartmentId: "P", apartmentName: "Penthouse", guestName: "C", checkIn: d("2026-11-10"), guestCount: 5, apartment: apt },
-    ]);
-    expect(p.arrivals).toBe(3);
-    expect(p.guests).toBe(11);
-    expect(p.need).toMatchObject({ beds: 2 + 1 + 3, duvetCovers: 11, towels: 11, washcloths: 3, bathMats: 3, kitchen: 3 });
-    // +1 Spannbettlaken je Wohnung, sonst +10 % aufgerundet
-    expect(p.buffer).toMatchObject({ beds: 2, duvetCovers: 2, towels: 2, washcloths: 1, bathMats: 1, kitchen: 1 });
-    expect(p.order).toMatchObject({ beds: 8, duvetCovers: 13, towels: 13, washcloths: 4 });
+  const arr = (ci: string, n: number, id = "L") => ({ apartmentId: id, apartmentName: id, guestName: "G", checkIn: d(ci), guestCount: n, apartment: apt });
+  const q = (o: Partial<Record<string, number>>) => ({ beds: 0, towels: 0, kitchen: 0, handTowels: 0, pillowCases: 0, duvetCovers: 0, bathMats: 0, washcloths: 0, ...o });
+  const arrivals = [arr("2026-10-28", 2), arr("2026-11-01", 4), arr("2026-11-05", 2, "P"), arr("2026-11-20", 5)];
+
+  it("ohne Bestand: Bedarf + Reserve, Reserve bei jedem Teil", () => {
+    const p = planLaundry({ arrivals, count: null, deliveries: [], today: d("2026-10-30"), end: d("2026-11-13") });
+    expect(p.arrivals).toBe(2);
+    expect(p.need).toMatchObject({ beds: 3, duvetCovers: 6, towels: 6, bathMats: 2 });
+    for (const k of Object.keys(DEFAULT_RESERVE) as (keyof typeof DEFAULT_RESERVE)[]) {
+      expect(p.order[k]).toBe(p.need[k] + DEFAULT_RESERVE[k]);
+      expect(DEFAULT_RESERVE[k]).toBeGreaterThan(0);
+    }
+    expect(p.stockToday).toBeNull();
   });
-  it("ohne Anreisen nichts", () => {
-    const p = proposeLaundryOrder([]);
-    expect(p.order.beds).toBe(0);
-    expect(p.order.towels).toBe(0);
+
+  it("mit Bestand: Zählung minus Anreisen seit der Zählung, Lieferungen dazu", () => {
+    const p = planLaundry({
+      arrivals,
+      count: { countedOn: d("2026-10-27"), quantities: q({ beds: 10, towels: 12, duvetCovers: 8, bathMats: 4 }) },
+      deliveries: [{ deliveryOn: d("2026-10-29"), quantities: q({ towels: 4 }) }],
+      today: d("2026-10-30"),
+      end: d("2026-11-13"),
+    });
+    // 28.10. (2 Gäste) ist schon verbraucht: Spannbettlaken 10−1, Handtücher 12+4−2, Bettbezüge 8−2, Badvorleger 4−1
+    expect(p.stockToday).toMatchObject({ beds: 9, towels: 14, duvetCovers: 6, bathMats: 3 });
+    // Bestellen = Bedarf + Reserve − Bestand, nie negativ
+    expect(p.order.beds).toBe(Math.max(0, 3 + DEFAULT_RESERVE.beds - 9));
+    expect(p.order.towels).toBe(Math.max(0, 6 + DEFAULT_RESERVE.towels - 14));
+    expect(p.order.duvetCovers).toBe(6 + DEFAULT_RESERVE.duvetCovers - 6);
+    expect(p.stockAfter!.towels).toBeGreaterThanOrEqual(DEFAULT_RESERVE.towels);
+  });
+
+  it("schon bestellte Lieferung im Zeitraum wird abgezogen; Engpass davor wird gemeldet", () => {
+    const p = planLaundry({
+      arrivals,
+      count: { countedOn: d("2026-10-29"), quantities: q({ duvetCovers: 2 }) },
+      deliveries: [{ deliveryOn: d("2026-11-03"), quantities: q({ duvetCovers: 10 }) }],
+      today: d("2026-10-30"),
+      end: d("2026-11-13"),
+      reserve: q({ duvetCovers: 2 }),
+    });
+    expect(p.incoming.duvetCovers).toBe(10);
+    expect(p.order.duvetCovers).toBe(0); // 6 + 2 − 2 − 10 < 0
+    expect(p.shortBeforeDelivery).toContain("duvetCovers"); // 01.11.: 4 Gäste, nur 2 da
   });
 });
 
@@ -231,12 +258,29 @@ describe("wochenplan & waesche_bedarf", () => {
     expect(r.result.warnungen.some((w: any) => w.art === "hundegebuehr_offen" && w.buchung_id === world.bookings.b5.id)).toBe(true);
   });
 
-  it("waesche_bedarf: Anreisen der nächsten 14 Tage + Puffer", async () => {
+  it("waesche_bedarf: ohne Bestand Bedarf + Reserve; Bestand erfassen senkt die Bestellmenge", async () => {
     const r = await call("waesche_bedarf", {});
-    // Anreisen ab 30.10.: b2 Lodge 4 P. (2 Handtücher/Gast laut Fixture), b5 Penthouse 5 P., b3 Lodge 3 P. — b6 storniert
+    // Anreisen ab 30.10.: b2 Lodge 4 P., b5 Penthouse 5 P., b3 Lodge 3 P. — b6 storniert
     expect(r.result.anreisen).toBe(3);
     expect(r.result.gaeste).toBe(12);
-    expect(r.result.bestellmenge["Spannbettlaken"]).toBe(2 + 3 + 2 + 2); // 2+3+2 Bedarf + 2 Wohnungen Puffer
-    expect(r.result.bestellmenge["Badvorleger"]).toBe(3 + 1);
+    expect(r.result.bestellmenge["Spannbettlaken"]).toBe(2 + 3 + 2 + DEFAULT_RESERVE.beds);
+    expect(r.result.hinweis_bestand).toMatch(/kein Bestand/);
+
+    const v = await call("waesche_bestand_erfassen", { mengen: { spannbettlaken: 20, badvorleger: 1 } });
+    expect(v.result.vorschau).toBe(true);
+    await call("waesche_bestand_erfassen", { gezaehlt_am: "2026-10-29", mengen: { spannbettlaken: 20, badvorleger: 1 }, bestaetigt: true });
+    const r2 = await call("waesche_bedarf", {});
+    expect(r2.result.bestellmenge["Spannbettlaken"]).toBe(0);
+    expect(r2.result.bestellmenge["Badvorleger"]).toBe(3 + DEFAULT_RESERVE.bathMats - 1);
+
+    await call("waesche_lieferung_erfassen", { liefertag: "2026-11-02", mengen: { badvorleger: 4 }, bestaetigt: true });
+    const r3 = await call("waesche_bedarf", {});
+    expect(r3.result.bestellmenge["Badvorleger"]).toBe(0);
+    expect(r3.result.achtung).toMatch(/Badvorleger/); // 30.10. + 01.11. Anreisen vor der Lieferung, nur 1 da
+
+    await call("waesche_reserve", { mengen: { badvorleger: 5 }, bestaetigt: true });
+    const r4 = await call("waesche_bedarf", {});
+    expect(r4.result.reserve["Badvorleger"]).toBe(5);
+    expect(r4.result.reserve["Spannbettlaken"]).toBe(DEFAULT_RESERVE.beds);
   });
 });

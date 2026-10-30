@@ -343,13 +343,19 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
   Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt.
 - Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
 
-### Wäsche-Mengen (`src/lib/laundry-quantity.ts`, `src/lib/laundry-order.ts`)
+### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
 
 Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, 1 Waschlappen, Küchentücher (Einstellung);
 je Gast kleines + großes Handtuch, Kissen- + Bettbezug; je 2 Gäste ein Spannbettlaken.
-Bestellvorschlag (`/laundry`, MCP `waesche_bedarf`, Vorgabe 14 Tage): Summe der Anreisen +
-Puffer (+1 Spannbettlaken je Wohnung für getrennte Betten, sonst +10 % aufgerundet).
-Bestellt wird auf der Website der Wäscherei.
+- **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
+  die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
+- **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),
+  fortgeschrieben mit Anreisen (−) und `LaundryDelivery` (+ ab Liefertag).
+- Bestellmenge = Bedarf (Anreisen im Zeitraum) + Reserve − Bestand heute − schon bestellt; nie < 0.
+  Warnung, wenn ein Teil vor einer Lieferung ausgeht.
+- Seite `/laundry` (Bestand zählen, Bestellung festhalten, Reserve ändern), MCP `waesche_bedarf`,
+  `waesche_bestand_erfassen`, `waesche_lieferung_erfassen`, `waesche_reserve`.
+- Bestellt wird auf der Website der Wäscherei; die App rechnet und hält fest.
 
 ### Portal-Mail-Import (`src/lib/email-import/`)
 

@@ -48,6 +48,9 @@ model Organization {
   lastSyncAt       DateTime?
   // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem der Tagesstatus verschickt wurde
   dailyStatusSentOn String?
+  // Wäsche-Reserve je Teil, die nach allen Anreisen immer noch im Keller liegen soll
+  // ({ beds: 3, towels: 3, … }); null = Vorgabe aus laundry-stock.ts
+  laundryReserve   Json?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -55,6 +58,8 @@ model Organization {
   apartments   Apartment[]
   emailImports EmailImport[]
   mcpTokens    McpToken[]
+  laundryCounts     LaundryCount[]
+  laundryDeliveries LaundryDelivery[]
 
   @@map("organizations")
 }
@@ -407,4 +412,41 @@ model AuditLog {
 
   @@index([organizationId, createdAt])
   @@map("audit_logs")
+}
+
+// ─── Wäsche-Bestand (Keller) ──────────────────────────────────────────────────
+// Gezählter Bestand sauberer Wäsche. Maßgeblich ist die jüngste Zählung; ab dem
+// Tag danach werden Anreisen abgezogen und Lieferungen hinzugerechnet.
+model LaundryCount {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Kalendertag der Zählung (UTC-Mitternacht); der Bestand gilt am Ende dieses Tages
+  countedOn      DateTime
+  // { beds, towels, handTowels, pillowCases, duvetCovers, bathMats, washcloths, kitchen }
+  quantities     Json
+  notes          String?
+  createdById    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, countedOn])
+  @@map("laundry_counts")
+}
+
+// Bestellung bei der Wäscherei; zählt ab dem Liefertag zum Bestand.
+model LaundryDelivery {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Liefertag (UTC-Mitternacht)
+  deliveryOn     DateTime
+  quantities     Json
+  // Bestellnummer o.ä.
+  reference      String?
+  cancelled      Boolean      @default(false)
+  createdById    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, deliveryOn])
+  @@map("laundry_deliveries")
 }
