@@ -304,7 +304,7 @@ export const waescheStatus = defineTool({
     const b = await loadBooking(ctx, args.buchung_id);
     const apt = await prisma.apartment.findUniqueOrThrow({
       where: { id: b.apartmentId },
-      select: { laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true },
+      select: { laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true },
     });
     const menge = calculateLaundryQuantity(b.guestCount, apt);
     const ziel = WAESCHE[args.status];

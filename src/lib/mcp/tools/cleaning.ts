@@ -4,7 +4,7 @@ import { prisma } from "../../prisma";
 import { defineTool, ToolError } from "../tool";
 import { day, addDays, viennaIso, minutesSince, todayVienna } from "../format";
 import { datum, wohnungFilter, pagingFields, resolveApartmentId, resolveDays, paging, page } from "../shared";
-import { calculateLaundryQuantity, laundryText } from "../../laundry-quantity";
+import { calculateLaundryQuantity, laundryText, fittedSheetsTotal } from "../../laundry-quantity";
 import { petFee, PET_FEE_LABEL } from "../../pets";
 import { isImapConfigured } from "../../email-import/imap";
 
@@ -82,7 +82,7 @@ export const reinigungen = defineTool({
           booking: {
             select: {
               id: true, checkIn: true, checkOut: true, guestCount: true, petCount: true, arrivalTime: true, channelNotice: true,
-              apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true } },
+              apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
             },
           },
         },
@@ -112,7 +112,8 @@ export const reinigungen = defineTool({
             haustiere: a.booking.petCount,
             waesche: {
               status: LAUNDRY_TEXT[a.laundryStatus] ?? a.laundryStatus,
-              bettsets: qty.beds,
+              bettsets: fittedSheetsTotal(qty),
+              spannbettlaken: { "90er": qty.sheets90, "180er": qty.beds, "200er": qty.sheets200 },
               handtuecher: qty.towels,
               kuechentuecher: qty.kitchen,
             },
@@ -205,7 +206,7 @@ export const wochenplan = defineTool({
       },
       orderBy: [{ checkIn: "asc" }],
       include: {
-        apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true } },
+        apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
         cleaningAssignment: {
           select: { status: true, isSelfClean: true, cleanerUnavailable: true, laundryStatus: true, cleaner: { select: { name: true } } },
         },

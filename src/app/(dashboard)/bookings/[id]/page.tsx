@@ -23,7 +23,7 @@ export default async function BookingDetailPage({
             color: true,
             laundryBedsDivisor: true,
             laundryTowelsPerGuest: true,
-            laundryKitchenCount: true,
+            laundryKitchenCount: true, laundryBeds: true,
           },
         },
         cleaningAssignment: { include: { cleaner: true } },

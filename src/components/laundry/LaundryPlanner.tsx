@@ -166,5 +166,5 @@ export function LaundryPlanner({ todayKey, plan, lastCount, deliveries }: Planne
 }
 
 function emptyQ(): Q {
-  return { beds: 0, towels: 0, kitchen: 0, handTowels: 0, pillowCases: 0, duvetCovers: 0, bathMats: 0, washcloths: 0 };
+  return { beds: 0, sheets90: 0, sheets200: 0, towels: 0, kitchen: 0, handTowels: 0, pillowCases: 0, duvetCovers: 0, bathMats: 0, washcloths: 0 };
 }

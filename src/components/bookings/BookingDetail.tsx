@@ -10,7 +10,7 @@ import { ScrollLock } from "@/components/ui/ScrollLock";
 import { RateBadge } from "@/components/ui/RateBadge";
 import { GuestChat } from "@/components/bookings/GuestChat";
 import { DogFeeCard } from "@/components/bookings/DogFeeCard";
-import { calculateLaundryQuantity, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { calculateLaundryQuantity, LAUNDRY_ITEMS, fittedSheetsTotal } from "@/lib/laundry-quantity";
 interface Cleaner {
   id: string;
   name: string;
@@ -24,6 +24,7 @@ interface Apartment {
   laundryBedsDivisor?: number | null;
   laundryTowelsPerGuest?: number | null;
   laundryKitchenCount?: number | null;
+  laundryBeds?: unknown;
 }
 
 interface Booking {
@@ -580,7 +581,7 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
             <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 4 }}>Wäsche bestellen</h3>
             <p style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
             <div style={{ ...glassAmber, display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 20 }}>
-              <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
+              <QuantityChip emoji="🛏" value={fittedSheetsTotal(qty)} label="Spannbettlaken" />
               <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
               <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
             </div>
