@@ -1,9 +1,10 @@
 import { z } from "zod";
 import { prisma } from "../../prisma";
 import { defineTool, preview, bestaetigtSchema, ToolError, type ToolContext } from "../tool";
-import { day, addDays, todayVienna, channelGroup } from "../format";
+import { day, channelGroup } from "../format";
 import { wohnungFilter, resolveApartmentId } from "../shared";
 import { fetchGuestMessages, sendGuestMessage, lastMessage, GuestMessageError } from "../../guest-messages";
+import { findUnansweredChats, MAX_CHATS } from "../../guest-chat-overview";
 import { logAudit } from "../../audit";
 
 // ─── Gästenachrichten (Smoobu) ────────────────────────────────────────────────
@@ -88,45 +89,15 @@ export const offeneGaestenachrichten = defineTool({
     wohnung: wohnungFilter,
   },
   async handler(args, ctx) {
-    const today = todayVienna();
     const apartmentId = await resolveApartmentId(ctx.organizationId, args.wohnung);
-    const MAX = 25;
-    const rows = await prisma.booking.findMany({
-      where: {
-        organizationId: ctx.organizationId,
-        status: "confirmed",
-        smoobuId: { not: null },
-        ...(apartmentId ? { apartmentId } : {}),
-        checkOut: { gte: today },
-        checkIn: { lt: addDays(today, (args.tage ?? 30) + 1) },
-      },
-      orderBy: { checkIn: "asc" },
-      take: MAX + 1,
-      select: {
-        id: true, smoobuId: true, guestName: true, checkIn: true, checkOut: true, channelName: true, status: true,
-        apartment: { select: { name: true } },
-      },
-    });
-
-    const offen = [];
-    const fehler = [];
-    for (const b of rows.slice(0, MAX)) {
-      try {
-        const { messages } = await fetchGuestMessages(b.smoobuId as number, 3);
-        const last = lastMessage(messages);
-        if (last?.von === "gast") {
-          offen.push({ ...kopf(b as Awaited<ReturnType<typeof loadBooking>>), letzte_nachricht: last.text.slice(0, 500), betreff: last.betreff });
-        }
-      } catch (err) {
-        fehler.push({ buchung_id: b.id, gast: b.guestName, fehler: err instanceof Error ? err.message : String(err) });
-      }
-    }
+    const r = await findUnansweredChats({ organizationId: ctx.organizationId, days: args.tage ?? 30, apartmentId });
     return {
-      geprueft: Math.min(rows.length, MAX),
-      ...(rows.length > MAX ? { hinweis: `Mehr als ${MAX} Buchungen im Zeitraum — nur die ersten ${MAX} geprüft. Zeitraum verkürzen.` } : {}),
-      unbeantwortet: offen.length,
-      buchungen: offen,
-      ...(fehler.length ? { fehler } : {}),
+      geprueft: r.checked,
+      ...(r.truncated ? { hinweis: `Mehr als ${MAX_CHATS} Buchungen im Zeitraum — nur die ersten ${MAX_CHATS} geprüft. Zeitraum verkürzen.` } : {}),
+      unbeantwortet: r.open.length,
+      buchungen: r.open.map((o) => ({ ...kopf(o.booking as Awaited<ReturnType<typeof loadBooking>>), letzte_nachricht: o.last.text.slice(0, 500), betreff: o.last.betreff })),
+      ...(r.errors.length ? { fehler: r.errors.map((e) => ({ buchung_id: e.booking.id, gast: e.booking.guestName, fehler: e.error })) } : {}),
+      hinweis_portale: "Antworten, die direkt in der Airbnb- oder Booking-App geschrieben wurden, sieht Smoobu nicht — solche Chats erscheinen trotzdem als offen.",
     };
   },
 });

@@ -223,7 +223,7 @@ describe("Kompletter Ablauf", () => {
     expect(row.resource).toBe(`${ORIGIN}/api/mcp`);
     const list = await tools(t.body.access_token);
     expect(list.status).toBe(200);
-    expect(list.body.result.tools).toHaveLength(16);
+    expect(list.body.result.tools).toHaveLength(20);
 
     // Erneuern: neues Paar, altes Refresh-Token ist verbraucht
     const r1 = await refresh(client.client_id, t.body.refresh_token);

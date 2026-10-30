@@ -3,6 +3,7 @@ import { getChannelManagerAdapter } from "./channel-manager";
 import { addDays, format, subDays } from "date-fns";
 import { sendPushToRole, sendPushToUsers } from "./push";
 import { premiumForNewBooking } from "./rates";
+import { detectDogs } from "./pets";
 
 export async function syncBookings(organizationId: string): Promise<{
   created: number;
@@ -142,6 +143,8 @@ export async function syncBookings(organizationId: string): Promise<{
           departureTime: res.departureTime,
           channelName: res.channelName,
           channelNotice: res.notice,
+          // Hund aus der Portalnotiz (Booking.com liefert kein Haustier-Feld)
+          ...dogsFromNotice(res.notice),
           // Sondersatz der Wohnung (z.B. 70 € Penthouse) für diese neue Buchung vormerken
           ...premiumForNewBooking(aptData),
           price: res.price,
@@ -194,6 +197,8 @@ export async function syncBookings(organizationId: string): Promise<{
           departureTime: res.departureTime,
           channelName: res.channelName,
           channelNotice: res.notice,
+          // Hund aus der Portalnotiz — nie über eine Hand-Eingabe, nie nach unten
+          ...(existing.petSource === "manual" || existing.petSource === "chat" ? {} : dogsFromNotice(res.notice, existing.petCount)),
           price: res.price,
           currency: res.currency ?? "EUR",
           status: "confirmed",
@@ -246,4 +251,11 @@ export async function syncBookings(organizationId: string): Promise<{
   }
 
   return stats;
+}
+
+/** petCount/petSource/petHint aus der Portalnotiz, wenn dort ein Hund steht (und mehr als bisher). */
+function dogsFromNotice(notice: string | null | undefined, current?: number | null) {
+  const d = detectDogs(notice);
+  if (!d || (current ?? 0) >= d.count) return {};
+  return { petCount: d.count, petSource: "notice", petHint: d.hint.slice(0, 200) };
 }

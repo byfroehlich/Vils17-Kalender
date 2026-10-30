@@ -269,7 +269,17 @@ model Booking {
   guestCountManual Boolean @default(false)
   // Woher die abweichende Gästezahl stammt: "manual" (Eingabe) oder "email" (Portal-Mail)
   guestCountSource String?
-  petCount   Int?    // Haustiere (manuell gepflegt — kein Portal liefert dafür ein eigenes Feld)
+  petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
+  // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
+  petSource  String?
+  // Kurzer Auszug der Stelle, an der der Hund erkannt wurde (zum Gegenprüfen)
+  petHint    String?
+  // Hundegebühr (nur wo das Portal sie nicht selbst kassiert, v.a. Booking.com):
+  // null = noch nichts unternommen, REQUESTED = beim Gast angefordert, PAID, WAIVED = erlassen
+  petFeeStatus      String?
+  petFeeAmount      Float?   // Betrag der Anforderung (festgehalten beim Anfordern/Bezahlen)
+  petFeeRequestedAt DateTime?
+  petFeePaidAt      DateTime?
   // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
   channelNotice String?
   // Sondersatz-Vermerk, beim Eingang der Buchung von der Wohnung übernommen und

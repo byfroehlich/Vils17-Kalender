@@ -331,6 +331,26 @@ app/.well-known/…, app/oauth/{authorize,authorize/approve,register,token,revok
 - OAuth-Token erscheinen nicht in der Token-Liste, sondern als „Verbindung“ mit „Trennen“.
 - Tests: `tests/oauth.test.ts` (kompletter Ablauf, PKCE, Wiederverwendung, Zielgruppe, Rollen).
 
+### Hunde & Hundegebühr (`src/lib/pets.ts`, `src/lib/pet-actions.ts`)
+
+Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
+- Airbnb kassiert selbst (über Smoobu eingestellt) → in der App nur „kassiert das Portal“.
+- Booking.com berechnet nichts und überträgt Haustiere nicht → Hund wird erkannt aus
+  Portalnotiz (beim Sync) und Gästechat (`hunde_pruefen`, Button „Chat auf Hund prüfen“).
+- `petSource`: `manual` (Eingabe, wird nie überschrieben) | `notice` | `chat`; `petHint` = Fundstelle.
+- Gebühr: `petFeeStatus` null (offen) → REQUESTED → PAID / WAIVED. Anfordern per Nachricht über
+  Smoobu, Text vorher freigeben; Zahlungsweg aus ENV `PET_FEE_PAYMENT_TEXT` (PayPal-Link/Bank).
+  Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt.
+- Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
+
+### Wäsche-Mengen (`src/lib/laundry-quantity.ts`, `src/lib/laundry-order.ts`)
+
+Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, 1 Waschlappen, Küchentücher (Einstellung);
+je Gast kleines + großes Handtuch, Kissen- + Bettbezug; je 2 Gäste ein Spannbettlaken.
+Bestellvorschlag (`/laundry`, MCP `waesche_bedarf`, Vorgabe 14 Tage): Summe der Anreisen +
+Puffer (+1 Spannbettlaken je Wohnung für getrennte Betten, sonst +10 % aufgerundet).
+Bestellt wird auf der Website der Wäscherei.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

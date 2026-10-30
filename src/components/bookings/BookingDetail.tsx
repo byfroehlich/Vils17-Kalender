@@ -8,7 +8,9 @@ import Link from "next/link";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { RateBadge } from "@/components/ui/RateBadge";
-import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
+import { GuestChat } from "@/components/bookings/GuestChat";
+import { DogFeeCard } from "@/components/bookings/DogFeeCard";
+import { calculateLaundryQuantity, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
 interface Cleaner {
   id: string;
   name: string;
@@ -36,6 +38,11 @@ interface Booking {
   premiumRate?: number | null;
   premiumRateCleanerId?: string | null;
   petCount?: number | null;
+  petSource?: string | null;
+  petHint?: string | null;
+  petFeeStatus?: string | null;
+  petFeeAmount?: number | null;
+  status?: string;
   checkIn: Date;
   checkOut: Date;
   arrivalTime?: string | null;
@@ -352,6 +359,9 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
         </div>
       </div>
 
+      {/* Hund & Hundegebühr */}
+      {(booking.petCount ?? 0) > 0 || !/airbnb/i.test(booking.channelName ?? "") ? <DogFeeCard booking={booking} /> : null}
+
       {/* Reinigung */}
       <div style={{ ...glass, padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -445,9 +455,9 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
         </div>
 
         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8, marginBottom: 16 }}>
-          <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
-          <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
-          <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
+          {LAUNDRY_ITEMS.filter((i) => qty[i.key] > 0).map((i) => (
+            <QuantityChip key={i.key} emoji={i.emoji} value={qty[i.key]} label={i.label} />
+          ))}
         </div>
 
         {/* Status-Toggle */}
@@ -508,6 +518,9 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
           </p>
         )}
       </div>
+
+      {/* Gästechat (Smoobu) */}
+      {booking.smoobuId ? <GuestChat bookingId={booking.id} cancelled={booking.status === "cancelled"} /> : null}
 
       {/* Dialog: Reiniger zuweisen */}
       {showAssignDialog && (
