@@ -51,7 +51,7 @@ export const waescheBedarf = defineTool({
   description:
     "Rechnet aus, wie viel Wäsche bestellt werden muss, damit sie in den nächsten N Tagen (Vorgabe 14) nicht ausgeht: " +
     "Bedarf aller Anreisen + Reserve je Teil − Bestand im Keller (letzte Zählung, fortgeschrieben) − schon bestellte Lieferungen. " +
-    "Je Anreise 1 Badvorleger, 1 Waschlappen, Küchentücher; je Gast kleines und großes Handtuch, Kissen- und Bettbezug; je 2 Gäste ein Spannbettlaken. " +
+    "Je Anreise 1 Badvorleger, Küchentücher; je Gast Waschlappen, kleines und großes Handtuch, Kissen- und Bettbezug; je 2 Gäste ein Spannbettlaken. " +
     "Für „Wie viel Wäsche müssen wir bestellen?“. Bestellt nicht selbst.",
   scope: "cleaning:read",
   input: {

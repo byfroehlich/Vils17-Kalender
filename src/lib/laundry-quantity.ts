@@ -2,8 +2,8 @@
 // MCP-Schnittstelle. Reine Funktion, auch in Client-Komponenten nutzbar.
 //
 // Regel (Mathias, 30.10.2026) — pro Anreise:
-//   je Wohnung: 1 Badvorleger, 1 Waschlappen, Küchentücher (Wohnungs-Einstellung, Vorgabe 1)
-//   je Gast:    1 kleines Handtuch, 1 großes Handtuch, 1 Kissenbezug, 1 Bettbezug
+//   je Anreise: 1 Badvorleger, Küchentücher (Wohnungs-Einstellung, Vorgabe 1)
+//   je Gast:    1 Waschlappen, 1 kleines Handtuch, 1 großes Handtuch, 1 Kissenbezug, 1 Bettbezug
 //   je 2 Gäste: 1 Spannbettlaken (Teiler aus der Wohnungs-Einstellung, Vorgabe 2)
 // Puffer kommt erst auf die Bestellmenge (siehe laundry-order.ts), nicht auf die einzelne Anreise.
 
@@ -55,7 +55,7 @@ export function calculateLaundryQuantity(guestCount: number, apt: LaundryConfig 
     duvetCovers: guests,
     kitchen: apt.laundryKitchenCount ?? 1,
     bathMats: 1,
-    washcloths: 1,
+    washcloths: guests,
   };
 }
 

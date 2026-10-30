@@ -345,8 +345,8 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
 
 ### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
 
-Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, 1 Waschlappen, Küchentücher (Einstellung);
-je Gast kleines + großes Handtuch, Kissen- + Bettbezug; je 2 Gäste ein Spannbettlaken.
+Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, Küchentücher (Einstellung);
+je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug; je 2 Gäste ein Spannbettlaken.
 - **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
   die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
 - **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),

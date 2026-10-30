@@ -88,7 +88,7 @@ describe("Smoobu-Automatik", () => {
 describe("Wäschemenge pro Anreise", () => {
   it("Regel 30.10.2026: 3 Gäste", () => {
     expect(calculateLaundryQuantity(3, { laundryBedsDivisor: 2, laundryTowelsPerGuest: 1, laundryKitchenCount: 1 })).toEqual({
-      beds: 2, duvetCovers: 3, pillowCases: 3, towels: 3, handTowels: 3, washcloths: 1, bathMats: 1, kitchen: 1,
+      beds: 2, duvetCovers: 3, pillowCases: 3, towels: 3, handTowels: 3, washcloths: 3, bathMats: 1, kitchen: 1,
     });
   });
 });
