@@ -3,7 +3,7 @@ import { prisma } from "../../prisma";
 import { defineTool, preview, bestaetigtSchema, ToolError, type ToolContext } from "../tool";
 import { day, viennaIso, minutesSince } from "../format";
 import { assignCleaner, setAssignmentNotes, setGuestCount, setCleaningStatus, setLaundryStatus, ActionError } from "../../booking-actions";
-import { calculateLaundryQuantity } from "../../laundry-quantity";
+import { calculateLaundryQuantity, laundryText } from "../../laundry-quantity";
 import { runAutoSync, AUTO_SYNC_MAX_AGE_MS } from "../../sync-runner";
 
 // ─── Stufe 2: schreibende Tools ───────────────────────────────────────────────
@@ -315,13 +315,13 @@ export const waescheStatus = defineTool({
       return { ausgefuehrt: false, unveraendert: true, waesche: vorher };
     }
 
-    const mengeText = `${menge.beds} Bettsets, ${menge.towels} Handtücher, ${menge.kitchen} Küchentücher`;
+    const mengeText = laundryText(menge);
     if (!args.bestaetigt) {
       return preview(`Wäsche für ${describeBooking(b)}: ${vorher} → ${args.status}${ziel === "ORDERED" ? ` (${mengeText})` : ""}.`, {
         buchung_id: b.id,
         vorher,
         nachher: args.status,
-        mengen: { bettsets: menge.beds, handtuecher: menge.towels, kuechentuecher: menge.kitchen },
+        mengen: mengeText,
         ...(notizNeu !== undefined ? { notiz_nachher: notizNeu } : {}),
       });
     }

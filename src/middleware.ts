@@ -43,5 +43,7 @@ export const config = {
     "/statistics/:path*",
     "/settings/:path*",
     "/billing/:path*",
+    "/messages/:path*",
+    "/laundry/:path*",
   ],
 };

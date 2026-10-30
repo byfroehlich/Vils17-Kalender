@@ -92,11 +92,19 @@ export async function fetchGuestMessages(smoobuId: number, maxPages = 5): Promis
     }
     const parsed = pageSchema.safeParse(await res.json().catch(() => null));
     if (!parsed.success) throw new GuestMessageError("Unerwartete Antwort von Smoobu (Nachrichten)");
-    out.push(...parsed.data.messages.map(normalize));
+    out.push(...parsed.data.messages.map(normalize).filter((m) => !isAutomationMessage(m)));
     pageCount = parsed.data.page_count ?? 1;
     page++;
   } while (page <= pageCount && page <= maxPages);
   return { messages: out, complete: page > pageCount };
+}
+
+/**
+ * Systemnachrichten von Smoobu (Schlüssel-/Zugangsautomatik) sind kein Gespräch
+ * mit dem Gast und würden „wartet auf Antwort“ verfälschen.
+ */
+export function isAutomationMessage(m: Pick<GuestMessage, "betreff" | "text">): boolean {
+  return /^automation for booking/i.test(m.betreff ?? "") || /will be granted access/i.test(m.text);
 }
 
 /** Schickt eine Nachricht an den Gast. Nur nach Bestätigung aufrufen. */

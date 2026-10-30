@@ -331,6 +331,32 @@ app/.well-known/…, app/oauth/{authorize,authorize/approve,register,token,revok
 - OAuth-Token erscheinen nicht in der Token-Liste, sondern als „Verbindung“ mit „Trennen“.
 - Tests: `tests/oauth.test.ts` (kompletter Ablauf, PKCE, Wiederverwendung, Zielgruppe, Rollen).
 
+### Hunde & Hundegebühr (`src/lib/pets.ts`, `src/lib/pet-actions.ts`)
+
+Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
+- Airbnb kassiert selbst (über Smoobu eingestellt) → in der App nur „kassiert das Portal“.
+- Booking.com berechnet nichts und überträgt Haustiere nicht → Hund wird erkannt aus
+  Portalnotiz (beim Sync) und Gästechat (`hunde_pruefen`, Button „Chat auf Hund prüfen“).
+- `petSource`: `manual` (Eingabe, wird nie überschrieben) | `notice` | `chat`; `petHint` = Fundstelle.
+- Gebühr: `petFeeStatus` null (offen) → REQUESTED → PAID / WAIVED. Anfordern per Nachricht über
+  Smoobu, Text vorher freigeben; Zahlungsweg aus ENV `PET_FEE_PAYMENT_TEXT` (PayPal-Link/Bank).
+  Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt.
+- Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
+
+### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
+
+Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, Küchentücher (Einstellung);
+je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug; je 2 Gäste ein Spannbettlaken.
+- **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
+  die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
+- **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),
+  fortgeschrieben mit Anreisen (−) und `LaundryDelivery` (+ ab Liefertag).
+- Bestellmenge = Bedarf (Anreisen im Zeitraum) + Reserve − Bestand heute − schon bestellt; nie < 0.
+  Warnung, wenn ein Teil vor einer Lieferung ausgeht.
+- Seite `/laundry` (Bestand zählen, Bestellung festhalten, Reserve ändern), MCP `waesche_bedarf`,
+  `waesche_bestand_erfassen`, `waesche_lieferung_erfassen`, `waesche_reserve`.
+- Bestellt wird auf der Website der Wäscherei; die App rechnet und hält fest.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

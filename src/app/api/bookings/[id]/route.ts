@@ -38,7 +38,7 @@ export async function PATCH(
   const { petCount, guestCount } = parsed.data;
 
   if (petCount !== undefined) {
-    await prisma.booking.update({ where: { id: params.id }, data: { petCount } });
+    await prisma.booking.update({ where: { id: params.id }, data: { petCount, petSource: petCount === null ? null : "manual" } });
   }
   // Gästezahl: gemeinsame Logik mit der MCP-Schnittstelle (lib/booking-actions)
   if (guestCount !== undefined) {

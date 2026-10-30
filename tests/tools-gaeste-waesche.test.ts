@@ -211,14 +211,14 @@ describe("waesche_status", () => {
   it("bestellt: Vorschau mit Mengen, dann Status, Zeitpunkt und Mengen festgehalten", async () => {
     const id = world.bookings.b2.id; // Lodge, 4 Gäste, 1 Set je 2 Gäste, 2 Handtücher je Gast, 1 Küchentuch
     const v = await call("waesche_status", { buchung_id: id, status: "bestellt", notiz: "Bestellung W-123" });
-    expect(v.result).toMatchObject({ vorschau: true, vorher: "offen", nachher: "bestellt", mengen: { bettsets: 2, handtuecher: 8, kuechentuecher: 1 } });
+    expect(v.result).toMatchObject({ vorschau: true, vorher: "offen", nachher: "bestellt", mengen: "2 Spannbettlaken, 4 Bettbezüge, 4 Kissenbezüge, 8 große Handtücher, 8 kleine Handtücher, 4 Waschlappen, 1 Badvorleger, 1 Küchentücher" });
 
     const r = await call("waesche_status", { buchung_id: id, status: "bestellt", notiz: "Bestellung W-123", bestaetigt: true });
     expect(r.result).toMatchObject({ ausgefuehrt: true });
     const a = await prisma.cleaningAssignment.findUniqueOrThrow({ where: { bookingId: id } });
     expect(a).toMatchObject({ laundryStatus: "ORDERED", laundryNotes: "Bestellung W-123" });
     expect(a.laundryOrderedAt).toBeInstanceOf(Date);
-    expect(a.laundryQuantity).toEqual({ beds: 2, towels: 8, kitchen: 1 });
+    expect(a.laundryQuantity).toEqual({ beds: 2, towels: 8, kitchen: 1, handTowels: 8, pillowCases: 4, duvetCovers: 4, bathMats: 1, washcloths: 4 });
   });
 
   it("gleicher Stand → unverändert, kein Schreiben", async () => {

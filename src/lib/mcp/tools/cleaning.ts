@@ -4,7 +4,8 @@ import { prisma } from "../../prisma";
 import { defineTool, ToolError } from "../tool";
 import { day, addDays, viennaIso, minutesSince, todayVienna } from "../format";
 import { datum, wohnungFilter, pagingFields, resolveApartmentId, resolveDays, paging, page } from "../shared";
-import { calculateLaundryQuantity } from "../../laundry-quantity";
+import { calculateLaundryQuantity, laundryText } from "../../laundry-quantity";
+import { petFee, PET_FEE_LABEL } from "../../pets";
 import { isImapConfigured } from "../../email-import/imap";
 
 const STATUS = ["UNASSIGNED", "ASSIGNED", "COMPLETED", "SELF_CLEAN"] as const;
@@ -183,7 +184,7 @@ export const wochenplan = defineTool({
   description:
     "Planungsübersicht für die nächsten N Tage (Vorgabe 7): je Tag An- und Abreisen, Reinigungen mit Reinigungskraft und Wäschestatus, " +
     "dazu eine Liste mit Warnungen — Reinigung ohne Reinigungskraft, abgesagte Reinigung, Wäsche noch offen (ab 3 Tage vorher), " +
-    "Wechseltag (Ab- und Anreise am selben Tag in derselben Wohnung). Für „Was steht an?“ und den Wochenstart.",
+    "Wechseltag (Ab- und Anreise am selben Tag in derselben Wohnung), Hundegebühr nicht angefordert bzw. kurz vor Anreise unbezahlt. Für „Was steht an?“ und den Wochenstart.",
   scope: "cleaning:read",
   input: {
     tage: z.number().int().min(1).max(31).optional().describe("Anzahl Tage ab heute (Vorgabe 7)"),
@@ -231,6 +232,9 @@ export const wochenplan = defineTool({
         else if (!zugewiesen) warnungen.push({ datum: key, art: "ohne_reinigungskraft", text: `Reinigung ${wo} hat keine Reinigungskraft`, buchung_id: b.id });
         if (!selbst && waesche === "OPEN" && inTagen <= 3) warnungen.push({ datum: key, art: "waesche_offen", text: `Wäsche für ${wo} noch nicht bestellt`, buchung_id: b.id });
         if (wechsel) warnungen.push({ datum: key, art: "wechseltag", text: `Wechseltag ${b.apartment.name}: Abreise und Anreise am selben Tag`, buchung_id: b.id });
+        const fee = petFee(b);
+        if (fee.state === "OFFEN") warnungen.push({ datum: key, art: "hundegebuehr_offen", text: `Hundegebühr ${wo}: ${fee.amount} € noch nicht angefordert`, buchung_id: b.id });
+        else if (fee.state === "ANGEFORDERT" && inTagen <= 2) warnungen.push({ datum: key, art: "hundegebuehr_unbezahlt", text: `Hundegebühr ${wo}: ${fee.amount} € angefordert, noch nicht bezahlt`, buchung_id: b.id });
 
         const menge = calculateLaundryQuantity(b.guestCount, b.apartment);
         return {
@@ -244,7 +248,8 @@ export const wochenplan = defineTool({
           reinigung: selbst ? "Selbstreinigung" : a?.cleanerUnavailable ? "abgesagt" : a?.cleaner?.name ?? "offen",
           reinigung_status: a ? STATUS_TEXT[a.isSelfClean ? "SELF_CLEAN" : a.status] : "kein Auftrag",
           waesche: LAUNDRY_TEXT[waesche],
-          waesche_menge: { bettsets: menge.beds, handtuecher: menge.towels, kuechentuecher: menge.kitchen },
+          waesche_menge: laundryText(menge),
+          ...(fee.state !== "KEINE" ? { hundegebuehr: `${PET_FEE_LABEL[fee.state]} (${fee.amount} €)` } : {}),
         };
       });
 
