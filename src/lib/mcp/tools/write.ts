@@ -2,12 +2,13 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { defineTool, preview, bestaetigtSchema, ToolError, type ToolContext } from "../tool";
 import { day, viennaIso, minutesSince } from "../format";
-import { assignCleaner, setAssignmentNotes, setGuestCount, ActionError } from "../../booking-actions";
+import { assignCleaner, setAssignmentNotes, setGuestCount, setCleaningStatus, setLaundryStatus, ActionError } from "../../booking-actions";
+import { calculateLaundryQuantity } from "../../laundry-quantity";
 import { runAutoSync, AUTO_SYNC_MAX_AGE_MS } from "../../sync-runner";
 
 // ─── Stufe 2: schreibende Tools ───────────────────────────────────────────────
 // Ohne "bestaetigt": true liefern alle nur eine Vorschau und ändern nichts.
-// Kein Löschen, keine Preise, keine Änderungen an Smoobu, keine Gästenachrichten.
+// Kein Löschen, keine Preise, keine Änderungen an Smoobu. Gästenachrichten: eigenes Modul (guests.ts).
 
 const buchungId = z.string().min(1).describe("ID der Buchung (aus buchungen_list, anreisen_abreisen oder reinigungen)");
 
@@ -215,5 +216,126 @@ export const syncAusloesen = defineTool({
       letzter_sync: viennaIso(r.lastSyncAt),
       neue_buchungen: Math.max(0, after - before),
     };
+  },
+});
+
+// ─── reinigung_status ─────────────────────────────────────────────────────────
+
+const REINIGUNG_STATUS = ["erledigt", "selbstreinigung", "offen"] as const;
+
+export const reinigungStatus = defineTool({
+  name: "reinigung_status",
+  title: "Reinigungsstatus setzen",
+  description:
+    "Setzt den Reinigungsauftrag einer Buchung auf erledigt (Satz wird festgeschrieben, Verwaltung bekommt Push), " +
+    "Selbstreinigung (keine Reinigungskraft) oder offen (Zuweisung wird aufgehoben, Reinigungskräfte bekommen „wieder frei“). " +
+    "Gleiche Regeln wie in der App. Erst ohne bestaetigt aufrufen (Vorschau), dann mit bestaetigt: true.",
+  scope: "cleaning:write",
+  write: true,
+  input: {
+    buchung_id: buchungId,
+    status: z.enum(REINIGUNG_STATUS),
+    bestaetigt: bestaetigtSchema,
+  },
+  async handler(args, ctx) {
+    const b = await loadBooking(ctx, args.buchung_id);
+    const a = b.cleaningAssignment;
+    if (!a) throw new ToolError("Zu dieser Buchung gibt es keinen Reinigungsauftrag");
+    const vorher = describeCleaning(b);
+
+    const ziel = args.status;
+    if (ziel === "erledigt" && !a.cleanerId) {
+      throw new ToolError("Ohne zugewiesene Reinigungskraft kann nichts als erledigt markiert werden — erst zuweisen oder Selbstreinigung setzen.");
+    }
+    const schon =
+      (ziel === "erledigt" && a.status === "COMPLETED") ||
+      (ziel === "selbstreinigung" && (a.status === "SELF_CLEAN" || a.isSelfClean)) ||
+      (ziel === "offen" && a.status === "UNASSIGNED" && !a.cleanerId && !a.isSelfClean);
+    if (schon) return { ausgefuehrt: false, unveraendert: true, reinigung: vorher };
+
+    const nachher =
+      ziel === "erledigt" ? `erledigt von ${a.cleaner?.name ?? "?"}` : ziel === "selbstreinigung" ? "Selbstreinigung" : "offen";
+    const folgen =
+      ziel === "erledigt" ? " Der Satz wird festgeschrieben." :
+      ziel === "offen" ? " Die Reinigungskräfte bekommen „wieder frei“." : "";
+
+    if (!args.bestaetigt) {
+      return preview(`${describeBooking(b)}: ${vorher} → ${nachher}.${folgen}`, { buchung_id: b.id, vorher, nachher });
+    }
+
+    if (ziel === "erledigt") {
+      await act(() =>
+        setCleaningStatus({ organizationId: ctx.organizationId, bookingId: b.id, status: "COMPLETED", actor: via(ctx), actorName: "Claude" })
+      );
+    } else if (ziel === "selbstreinigung") {
+      // wie „Selbstreinigung“ im Zuweisen-Dialog der App
+      await act(() => assignCleaner({ organizationId: ctx.organizationId, bookingId: b.id, cleanerId: null, isSelfClean: true, actor: via(ctx) }));
+    } else {
+      await act(() =>
+        setCleaningStatus({ organizationId: ctx.organizationId, bookingId: b.id, status: "UNASSIGNED", actor: via(ctx), actorName: "Claude" })
+      );
+    }
+    return { ausgefuehrt: true, buchung: describeBooking(b), vorher, nachher };
+  },
+});
+
+// ─── waesche_status ───────────────────────────────────────────────────────────
+
+const WAESCHE = { offen: "OPEN", bestellt: "ORDERED", vorhanden: "AVAILABLE" } as const;
+const WAESCHE_TEXT: Record<string, string> = { OPEN: "offen", ORDERED: "bestellt", AVAILABLE: "vorhanden" };
+
+export const waescheStatus = defineTool({
+  name: "waesche_status",
+  title: "Wäschestatus setzen",
+  description:
+    "Setzt den Wäschestatus einer Reinigung auf offen, bestellt oder vorhanden, optional mit Notiz (z.B. Bestellnummer der Wäscherei). " +
+    "Bei „bestellt“ werden Zeitpunkt und Mengen (nach Wäsche-Konfiguration der Wohnung) festgehalten. " +
+    "Bestellt NICHT bei der Wäscherei — das passiert auf deren Website; dieses Tool hält nur den Stand in der App fest. " +
+    "Erst ohne bestaetigt aufrufen (Vorschau), dann mit bestaetigt: true.",
+  scope: "cleaning:write",
+  write: true,
+  input: {
+    buchung_id: buchungId,
+    status: z.enum(["offen", "bestellt", "vorhanden"]),
+    notiz: z.string().max(1000).optional().describe("Wäsche-Notiz (ersetzt die bisherige; leer = entfernen)"),
+    bestaetigt: bestaetigtSchema,
+  },
+  async handler(args, ctx) {
+    const b = await loadBooking(ctx, args.buchung_id);
+    const apt = await prisma.apartment.findUniqueOrThrow({
+      where: { id: b.apartmentId },
+      select: { laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true },
+    });
+    const menge = calculateLaundryQuantity(b.guestCount, apt);
+    const ziel = WAESCHE[args.status];
+    const vorher = WAESCHE_TEXT[b.cleaningAssignment?.laundryStatus ?? "OPEN"];
+    const notizNeu = args.notiz === undefined ? undefined : args.notiz.trim() || null;
+
+    if (b.cleaningAssignment?.laundryStatus === ziel && (notizNeu === undefined || notizNeu === b.cleaningAssignment.laundryNotes)) {
+      return { ausgefuehrt: false, unveraendert: true, waesche: vorher };
+    }
+
+    const mengeText = `${menge.beds} Bettsets, ${menge.towels} Handtücher, ${menge.kitchen} Küchentücher`;
+    if (!args.bestaetigt) {
+      return preview(`Wäsche für ${describeBooking(b)}: ${vorher} → ${args.status}${ziel === "ORDERED" ? ` (${mengeText})` : ""}.`, {
+        buchung_id: b.id,
+        vorher,
+        nachher: args.status,
+        mengen: { bettsets: menge.beds, handtuecher: menge.towels, kuechentuecher: menge.kitchen },
+        ...(notizNeu !== undefined ? { notiz_nachher: notizNeu } : {}),
+      });
+    }
+
+    await act(() =>
+      setLaundryStatus({
+        organizationId: ctx.organizationId,
+        bookingId: b.id,
+        status: ziel,
+        ...(notizNeu !== undefined ? { notes: notizNeu } : {}),
+        quantity: menge,
+        actor: via(ctx),
+      })
+    );
+    return { ausgefuehrt: true, buchung: describeBooking(b), vorher, nachher: args.status, ...(ziel === "ORDERED" ? { mengen: mengeText } : {}) };
   },
 });

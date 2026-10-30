@@ -295,7 +295,8 @@ src/app/api/mcp/route.ts      POST, eigene Bearer-Prüfung, 60/min pro Token, ke
 src/lib/mcp/tokens.ts         Token v17_…, SHA-256-Hash, Scopes
 src/lib/mcp/tool.ts           defineTool, runTool (Scope, zod strict, Audit mcp.<tool>)
 src/lib/mcp/server.ts         McpServer pro Anfrage, nur Tools der Token-Scopes
-src/lib/mcp/tools/*.ts        bookings, cleaning, finance (lesen), write (schreiben)
+src/lib/mcp/tools/*.ts        bookings, cleaning (inkl. wochenplan), finance (lesen), write (schreiben),
+                              guests (Gästechat über Smoobu)
 src/lib/booking-actions.ts    assignCleaner / setAssignmentNotes / setGuestCount —
                               gemeinsam für App-Routen UND MCP
 /settings/schnittstelle       Token anlegen (Klartext einmalig), widerrufen
@@ -305,7 +306,11 @@ Regeln:
 - Neue Fachlogik nie im Tool selbst, sondern als Server-Funktion, die auch die
   App-Route nutzt (siehe `booking-actions.ts`, `runAutoSync`).
 - Schreib-Tools: `write: true`, Parameter `bestaetigt`; ohne `true` nur `preview(…)`.
-- Kein Löschen, keine Preis-/Smoobu-Änderungen, keine Gästenachrichten.
+- Kein Löschen, keine Preis-/Smoobu-Änderungen.
+- Gästenachrichten (Entscheidung Mathias 30.10.2026): lesen mit `messages:read`, senden nur über
+  `gast_antworten` (`messages:write`) mit `bestaetigt: true` — Text vorher von Mathias freigeben.
+  Nachrichtentexte nie ins Audit-Log (`src/lib/guest-messages.ts`, `tools/guests.ts`).
+- Wäsche wird auf der Website der Wäscherei bestellt; `waesche_status` hält nur den Stand fest.
 - Antworten: Geld via `money()`, Kalendertage `YYYY-MM-DD`, Zeitpunkte `viennaIso()`,
   Listen mit `limit`/`cursor`.
 - Tests: `npm test` (vitest gegen PGlite, `tests/`), `npm run mcp:pruefen` gegen eine laufende App.

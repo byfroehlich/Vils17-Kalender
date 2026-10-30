@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { sendPushToRole } from "@/lib/push";
-import { effectiveRate } from "@/lib/rates";
+import { setCleaningStatus, ActionError } from "@/lib/booking-actions";
 
 const schema = z.object({
   status: z.enum(["UNASSIGNED", "SELF_CLEAN", "ASSIGNED", "COMPLETED"]),
@@ -35,71 +33,19 @@ export async function PATCH(
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
   }
 
-  // CLEANER: nur eigene Aufträge
-  const cleanerFilter: Record<string, unknown> = isCleaner
-    ? { cleanerId: session.user.id }
-    : {};
-
-  const assignment = await prisma.cleaningAssignment.findFirst({
-    where: {
-      bookingId: params.id,
+  try {
+    const { assignment: updated } = await setCleaningStatus({
       organizationId: session.user.organizationId,
-      ...cleanerFilter,
-    },
-    include: {
-      cleaner: { select: { cleanerRate: true } },
-      booking: { select: { premiumRate: true, premiumRateCleanerId: true } },
-    },
-  });
-
-  if (!assignment) {
-    return NextResponse.json({ error: "Nicht gefunden" }, { status: 404 });
+      bookingId: params.id,
+      status: parsed.data.status,
+      actor: { userId: session.user.id },
+      actorName: session.user.name ?? "",
+      // CLEANER: nur eigene Aufträge
+      ...(isCleaner ? { onlyCleanerId: session.user.id } : {}),
+    });
+    return NextResponse.json({ success: true, assignment: updated });
+  } catch (err) {
+    if (err instanceof ActionError) return NextResponse.json({ error: err.message }, { status: err.status });
+    throw err;
   }
-
-  const newStatus = parsed.data.status;
-  const updated = await prisma.cleaningAssignment.update({
-    where: { id: assignment.id },
-    data: {
-      status: newStatus,
-      // Satz beim Erledigen festschreiben — spätere Satzänderungen verändern
-      // diese Abrechnung dann nicht mehr. Wird "erledigt" zurückgenommen, gilt
-      // wieder der laufende Satz.
-      rate: newStatus === "COMPLETED" && assignment.cleanerId
-        // schon erledigt → festgeschriebenen Satz behalten, nicht neu rechnen
-        ? effectiveRate({ ...assignment, rate: assignment.status === "COMPLETED" ? assignment.rate : null })
-        : null,
-      // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
-      ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
-        ? { cleanerId: null, assignedAt: null, cleanerUnavailable: false, cleanerUnavailableNote: null, declinedById: null }
-        : {}),
-    },
-  });
-
-  const booking = await prisma.booking.findUnique({
-    where: { id: params.id },
-    select: { checkIn: true, apartment: { select: { name: true } } },
-  });
-  const orgId = session.user.organizationId;
-
-  if (booking) {
-    // Reinigungstag = Anreisetag der nächsten Gäste (UTC-Mitternacht gespeichert)
-    const cleaningDay = new Date(booking.checkIn).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" });
-    const apt = booking.apartment.name;
-
-    if (newStatus === "COMPLETED") {
-      sendPushToRole(orgId, ["ADMIN", "MANAGER"], {
-        title: "Reinigung erledigt",
-        body: `${session.user.name}: ${apt} am ${cleaningDay} ist fertig`,
-        url: `/bookings/${params.id}`,
-      }).catch(() => null);
-    } else if (newStatus === "UNASSIGNED") {
-      sendPushToRole(orgId, ["CLEANER"], {
-        title: "Reinigung wieder verfügbar",
-        body: `${apt} am ${cleaningDay} ist wieder frei — jetzt zusagen!`,
-        url: "/my-jobs/list",
-      }).catch(() => null);
-    }
-  }
-
-  return NextResponse.json({ success: true, assignment: updated });
 }

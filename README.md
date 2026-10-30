@@ -81,10 +81,19 @@ Claude Code geht auch ohne Token: `claude mcp add --transport http vils17 https:
 | `buchung_notiz` | cleaning:write | Notiz für die Reinigungskraft setzen |
 | `gaestezahl_korrigieren` | cleaning:write | Gästezahl von Hand korrigieren (bleibt bei Sync erhalten) |
 | `sync_ausloesen` | cleaning:write | Smoobu-Abgleich wie beim Öffnen der App |
+| `wochenplan` | cleaning:read | Nächste N Tage mit Warnungen: ohne Reinigungskraft, abgesagt, Wäsche offen, Wechseltag |
+| `reinigung_status` | cleaning:write | erledigt (Satz festschreiben) / Selbstreinigung / offen |
+| `waesche_status` | cleaning:write | offen / bestellt / vorhanden, mit Notiz und Mengen (bestellt wird auf der Website der Wäscherei) |
+| `gaeste_nachrichten` | messages:read | Chat mit dem Gast aus Smoobu (Airbnb, Booking.com, direkt) |
+| `offene_gaestenachrichten` | messages:read | Aktuelle/kommende Buchungen, bei denen der Gast auf Antwort wartet |
+| `gast_antworten` | messages:write | Nachricht an den Gast über Smoobu — nur nach Freigabe des Texts |
 
 **Schreib-Tools ändern nur mit `"bestaetigt": true`.** Ohne liefern sie eine Vorschau
-(„Das würde passieren: …“). Es gibt bewusst kein Löschen, keine Preis- oder
-Smoobu-Änderungen und keine Nachrichten an Gäste.
+(„Das würde passieren: …“). Es gibt bewusst kein Löschen und keine Preis- oder
+Smoobu-Änderungen. Nachrichten an Gäste gehen nur mit `messages:write` und
+`"bestaetigt": true` raus; der Text wird vorher freigegeben.
+Bestehende claude.ai-Verbindungen müssen für die `messages:*`-Bereiche einmal
+getrennt und neu verbunden werden.
 
 ### Sicherheit
 
