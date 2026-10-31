@@ -5,7 +5,7 @@ import { WashingMachine } from "lucide-react";
 import { authOptions } from "@/lib/auth";
 import { loadLaundryPlan } from "@/lib/laundry-proposal";
 import { normalizeQuantity } from "@/lib/laundry-order";
-import { laundryText } from "@/lib/laundry-quantity";
+import { laundryText, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
 import { todayVienna, addDays, day } from "@/lib/mcp/format";
 import { LaundryPlanner } from "@/components/laundry/LaundryPlanner";
 
@@ -40,9 +40,30 @@ export default async function LaundryPage({ searchParams }: { searchParams: { ta
 
       <div style={{ ...glass, padding: "20px 24px" }}>
         <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>Bestellen für {de(today)} – {de(addDays(r.end, -1))} · {p.arrivals} Anreisen, {p.guests} Gäste</div>
-        <div style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginTop: 4 }}>
-          {laundryText(p.order) || "Nichts zu bestellen — Bestand reicht inklusive Reserve"}
-        </div>
+        {laundryText(p.order) ? (
+          <>
+            <div style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginTop: 4 }}>Bestellen:</div>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr auto", gap: "4px 16px", marginTop: 6, fontSize: 15 }}>
+              {LAUNDRY_ITEMS.filter((i) => p.order[i.key] > 0).map((i) => (
+                <div key={i.key} style={{ display: "contents" }}>
+                  <span style={{ color: "rgba(255,255,255,0.85)" }}>{i.emoji} {i.label}</span>
+                  <strong style={{ color: "#5eead4", textAlign: "right" }}>{p.order[i.key]}</strong>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : (
+          <div style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginTop: 4 }}>Nichts zu bestellen — Bestand reicht inklusive Reserve</div>
+        )}
+        {/* Bis wann reicht der Bestand? (Dashboard „Zu erledigen“ → hierher, Entscheidung Mathias 31.10.2026) */}
+        {p.stockToday && (
+          <div style={{ fontSize: 13, marginTop: 10, color: p.firstShortage ? "#fca5a5" : "rgba(255,255,255,0.65)" }}>
+            {p.firstShortage
+              ? <>Bestand reicht bis {de(addDays(p.firstShortage.day, -1))} — ab {de(p.firstShortage.day)} zu knapp (unter der Reserve): {p.firstShortage.items.map((k) => LAUNDRY_ITEMS.find((i) => i.key === k)?.label ?? k).join(", ")} ({p.firstShortage.arrivals.map((a) => `${a.apartmentName.split(/\s+No\.|\s+-\s+/)[0]}, ${a.guestCount} Gäste`).join("; ")})</>
+              : <>Bestand reicht für alle Anreisen bis {de(addDays(r.end, -1))}{laundryText(p.order) ? " — mit der Bestellung bleibt die Reserve im Keller" : ""}.</>}
+          </div>
+        )}
+        {!p.stockToday && <div style={{ fontSize: 13, marginTop: 10, color: "rgba(255,255,255,0.6)" }}>Noch kein Bestand im Keller erfasst — unten zählen, dann sagt die App, bis wann er reicht.</div>}
       </div>
 
       <LaundryPlanner
