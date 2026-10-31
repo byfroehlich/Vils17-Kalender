@@ -59,7 +59,7 @@ export default async function CleanersPage() {
     <div className="space-y-4 sm:space-y-5">
       <div>
         <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", letterSpacing: "-0.02em" }}>Reinigung</h1>
-        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Aufträge, Wäsche und Reinigungskräfte.</p>
+        <p style={{ fontSize: 13, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Aufträge und Reinigungskräfte.</p>
       </div>
       <CleaningSchedule assignments={assignments} cleaners={cleaners} isAdmin={isAdmin} />
     </div>
