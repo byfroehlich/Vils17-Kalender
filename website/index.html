@@ -52,6 +52,22 @@ footer nav{display:flex;gap:20px}
 .perk h3{font:400 1.25rem/1.25 var(--serif);margin-bottom:6px}
 .perk p{color:var(--mist);font-size:.96875rem}
 .perk a{color:var(--paper)}
+.book{background:var(--paper);color:var(--deep);padding:clamp(28px,5vh,48px) clamp(16px,6vw,96px)}
+.book>div{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:1.25fr 1fr;gap:20px 48px;align-items:center}
+.promo .kick{display:inline-flex;gap:8px;align-items:center;font:500 .78rem/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:#9a4a1e;background:#f7e6d6;border-radius:999px;padding:7px 12px}
+.promo h2{font:400 clamp(1.5rem,3vw,2.2rem)/1.12 var(--serif);margin:12px 0 8px}
+.promo p{color:#38544D;max-width:52ch}
+.wk{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;padding:0;list-style:none}
+.wk li{font-size:.875rem;border:1px solid #c3d6c8;border-radius:999px;padding:6px 12px;background:#fff}
+.wk li b{font-weight:500}
+.scarce{margin-top:12px;font-size:.9rem;color:#9a4a1e;font-weight:500}
+.bar{background:#fff;border-radius:18px;padding:20px;box-shadow:0 10px 30px rgba(30,48,42,.10);display:grid;gap:12px}
+.bar label{font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:#38544D}
+.bar select{width:100%;height:48px;border-radius:12px;border:1px solid #c3d6c8;padding:0 12px;font:inherit;color:var(--deep);background:#fff}
+.bar .btn{display:flex;align-items:center;justify-content:center;height:52px;border-radius:999px;background:var(--deep);color:var(--paper);font-weight:500;text-decoration:none;border:0;cursor:pointer;font-size:1rem}
+.bar .btn:hover{background:#2c463d}
+.bar small{color:#55625c;font-size:.82rem}
+@media (max-width:820px){.book>div{grid-template-columns:1fr}}
 @media (max-width:820px){.perks ul{grid-template-columns:1fr}}
 .tl-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--mist)} .tl-badge img{width:22px;height:22px;flex:none} .tl-badge:hover{color:var(--paper)}
 @media (max-width:820px){main{grid-template-columns:1fr} .unit{min-height:78svh} .intro{grid-template-columns:1fr} @media (prefers-reduced-motion:reduce){.unit img{transition:none}}
@@ -114,6 +130,30 @@ footer nav{display:flex;gap:20px}
     <span class="go">Lodge ansehen →</span>
   </a>
 </main>
+<section class="book" aria-labelledby="bh"><div>
+  <div class="promo" id="promo" data-ende="2026-12-21">
+    <span class="kick">✨ Advent in Tirol</span>
+    <h2 id="bh">Lumagica-Wochenende: Lichterzauber auf Burg Ehrenberg</h2>
+    <p>Der magische Lichterpark Lumagica an der Burgruine Ehrenberg, Weihnachtsmarkt in Füssen – und danach zurück ins warme Penthouse oder die Lodge. Bis 11.12. gibt es Lumagica mit der Gästekarte zum halben Preis.</p>
+    <ul class="wk" aria-label="Adventwochenenden">
+      <li><b>28.–29.11.</b> · 1. Advent</li><li><b>5.–6.12.</b> · 2. Advent</li><li><b>12.–13.12.</b> · 3. Advent</li><li><b>19.–20.12.</b> · 4. Advent</li>
+    </ul>
+    <p class="scarce">Nur vier Adventwochenenden, nur zwei Unterkünfte – wer zuerst bucht, wohnt.</p>
+  </div>
+  <form class="bar" id="bookbar" onsubmit="return false">
+    <label for="apt">Direkt beim Gastgeber buchen</label>
+    <select id="apt" aria-label="Unterkunft wählen">
+      <option value="2943886">Penthouse No. 17 · bis 5 Gäste</option>
+      <option value="3443356">Lodge No. 17 · bis 4 Gäste</option>
+    </select>
+    <a class="btn" id="checkbtn" href="https://booking.smoobu.com/vils17?apartmentId=2943886" target="_blank" rel="noopener">Jetzt freie Termine prüfen →</a>
+    <small>Sofort sehen, was frei ist – ohne Anmeldung, Buchung direkt bei uns.</small>
+  </form>
+</div></section>
+<script>
+(function(){var s=document.getElementById('apt'),b=document.getElementById('checkbtn');s.addEventListener('change',function(){b.href='https://booking.smoobu.com/vils17?apartmentId='+s.value;});
+var p=document.getElementById('promo');try{if(new Date()>=new Date(p.dataset.ende+'T00:00:00')){p.style.display='none';p.parentNode.style.gridTemplateColumns='1fr';}}catch(e){}})();
+</script>
 <section class="intro" aria-labelledby="ih">
   <div><h1 id="ih">Zwei Unterkünfte, eine Adresse in Vils.</h1>
   <p style="margin-top:1rem">Vils liegt im Außerfern in Tirol, direkt an der Grenze zum Allgäu. Füssen und Neuschwanstein sind rund 10 Minuten entfernt, Reutte etwa 15. Sie buchen hier direkt bei uns als Gastgeber.</p></div>
