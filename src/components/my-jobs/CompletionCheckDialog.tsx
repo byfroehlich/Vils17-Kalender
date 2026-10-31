@@ -6,6 +6,7 @@ import { ScrollLock } from "@/components/ui/ScrollLock";
 
 // Pflicht-Check beim „Erledigt“ (Entscheidung Mathias 31.10.2026):
 // 1. Ist alles heil (Möbel, Geräte, Geschirr …)?  2. Muss Verbrauchsmaterial nachgekauft werden?
+// 3. Duschabflüsse geprüft und gereinigt? (bodentiefe Duschen setzen sich schnell zu)
 // Meldungen gehen sofort per Push an Mathias und hängen am Aufenthalt davor.
 
 const box = { background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 22, maxHeight: "100%", overflowY: "auto" as const };
@@ -47,10 +48,13 @@ export function CompletionCheckDialog({ bookingId, title, onCancel, onDone }: { 
   const [photo, setPhoto] = useState<string | null>(null);
   const [suppliesOk, setSuppliesOk] = useState<boolean | null>(null);
   const [supplies, setSupplies] = useState("");
+  const [drainsOk, setDrainsOk] = useState<boolean | null>(null);
+  const [drain, setDrain] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const ready = inventoryOk !== null && suppliesOk !== null && (inventoryOk || damage.trim()) && (suppliesOk || supplies.trim());
+  const ready = inventoryOk !== null && suppliesOk !== null && drainsOk !== null
+    && (inventoryOk || damage.trim()) && (suppliesOk || supplies.trim()) && (drainsOk || drain.trim());
 
   const submit = async () => {
     setBusy(true);
@@ -61,9 +65,10 @@ export function CompletionCheckDialog({ bookingId, title, onCancel, onDone }: { 
       body: JSON.stringify({
         status: "COMPLETED",
         check: {
-          inventoryOk, suppliesOk,
+          inventoryOk, suppliesOk, drainsOk,
           ...(inventoryOk ? {} : { damage: damage.trim(), ...(photo ? { damagePhoto: photo } : {}) }),
           ...(suppliesOk ? {} : { supplies: supplies.trim() }),
+          ...(drainsOk ? {} : { drain: drain.trim() }),
         },
       }),
     }).catch(() => null);
@@ -109,6 +114,13 @@ export function CompletionCheckDialog({ bookingId, title, onCancel, onDone }: { 
         {suppliesOk === false && (
           <textarea value={supplies} onChange={(e) => setSupplies(e.target.value)} rows={2} className="form-input" style={{ resize: "none", marginTop: 10 }}
             placeholder="Was fehlt oder wird knapp?" />
+        )}
+
+        <div style={q}>Duschabflüsse geprüft? (Gitter raus, Haare entfernen, Wasser laufen lassen)</div>
+        <Choice value={drainsOk} onChange={setDrainsOk} yes="Gereinigt, läuft gut" no="Läuft schlecht" />
+        {drainsOk === false && (
+          <textarea value={drain} onChange={(e) => setDrain(e.target.value)} rows={2} className="form-input" style={{ resize: "none", marginTop: 10 }}
+            placeholder="Welche Dusche / welcher Abfluss? Was ist los?" />
         )}
 
         {error && <p style={{ color: "#fecaca", fontSize: 13, marginTop: 12 }}>{error}</p>}

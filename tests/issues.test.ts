@@ -24,17 +24,18 @@ beforeEach(async () => {
 
 describe("Pflicht-Check beim Erledigen", () => {
   it("Fragen müssen beantwortet und bei „nein“ beschrieben werden", () => {
-    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: true }).success).toBe(true);
-    expect(checkSchema.safeParse({ inventoryOk: false, suppliesOk: true }).success).toBe(false);
-    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: false }).success).toBe(false);
-    expect(checkSchema.safeParse({ inventoryOk: true }).success).toBe(false);
+    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: true, drainsOk: true }).success).toBe(true);
+    expect(checkSchema.safeParse({ inventoryOk: false, suppliesOk: true, drainsOk: true }).success).toBe(false);
+    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: false, drainsOk: true }).success).toBe(false);
+    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: true, drainsOk: false }).success).toBe(false);
+    expect(checkSchema.safeParse({ inventoryOk: true, suppliesOk: true }).success).toBe(false);
   });
 
   it("Schaden hängt am Aufenthalt davor, Airbnb-Frist 14 Tage, Push an Admin", async () => {
     // b5 (Penthouse, Anreise 01.11.) — davor b4 (Airbnb, Abreise 12.10.)
     const r = await recordCleaningCheck({
       organizationId: world.org.id, bookingId: world.bookings.b5.id,
-      check: { inventoryOk: false, damage: "Klappcouch: Mechanismus links gebrochen", suppliesOk: false, supplies: "Allzweckreiniger, Müllbeutel" },
+      check: { inventoryOk: false, damage: "Klappcouch: Mechanismus links gebrochen", suppliesOk: false, supplies: "Allzweckreiniger, Müllbeutel", drainsOk: true },
       actor: { name: "Vanessa" },
     });
     expect(r.created).toBe(2);
@@ -50,9 +51,17 @@ describe("Pflicht-Check beim Erledigen", () => {
   });
 
   it("alles in Ordnung → kein Eintrag, kein Push", async () => {
-    const r = await recordCleaningCheck({ organizationId: world.org.id, bookingId: world.bookings.b5.id, check: { inventoryOk: true, suppliesOk: true }, actor: {} });
+    const r = await recordCleaningCheck({ organizationId: world.org.id, bookingId: world.bookings.b5.id, check: { inventoryOk: true, suppliesOk: true, drainsOk: true }, actor: {} });
     expect(r.created).toBe(0);
     expect(pushes).toHaveLength(0);
+  });
+
+  it("Abfluss läuft schlecht → Mangel „Abfluss: …“ mit Push", async () => {
+    const r = await recordCleaningCheck({ organizationId: world.org.id, bookingId: world.bookings.b5.id, check: { inventoryOk: true, suppliesOk: true, drainsOk: false, drain: "Dusche oben läuft langsam ab" }, actor: { name: "Vanessa" } });
+    expect(r.created).toBe(1);
+    const open = await listIssues(world.org.id, { open: true });
+    expect(open[0]).toMatchObject({ kind: "DAMAGE", text: "Abfluss: Dusche oben läuft langsam ab" });
+    expect(pushes[0]!.title).toBe("⚠️ Schaden gemeldet");
   });
 
   it("Foto: nur Bilder, Größenlimit", () => {
