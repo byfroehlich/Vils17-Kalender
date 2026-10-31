@@ -4,6 +4,8 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // instrumentation.ts: App-Takt (Abgleich, Mail-Import, Saugroboter) beim Serverstart
+  experimental: { instrumentationHook: true },
   headers: async () => [
     {
       source: "/(.*)",

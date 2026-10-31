@@ -637,7 +637,10 @@ in Einstellungen → Unterkunft).
 - `runDreame` ist idempotent: ab 10:00 einmal starten (`dreameStartedAt`), danach Status prüfen →
   fertig (`dreameDoneAt`) bzw. Warnung bei Startfehler, Störung (Status 4), > 3 h Laufzeit oder fehlenden
   Zugangsdaten — je Auftrag nur einmal (`dreameWarnedAt`). Push an Admin/Verwaltung + Audit.
-- Auslöser: `POST /api/cron/dreame` (Cron alle 15 Min, `x-cron-secret`) und als Rückfallebene `runAutoSync`.
+- Auslöser: **App-Takt** (`src/lib/app-takt.ts`, gestartet in `src/instrumentation.ts`): der dauerhaft laufende
+  Render-Dienst stößt sich alle 5 Min selbst an (runAutoSync + Saugroboter) — keine extra Cron-Dienste nötig
+  (Render-Crons kosten je ≥ 1 $/Monat und waren nie angelegt). Zusätzlich `POST /api/cron/dreame` und `runAutoSync`.
+  Abschalten mit `APP_TAKT=off`.
   `/api/cron/dreame-start` und `-status` leiten dorthin weiter.
 - ENV: `DREAME_EMAIL`, `DREAME_PASSWORD`, optional `DREAME_DEVICE_ID`. Dreame-Cloud ist inoffiziell
   (nachgebaut) — kann sich ohne Vorwarnung ändern; dann kommt eine Warnung, nichts geht kaputt.
