@@ -372,7 +372,7 @@ dagegen im Klartext.
 src/lib/email-import/
   parse.ts   ← reine Parser (Booking.com + Airbnb, DE + EN) — testbar
   match.ts   ← Zuordnung Mail → Buchung über Name, Anreisedatum, Kanal
-  imap.ts    ← holt ungelesene Mails, markiert sie als gelesen
+  imap.ts    ← holt neue Mails der letzten 7 Tage (BODY.PEEK, markiert nichts als gelesen)
   run.ts     ← Ablauf: lesen → parsen → zuordnen → ergänzen → protokollieren
 ```
 
@@ -391,6 +391,35 @@ es zusätzlich „Jetzt prüfen" und ein Protokoll der letzten 25 Mails.
 **Parser prüfen:** `npm run test:mail` — 35 Prüfungen gegen realistische
 Mailtexte. Die Parser sind der fragile Teil: Ändern die Portale ihre Vorlagen,
 zuerst hier nachziehen und den Test erweitern.
+
+### Postfach / Mail-Bereich (`src/lib/mailbox/`, Seite `/mail` „Post“)
+
+Entscheidung Mathias 31.10.2026: **info@vils17.at** (Strato) ist das zentrale Postfach für
+alles rund ums Haus — Portale, Gäste, Behörden. Lesen und Senden direkt in der App
+(kleines Mailprogramm), parallel nutzbar in Apple Mail.
+
+```
+src/lib/mailbox/config.ts   Zugang aus ENV; smtpTransport() auch für Reinigungsmails
+src/lib/mailbox/index.ts    listFolders, listMessages, getMessage, getAttachment, updateMessage, sendMail
+src/app/api/mail/*          folders, messages, messages/[uid] (GET/PATCH), …/attachments/[i], send (multipart)
+src/components/mail/MailApp.tsx   Liste → Mail → Antworten/Weiterleiten/Neu, Anhänge, Suche, Ordner
+src/lib/mcp/tools/mail.ts   postfach, mail_lesen (messages:read), mail_senden (messages:write, bestaetigt)
+```
+
+ENV (Render): `IMAP_HOST=imap.strato.de`, `IMAP_USER=info@vils17.at`, `IMAP_PASS`,
+`SMTP_HOST=smtp.strato.de`, `SMTP_PORT=465` (SMTP_USER/SMTP_PASS fallen auf IMAP zurück), optional `MAIL_FROM_NAME`.
+
+Regeln:
+- Quelle ist immer der Server (IMAP) — die App speichert keine Mails. Öffnen in der App markiert
+  als gelesen; Lesen über MCP und der Portal-Import markieren **nichts**.
+- Gesendete Mails: dieselben Bytes gehen raus und landen in „Gesendet“; Antworten setzen
+  In-Reply-To/References und markieren das Original als beantwortet. Bcc steht nicht im Kopf.
+- HTML-Mails nur im Sandbox-iframe ohne Skripte; fremde Bilder erst auf „Bilder laden“.
+  Anhänge immer als Download (`application/octet-stream`).
+- Audit `mail.sent` nur mit Anzahl Empfänger/Anhänge — nie Adressen, Betreff oder Text.
+  `sanitizeForAudit` lässt keine Strings mit `@` durch.
+- Kein Löschen über MCP; in der App nur „Papierkorb“ (verschieben, wiederherstellbar).
+- Tests: `tests/mailbox.test.ts` (gefälschter IMAP-Server, abgefangener SMTP).
 
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript

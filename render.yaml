@@ -74,6 +74,8 @@ services:
         sync: false
       - key: IMAP_FOLDER
         sync: false
+      - key: MAIL_FROM_NAME
+        sync: false
 
   - type: cron
     name: smoobu-sync
