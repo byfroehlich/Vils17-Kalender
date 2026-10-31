@@ -48,7 +48,7 @@ describe("/api/mcp", () => {
     const list = await call("tools/list");
     const names = list.body.result.tools.map((t: any) => t.name).sort();
     expect(names).toEqual([
-      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "hunde_uebersicht", "ortstaxe",
+      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "hunde_uebersicht", "maengel", "ortstaxe",
       "reinigungen", "sync_status", "umsatz", "waesche_bedarf", "wochenplan", "wohnungen_list",
     ]);
     // Jedes Tool hat Beschreibung und JSON-Schema
@@ -83,7 +83,7 @@ describe("/api/mcp", () => {
     const writeToken = await createToken(org.id, ["cleaning:write"], "Schreiben");
     const list = await call("tools/list", {}, writeToken);
     const tools = list.body.result.tools;
-    expect(tools.map((t: any) => t.name).sort()).toEqual(["buchung_notiz", "gaestezahl_korrigieren", "hunde_eintragen", "hundegebuehr_status", "reinigung_status", "reinigung_zuweisen", "sync_ausloesen", "waesche_bestand_erfassen", "waesche_betten", "waesche_lieferung_erfassen", "waesche_reserve", "waesche_status"]);
+    expect(tools.map((t: any) => t.name).sort()).toEqual(["buchung_notiz", "gaestezahl_korrigieren", "hunde_eintragen", "hundegebuehr_status", "mangel_erfassen", "reinigung_status", "reinigung_zuweisen", "sync_ausloesen", "waesche_bestand_erfassen", "waesche_betten", "waesche_lieferung_erfassen", "waesche_reserve", "waesche_status"]);
     for (const t of tools) {
       expect(t.annotations.readOnlyHint).toBe(false);
       expect(Object.keys(t.inputSchema.properties)).toContain("bestaetigt");

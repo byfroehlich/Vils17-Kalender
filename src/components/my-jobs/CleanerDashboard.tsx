@@ -11,6 +11,7 @@ import {
 import { startOfDay, startOfMonth, endOfMonth, addDays, isWithinInterval } from "date-fns";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 interface Assignment {
   id: string;
   status: string;
@@ -103,15 +104,11 @@ export function CleanerDashboard({
     router.refresh();
   }
 
-  async function markDone(bookingId: string, assignmentId: string) {
-    setLoadingId(assignmentId);
-    await fetch(`/api/bookings/${bookingId}/cleaning-status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "COMPLETED" }),
-    });
-    setLoadingId(null);
-    router.refresh();
+  // Erledigt → erst Pflicht-Check (Inventar, Verbrauchsmaterial), dann melden
+  const [checkFor, setCheckFor] = useState<{ bookingId: string; title: string } | null>(null);
+  function markDone(bookingId: string, _assignmentId: string) {
+    const a = myAssignments.find((x) => x.booking.id === bookingId);
+    setCheckFor({ bookingId, title: a ? `${formatDateLong(new Date(a.booking.checkIn))} · ${a.booking.apartment.name}` : "" });
   }
 
   async function submitUnavailable(a: Assignment) {
@@ -317,6 +314,14 @@ export function CleanerDashboard({
       )}
 
       {/* Absage-Dialog */}
+      {checkFor && (
+        <CompletionCheckDialog
+          bookingId={checkFor.bookingId}
+          title={checkFor.title}
+          onCancel={() => setCheckFor(null)}
+          onDone={() => { setCheckFor(null); router.refresh(); }}
+        />
+      )}
       {unavailableId && (() => {
         const a = myAssignments.find((x) => x.id === unavailableId);
         if (!a) return null;

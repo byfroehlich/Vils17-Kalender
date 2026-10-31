@@ -14,6 +14,7 @@ import { de } from "date-fns/locale";
 import { JobCard, OpenAssignment, Assignment } from "./MyJobsList";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "rgba(255,255,255,0.14)",
   backdropFilter: "blur(20px)",
@@ -96,16 +97,11 @@ export function MyJobsCalendar({
     router.refresh();
   }
 
-  async function markDone(bookingId: string, assignmentId: string) {
-    setLoadingId(assignmentId);
-    const res = await fetch(`/api/bookings/${bookingId}/cleaning-status`, {
-      method: "PATCH",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: "COMPLETED" }),
-    });
-    setLoadingId(null);
-    if (!res.ok) { showError("Fehler beim Markieren"); return; }
-    router.refresh();
+  // Erledigt → erst Pflicht-Check (Inventar, Verbrauchsmaterial), dann melden
+  const [checkFor, setCheckFor] = useState<{ bookingId: string; title: string } | null>(null);
+  function markDone(bookingId: string, _assignmentId: string) {
+    const a = myAssignments.find((x) => x.booking.id === bookingId);
+    setCheckFor({ bookingId, title: a ? `${formatDateLong(new Date(a.booking.checkIn))} · ${a.booking.apartment.name}` : "" });
   }
 
   async function submitUnavailable(a: Assignment) {
@@ -234,6 +230,14 @@ export function MyJobsCalendar({
       )}
 
       {/* Absage-Dialog */}
+      {checkFor && (
+        <CompletionCheckDialog
+          bookingId={checkFor.bookingId}
+          title={checkFor.title}
+          onCancel={() => setCheckFor(null)}
+          onDone={() => { setCheckFor(null); router.refresh(); }}
+        />
+      )}
       {unavailableId && (() => {
         const a = myAssignments.find((x) => x.id === unavailableId);
         if (!a) return null;

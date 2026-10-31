@@ -45,6 +45,7 @@ export const config = {
     "/billing/:path*",
     "/messages/:path*",
     "/mail/:path*",
+    "/issues/:path*",
     "/laundry/:path*",
   ],
 };
