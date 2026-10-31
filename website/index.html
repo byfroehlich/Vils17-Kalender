@@ -43,7 +43,17 @@ footer{padding:32px clamp(16px,6vw,96px) calc(32px + env(safe-area-inset-bottom,
 footer div{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
 footer nav{display:flex;gap:20px}
 :focus-visible{outline:2px solid var(--sage);outline-offset:4px}
-.tl-li{display:flex;align-items:center;gap:8px} .tl-li img{width:18px;height:18px;flex:none} .tl-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--mist)} .tl-badge img{width:22px;height:22px;flex:none} .tl-badge:hover{color:var(--paper)}
+.perks{background:linear-gradient(180deg,rgba(142,192,163,.10),rgba(142,192,163,.05));border-top:1px solid rgba(220,232,223,.14);border-bottom:1px solid rgba(220,232,223,.14);padding:clamp(40px,7vh,72px) clamp(16px,6vw,96px)}
+.perks>div{max-width:1180px;margin:0 auto}
+.perks h2{font:500 .8125rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--sage);margin-bottom:22px}
+.perks ul{list-style:none;padding:0;display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.perk{display:flex;gap:18px;align-items:flex-start;padding:20px 22px;border-radius:18px;background:rgba(244,248,245,.06);border:1px solid rgba(220,232,223,.16)}
+.perk img{flex:none;width:52px;height:auto;border-radius:6px}
+.perk h3{font:400 1.25rem/1.25 var(--serif);margin-bottom:6px}
+.perk p{color:var(--mist);font-size:.96875rem}
+.perk a{color:var(--paper)}
+@media (max-width:820px){.perks ul{grid-template-columns:1fr}}
+.tl-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--mist)} .tl-badge img{width:22px;height:22px;flex:none} .tl-badge:hover{color:var(--paper)}
 @media (max-width:820px){main{grid-template-columns:1fr} .unit{min-height:78svh} .intro{grid-template-columns:1fr} @media (prefers-reduced-motion:reduce){.unit img{transition:none}}
 </style>
 <script type="application/ld+json">
@@ -107,8 +117,17 @@ footer nav{display:flex;gap:20px}
 <section class="intro" aria-labelledby="ih">
   <div><h1 id="ih">Zwei Unterkünfte, eine Adresse in Vils.</h1>
   <p style="margin-top:1rem">Vils liegt im Außerfern in Tirol, direkt an der Grenze zum Allgäu. Füssen und Neuschwanstein sind rund 10 Minuten entfernt, Reutte etwa 15. Sie buchen hier direkt bei uns als Gastgeber.</p></div>
-  <ul><li>Check-in ab 15 Uhr, Check-out bis 10 Uhr</li><li>Hunde nach Absprache, 15 € pro Hund und Nacht</li><li>Ortstaxe 3 € pro Person ab 15 Jahren und Nacht</li><li>WLAN inklusive</li><li class="tl-li"><img src="/assets/truloc/truloc-emblem.svg" alt="" width="18" height="18"><span>Regionaler Verkaufsstand in beiden Unterkünften – wir sind <a href="https://truloc.de" target="_blank" rel="noopener">Frühstarter-Partner von TRULOC</a></span></li></ul>
+  <ul><li>Check-in ab 15 Uhr, Check-out bis 10 Uhr</li><li>Hunde nach Absprache, 15 € pro Hund und Nacht</li><li>Ortstaxe 3 € pro Person ab 15 Jahren und Nacht</li><li>WLAN inklusive</li></ul>
 </section>
+<section class="perks" aria-labelledby="ph"><div>
+  <h2 id="ph">Inklusive in beiden Unterkünften</h2>
+  <ul>
+    <li class="perk"><img src="/assets/aktiv-card.webp" alt="Gäste Aktiv Card der Naturparkregion Reutte" width="196" height="300" loading="lazy">
+      <div><h3>Gäste Aktiv Card</h3><p>Ab der ersten Nacht kostenlos: Busse u. a. nach Füssen, ins Lechtal und ins Tannheimer Tal, freier Eintritt in die Burgenwelt Ehrenberg, geführte Touren und viele Ermäßigungen in der Naturparkregion Reutte. Digital in der Elfi-App.</p></div></li>
+    <li class="perk"><img src="/assets/truloc/truloc-emblem.svg" alt="TRULOC" width="52" height="52" loading="lazy" style="border-radius:0">
+      <div><h3>Regionales direkt in der Wohnung</h3><p>Ein kleiner Verkaufsstand mit Produkten von Erzeugern aus Allgäu und Außerfern, zum Beispiel Honig oder Chutney, wechselnd mit der Saison. Wir sind <a href="https://truloc.de" target="_blank" rel="noopener">Frühstarter-Partner von TRULOC</a>.</p></div></li>
+  </ul>
+</div></section>
 <footer><div><span>No. 17 · Josef-Ahorn-Weg 17 · 6682 Vils · Österreich</span><a class="tl-badge" href="https://truloc.de" target="_blank" rel="noopener"><img src="/assets/truloc/truloc-emblem.svg" alt="" width="22" height="22">Frühstarter-Partner von TRULOC</a><nav><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></nav></div></footer>
 </body>
 </html>
