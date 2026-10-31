@@ -127,7 +127,7 @@ describe("Bewertungsanfrage", () => {
   });
 
   it("Schalter aus → nichts", async () => {
-    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
+    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801 });
     delete process.env.REVIEW_REQUEST_ENABLED;
     expect((await runReviewRequests(world.org.id)).disabled).toBe(true);
     process.env.REVIEW_REQUEST_ENABLED = "1";
@@ -136,11 +136,11 @@ describe("Bewertungsanfrage", () => {
   });
 
   it("fällig: Abreise vor 2–7 Tagen, bestätigt; nicht früher, nicht älter, nicht storniert/blockiert", async () => {
-    const regular = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
-    const late = await booking({ guest: "Nina Nachholen", ci: "2026-10-20", co: "2026-10-24", smoobuId: 802, ch: "Booking.com" });
-    await booking({ guest: "Zu Früh", ci: "2026-10-27", co: "2026-10-30", smoobuId: 803, ch: "Booking.com" });
-    await booking({ guest: "Zu Alt", ci: "2026-10-20", co: "2026-10-23", smoobuId: 804, ch: "Booking.com" });
-    await booking({ guest: "Storno Gast", ci: "2026-10-26", co: "2026-10-29", smoobuId: 805, ch: "Booking.com", status: "cancelled" });
+    const regular = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801 });
+    const late = await booking({ guest: "Nina Nachholen", ci: "2026-10-20", co: "2026-10-24", smoobuId: 802 });
+    await booking({ guest: "Zu Früh", ci: "2026-10-27", co: "2026-10-30", smoobuId: 803 });
+    await booking({ guest: "Zu Alt", ci: "2026-10-20", co: "2026-10-23", smoobuId: 804 });
+    await booking({ guest: "Storno Gast", ci: "2026-10-26", co: "2026-10-29", smoobuId: 805, status: "cancelled" });
     await booking({ guest: "Block", ci: "2026-10-26", co: "2026-10-29", smoobuId: 806, ch: "Blocked channel" });
 
     const r = await runReviewRequests(world.org.id);
@@ -154,7 +154,7 @@ describe("Bewertungsanfrage", () => {
   });
 
   it("Uhrzeit: erst ab 8:00 Wien, nicht ab 21 Uhr", async () => {
-    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
+    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801 });
     vi.setSystemTime(new Date("2026-10-31T06:30:00Z")); // 07:30 Wien
     expect((await runReviewRequests(world.org.id)).skippedTime).toBe(true);
     vi.setSystemTime(new Date("2026-10-30T20:10:00Z")); // 21:10 Wien
@@ -166,9 +166,17 @@ describe("Bewertungsanfrage", () => {
     expect((await runReviewRequests(world.org.id)).sent).toBe(1);
   });
 
-  it("Booking.com ohne Postfach-Prüfung gesendet, genau einmal, Audit ohne Text/Namen", async () => {
-    delete process.env.IMAP_PASS; // Postfach nicht eingerichtet — für Booking.com egal
-    const b = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com", notice: "Sprache des Gastes: en" });
+  it("Booking.com und Direkt: keine Anfrage (Entscheidung 31.10.2026)", async () => {
+    const b = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
+    const d2 = await booking({ guest: "Dora Direkt", ci: "2026-10-26", co: "2026-10-29", smoobuId: 802, ch: "Direct booking" });
+    expect((await runReviewRequests(world.org.id)).sent).toBe(0);
+    expect(posts).toHaveLength(0);
+    expect((await reload(b.id)).reviewRequestSentAt).toBeNull();
+    expect((await reload(d2.id)).reviewRequestSentAt).toBeNull();
+  });
+
+  it("Airbnb ohne Bewertung: genau einmal gesendet, englisch, Audit ohne Text/Namen", async () => {
+    const b = await booking({ guest: "Bea Gast", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, notice: "Sprache des Gastes: en" });
     expect((await runReviewRequests(world.org.id)).sent).toBe(1);
     expect(posts[0]!.body.messageBody).toMatch(/^Hello Bea,\n\nwe were happy/);
     expect((await runReviewRequests(world.org.id)).sent).toBe(0);
@@ -237,7 +245,7 @@ describe("Bewertungsanfrage", () => {
   });
 
   it("Smoobu lehnt ab → Zeitstempel zurückgesetzt, nächster Lauf sendet", async () => {
-    const b = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
+    const b = await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801 });
     status = 500;
     expect((await runReviewRequests(world.org.id)).failed).toBe(1);
     expect((await reload(b.id)).reviewRequestSentAt).toBeNull();
@@ -247,8 +255,8 @@ describe("Bewertungsanfrage", () => {
   });
 
   it("REVIEW_REQUEST_FROM: keine Nachhol-Anfrage für Abreisen vor dem Umstieg", async () => {
-    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801, ch: "Booking.com" });
-    await booking({ guest: "Nina Nachholen", ci: "2026-10-20", co: "2026-10-24", smoobuId: 802, ch: "Booking.com" });
+    await booking({ guest: "Bea Booking", ci: "2026-10-26", co: "2026-10-29", smoobuId: 801 });
+    await booking({ guest: "Nina Nachholen", ci: "2026-10-20", co: "2026-10-24", smoobuId: 802 });
     process.env.REVIEW_REQUEST_FROM = "2026-10-31";
     expect((await runReviewRequests(world.org.id)).sent).toBe(1);
     expect(posts[0]!.url).toContain("/reservations/801/");

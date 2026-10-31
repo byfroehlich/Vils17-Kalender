@@ -11,7 +11,8 @@ import { isMailboxConfigured, listFolders, listMessages, type MailSummary } from
 // sie selbst — einmal je Buchung über Booking.reviewRequestSentAt.
 // - Airbnb: vorher im Postfach (info@vils17.at) nach einer Bewertungsmail von automated@airbnb.com suchen;
 //   Treffer → keine Anfrage (reviewRequestSkippedAt). Postfach nicht erreichbar → in diesem Lauf nichts senden.
-// - Booking.com / Direkt: kein Signal verfügbar → Anfrage wird gesendet.
+// - Booking.com / Direkt: keine Anfrage (Entscheidung Mathias 31.10.2026). Booking.com lädt selbst zur Bewertung ein,
+//   ein Signal „schon bewertet“ gibt es nicht – doppelt fragen ist schlechter als gar nicht.
 // - Erst aktiv mit REVIEW_REQUEST_ENABLED=true (Smoobu-Vorlage 6 muss dann abgeschaltet sein,
 //   sonst bekommen Gäste zwei Nachrichten).
 // Texte wörtlich wie von Mathias freigegeben — nicht ändern. Nachrichtentext und Namen nie ins Audit-Log.
@@ -155,7 +156,9 @@ export async function runReviewRequests(organizationId: string, now = new Date()
     orderBy: { checkOut: "asc" },
     select: { id: true, smoobuId: true, guestName: true, channelName: true, channelNotice: true, checkIn: true },
   });
-  const due = candidates.filter((b) => b.smoobuId && !BLOCK_CHANNEL.test(b.channelName ?? ""));
+  const due = candidates.filter(
+    (b) => b.smoobuId && !BLOCK_CHANNEL.test(b.channelName ?? "") && channelGroup(b.channelName) === "Airbnb",
+  );
   if (!due.length) return result;
 
   // Postfach nur abfragen, wenn eine Airbnb-Buchung fällig ist — und nur einmal je Lauf

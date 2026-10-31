@@ -562,7 +562,8 @@ Smoobu-Vorlage 6 (Abreise + 2 Tage, 8:00, an alle) schickt die App die Anfrage s
   Vornamen und „hat eine …-Sterne-Bewertung hinterlassen“ / „hat dir eine Bewertung geschrieben“ (auch „left a … review“ /
   „wrote you a review“) → keine Anfrage, `reviewRequestSkippedAt` + `reviewRequestSkipReason`. „wartet auf deine Bewertung“
   ist kein Signal. Postfach nicht eingerichtet/erreichbar → in diesem Lauf nichts senden (nicht blind).
-- **Booking.com / Direkt:** kein Signal verfügbar → Anfrage wird gesendet.
+- **Booking.com / Direkt:** keine Anfrage (Entscheidung Mathias 31.10.2026): ohne Signal „schon bewertet“ lieber gar nicht
+  fragen als doppelt; Booking.com lädt selbst zur Bewertung ein.
 - Texte DE/EN **wörtlich** in `REVIEW_REQUEST_TEXT` (Platzhalter Vorname, Kanal); Direktbuchung: Satz ohne Kanal
   („… über eine kurze Bewertung freuen.“). Sprache wie bei der Schlafzimmer-Frage. Nicht ändern ohne neue Freigabe.
 - Einmal je Buchung: `Booking.reviewRequestSentAt` atomar vor dem Senden; Smoobu-Ablehnung mit Status → zurückgesetzt,
