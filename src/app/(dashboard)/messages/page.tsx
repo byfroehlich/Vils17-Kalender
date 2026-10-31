@@ -8,6 +8,8 @@ import { findUnansweredChats } from "@/lib/guest-chat-overview";
 import { petFee, PET_FEE_LABEL } from "@/lib/pets";
 import { todayVienna, addDays } from "@/lib/mcp/format";
 import { formatDate } from "@/lib/utils";
+import { listNoteSuggestions } from "@/lib/note-suggestions";
+import { NoteSuggestionsBox } from "@/components/messages/NoteSuggestionsBox";
 
 export const dynamic = "force-dynamic";
 
@@ -22,13 +24,14 @@ export default async function MessagesPage() {
   const organizationId = session.user.organizationId;
 
   const today = todayVienna();
-  const [chats, dogBookings] = await Promise.all([
+  const [chats, dogBookings, suggestions] = await Promise.all([
     findUnansweredChats({ organizationId, days: 30 }),
     prisma.booking.findMany({
       where: { organizationId, status: "confirmed", petCount: { gt: 0 }, checkOut: { gte: today }, checkIn: { lt: addDays(today, 366) } },
       orderBy: { checkIn: "asc" },
       select: { id: true, guestName: true, checkIn: true, checkOut: true, channelName: true, petCount: true, petFeeStatus: true, petFeeAmount: true, apartment: { select: { name: true } } },
     }),
+    listNoteSuggestions(organizationId),
   ]);
   const fees = dogBookings.map((b) => ({ b, fee: petFee(b) })).filter((x) => x.fee.state === "OFFEN" || x.fee.state === "ANGEFORDERT");
 
@@ -37,6 +40,23 @@ export default async function MessagesPage() {
       <h1 style={{ fontSize: 22, fontWeight: 700, color: "rgba(255,255,255,0.95)", display: "flex", alignItems: "center", gap: 8 }}>
         <MessageCircle style={{ width: 20, height: 20, color: "#14B8A6" }} /> Gäste
       </h1>
+
+      {suggestions.length > 0 && (
+        <div id="hinweise" style={{ ...glass, padding: "20px 24px" }}>
+          <h2 style={h2}>⭐ Hinweise für die Reinigung bestätigen ({suggestions.length})</h2>
+          <p style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", marginBottom: 10 }}>Aus den Gästechats erkannt. „Übernehmen“ schreibt den Hinweis in den Reinigungsauftrag und benachrichtigt die Reinigungskraft.</p>
+          <NoteSuggestionsBox
+            items={suggestions.map((s) => ({
+              id: s.id, proposedText: s.proposedText, excerpt: s.excerpt, extraBeds: s.extraBeds,
+              bookingId: s.booking.id, guestName: s.booking.guestName, apartmentName: s.booking.apartment.name,
+              checkInLabel: formatDate(s.booking.checkIn),
+              currentNotes: s.booking.cleaningAssignment?.notes?.trim() || null,
+              currentExtraBeds: s.booking.cleaningAssignment?.extraBeds ?? 0,
+              cleanerName: s.booking.cleaningAssignment?.cleaner?.name ?? null,
+            }))}
+          />
+        </div>
+      )}
 
       <div style={{ ...glass, padding: "20px 24px" }}>
         <h2 style={h2}>Wartet auf Antwort ({chats.open.length})</h2>

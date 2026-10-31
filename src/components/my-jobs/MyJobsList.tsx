@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 import { RateBadge } from "@/components/ui/RateBadge";
+import { NoteBadge } from "@/components/ui/NoteBadge";
 export interface Assignment {
   id: string;
   status: string;
@@ -45,6 +46,7 @@ export interface Assignment {
 
 export interface OpenAssignment {
   id: string;
+  notes?: string | null;
   nextGuestCount?: number | null;
   /** Sondersatz, den ICH beim Zusagen bekäme */
   isPremium?: boolean;
@@ -412,8 +414,15 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
             {assignment.isPremium && assignment.premiumRate != null && <RateBadge rate={assignment.premiumRate} title={`${assignment.premiumRate.toFixed(0)} € für dich, wenn du übernimmst`} />}
             <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
+            {assignment.notes?.trim() && <NoteBadge />}
           </div>
         </div>
+        {assignment.notes?.trim() && (
+          <div style={{ padding: "10px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.30)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#fcd34d", marginBottom: 3 }}>⭐ Hinweis für die Reinigung</p>
+            <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", whiteSpace: "pre-wrap" as const }}>{assignment.notes}</p>
+          </div>
+        )}
         <div className="space-y-2" style={{ marginBottom: 16 }}>
           <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
             <Home style={{ width: 18, height: 18, color: "rgba(255,255,255,0.40)", marginTop: 2, flexShrink: 0 }} />
@@ -474,74 +483,10 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
     router.refresh();
   }
 
-  return (
-    <div style={{
-      background: isAbsage ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.14)",
-      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
-      border: isAbsage ? "1px solid rgba(239,68,68,0.40)" : isDone ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.22)",
-      borderRadius: 20, overflow: "hidden",
-    }}>
-      <div style={{ height: 4, backgroundColor: isAbsage ? "#ef4444" : aptColor }} />
-      <div style={{ padding: "16px 20px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
-          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
-            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
-            {assignment.isPremium && assignment.rate != null && <RateBadge rate={assignment.rate} />}
-            {!isCleaner && assignment.cleaner && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {assignment.cleaner.name}</span>}
-          </div>
-          {isDone && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}><CheckCircle style={{ width: 16, height: 16 }} /> Erledigt</span>}
-          {isAbsage && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#f87171", fontSize: 13, fontWeight: 700 }}><AlertTriangle style={{ width: 16, height: 16 }} /> Abgesagt</span>}
-        </div>
-
-        {takenByOther && (
-          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
-              Übernommen von {assignment.cleaner?.name ?? "jemand anderem"}
-            </p>
-          </div>
-        )}
-
-        {isCleaner && foreignDecline && (
-          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
-              Abgesagt von {assignment.cleaner?.name ?? "jemand anderem"} — du kannst übernehmen
-            </p>
-          </div>
-        )}
-
-        {isAbsage && assignment.cleanerUnavailableNote && (
-          <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, marginBottom: 12 }}>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>„{assignment.cleanerUnavailableNote}"</p>
-          </div>
-        )}
-
-        <div className="space-y-3">
-          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
-            <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
-            <div>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
-              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkIn)}</p>
-              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>
-                bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
-              </p>
-              {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
-            </div>
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
-            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
-          </div>
-          {/* Notiz aus dem Portal — Sonderwünsche wie Kinderbett, Haustiere */}
-          {b.channelNotice && (
-            <div style={{ padding: "10px 14px", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.28)", borderRadius: 10 }}>
-              <p style={{ fontSize: 12, fontWeight: 600, color: "#7dd3fc", marginBottom: 3 }}>Notiz vom Portal:</p>
-              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)", whiteSpace: "pre-wrap" as const }}>{b.channelNotice}</p>
-            </div>
-          )}
-
-          {/* Hinweise — Admin kann bearbeiten, Reiniger sieht nur Text */}
-          {!isCleaner && editingNotes ? (
+  // Hinweis für die Reinigung — steht, wenn vorhanden, ganz oben im Auftrag (Entscheidung Mathias 31.10.2026).
+  // Admin kann bearbeiten, Reiniger sieht nur den Text.
+  const notesBlock = (
+!isCleaner && editingNotes ? (
             <div style={{ padding: "12px 14px", background: "rgba(245,158,11,0.10)", border: "1px solid rgba(245,158,11,0.35)", borderRadius: 10 }}>
               <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 8 }}>Hinweis für Reiniger:</p>
               <textarea
@@ -588,8 +533,8 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
               <div>
                 {notesValue ? (
                   <>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: "#fcd34d", marginBottom: 3 }}>Hinweise:</p>
-                    <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)" }}>{notesValue}</p>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: "#fcd34d", marginBottom: 3 }}>⭐ Hinweis für die Reinigung</p>
+                    <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.9)", whiteSpace: "pre-wrap" as const }}>{notesValue}</p>
                   </>
                 ) : (
                   !isCleaner && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.30)" }}>Hinweis hinzufügen…</p>
@@ -599,7 +544,80 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
                 <Pencil style={{ width: 13, height: 13, color: "rgba(255,255,255,0.30)", flexShrink: 0, marginTop: 2 }} />
               )}
             </div>
+          )
+  );
+
+  return (
+    <div style={{
+      background: isAbsage ? "rgba(239,68,68,0.12)" : "rgba(255,255,255,0.14)",
+      backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)",
+      border: isAbsage ? "1px solid rgba(239,68,68,0.40)" : isDone ? "1px solid rgba(16,185,129,0.35)" : "1px solid rgba(255,255,255,0.22)",
+      borderRadius: 20, overflow: "hidden",
+    }}>
+      <div style={{ height: 4, backgroundColor: isAbsage ? "#ef4444" : aptColor }} />
+      <div style={{ padding: "16px 20px" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 14 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <span style={{ width: 10, height: 10, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block" }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: "rgba(255,255,255,0.65)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
+            {assignment.isPremium && assignment.rate != null && <RateBadge rate={assignment.rate} />}
+            {assignment.notes?.trim() && <NoteBadge />}
+            {!isCleaner && assignment.cleaner && <span style={{ fontSize: 12, color: "rgba(255,255,255,0.45)" }}>· {assignment.cleaner.name}</span>}
+          </div>
+          {isDone && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#6ee7b7", fontSize: 13, fontWeight: 600 }}><CheckCircle style={{ width: 16, height: 16 }} /> Erledigt</span>}
+          {isAbsage && <span style={{ display: "flex", alignItems: "center", gap: 5, color: "#f87171", fontSize: 13, fontWeight: 700 }}><AlertTriangle style={{ width: 16, height: 16 }} /> Abgesagt</span>}
+        </div>
+
+        {takenByOther && (
+          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Übernommen von {assignment.cleaner?.name ?? "jemand anderem"}
+            </p>
+          </div>
+        )}
+
+        {isCleaner && foreignDecline && (
+          <div style={{ padding: "8px 12px", background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.14)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.65)" }}>
+              Abgesagt von {assignment.cleaner?.name ?? "jemand anderem"} — du kannst übernehmen
+            </p>
+          </div>
+        )}
+
+        {isAbsage && assignment.cleanerUnavailableNote && (
+          <div style={{ padding: "8px 12px", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)", borderRadius: 10, marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.75)" }}>„{assignment.cleanerUnavailableNote}"</p>
+          </div>
+        )}
+
+        {(notesValue || editingNotes) && <div style={{ marginBottom: 12 }}>{notesBlock}</div>}
+
+        <div className="space-y-3">
+          <div style={{ display: "flex", alignItems: "flex-start", gap: 12 }}>
+            <Home style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", marginTop: 3, flexShrink: 0 }} />
+            <div>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)" }}>Reinigung</p>
+              <p style={{ fontSize: 24, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.15, marginTop: 2 }}>{formatDateLong(b.checkIn)}</p>
+              <p style={{ fontSize: 12, color: "rgba(255,255,255,0.38)", marginTop: 2 }}>
+                bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
+              </p>
+              {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
+            </div>
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <Users style={{ width: 20, height: 20, color: "rgba(255,255,255,0.40)", flexShrink: 0 }} />
+            <p style={{ fontSize: 15, fontWeight: 600, color: "rgba(255,255,255,0.85)" }}>{b.guestCount} {b.guestCount === 1 ? "Person" : "Personen"}</p>
+          </div>
+          {/* Notiz aus dem Portal — Sonderwünsche wie Kinderbett, Haustiere */}
+          {b.channelNotice && (
+            <div style={{ padding: "10px 14px", background: "rgba(56,189,248,0.10)", border: "1px solid rgba(56,189,248,0.28)", borderRadius: 10 }}>
+              <p style={{ fontSize: 12, fontWeight: 600, color: "#7dd3fc", marginBottom: 3 }}>Notiz vom Portal:</p>
+              <p style={{ fontSize: 14, color: "rgba(255,255,255,0.80)", whiteSpace: "pre-wrap" as const }}>{b.channelNotice}</p>
+            </div>
           )}
+
+          {/* Ohne Hinweis: Admin kann einen anlegen */}
+          {!notesValue && !editingNotes && !isCleaner && notesBlock}
         </div>
 
         {!isDone && !takenByOther && (

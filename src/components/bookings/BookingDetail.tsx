@@ -10,7 +10,8 @@ import { ScrollLock } from "@/components/ui/ScrollLock";
 import { RateBadge } from "@/components/ui/RateBadge";
 import { GuestChat } from "@/components/bookings/GuestChat";
 import { DogFeeCard } from "@/components/bookings/DogFeeCard";
-import { calculateLaundryQuantity, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { arrivalQuantity } from "@/lib/laundry-order";
 import { isGuestCountUnconfirmed } from "@/lib/guest-count";
 interface Cleaner {
   id: string;
@@ -57,6 +58,7 @@ interface Booking {
     status: string;
     isSelfClean: boolean;
     notes?: string | null;
+    extraBeds?: number;
     laundryStatus: string;
     laundryNotes?: string | null;
     laundryOrderId?: string | null;
@@ -144,7 +146,18 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const qty = calculateLaundryQuantity(booking.guestCount, booking.apartment);
+  const qty = arrivalQuantity({ guestCount: booking.guestCount, extraBeds: assignment?.extraBeds ?? 0, apartment: booking.apartment });
+
+  async function saveExtraBeds(n: number) {
+    const res = await fetch(`/api/bookings/${booking.id}/extra-beds`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extraBeds: n }),
+    });
+    setMessage(res.ok ? "✓ Zusatzbetten gespeichert" : "Fehler beim Speichern");
+    if (res.ok) router.refresh();
+    setTimeout(() => setMessage(""), 2500);
+  }
   const cleaningStatus = assignment?.status ?? "UNASSIGNED";
   const cleanerName    = assignment?.cleaner?.name;
 
@@ -371,10 +384,25 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
           </div>
         )}
 
-        {assignment?.notes && (
-          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 10, fontSize: 13, color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {assignment.notes}
+        {assignment?.notes?.trim() && (
+          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(245,158,11,0.10)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.30)" }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#fcd34d", marginBottom: 3 }}>⭐ Hinweis für die Reinigung</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)", whiteSpace: "pre-wrap" as const }}>{assignment.notes}</p>
           </div>
+        )}
+
+        {assignment && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+            Zusatzbetten (Zustellbett, Sofa als Bett)
+            <select
+              value={assignment.extraBeds ?? 0}
+              onChange={(e) => saveExtraBeds(Number(e.target.value))}
+              className="form-input"
+              style={{ width: 64, padding: "4px 8px", fontSize: 13 }}
+            >
+              {[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
         )}
 
         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
@@ -430,6 +458,7 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
           ))}
         </div>
         <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          {(assignment?.extraBeds ?? 0) > 0 && <>Inkl. {assignment?.extraBeds} Zusatzbett{(assignment?.extraBeds ?? 0) > 1 ? "en" : ""}. </>}
           Kommt aus dem Bestand im Keller.{" "}
           <Link href="/laundry" style={{ color: "#5EEAD4", fontWeight: 600, textDecoration: "none" }}>Bestand &amp; Bestellung →</Link>
         </p>
