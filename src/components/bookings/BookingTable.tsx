@@ -2,11 +2,15 @@ import Link from "next/link";
 import { formatDate } from "@/lib/utils";
 import { Users } from "lucide-react";
 import { RateBadge } from "@/components/ui/RateBadge";
+import { GuestCountUnknownBadge } from "@/components/ui/GuestCountUnknownBadge";
+import { isGuestCountUnconfirmed } from "@/lib/guest-count";
 
 interface Booking {
   id: string;
   guestName: string;
   guestCount: number;
+  guestCountUnknown?: boolean;
+  guestCountManual?: boolean;
   checkIn: Date;
   checkOut: Date;
   channelName?: string | null;
@@ -116,6 +120,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                         <Users style={{ width: 12, height: 12 }} />
                         {booking.guestCount}
                       </span>
+                      {isGuestCountUnconfirmed(booking) && <GuestCountUnknownBadge />}
                       <span>{formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}</span>
                       {booking.channelName && (
                         <span style={{ background: "rgba(255,255,255,0.08)", padding: "1px 6px", borderRadius: 6 }}>

@@ -1,5 +1,5 @@
 import type { ToolDef } from "./tool";
-import { wohnungenList, buchungenList, anreisenAbreisen, belegung } from "./tools/bookings";
+import { wohnungenList, buchungenList, gaestezahlOffen, anreisenAbreisen, belegung } from "./tools/bookings";
 import { umsatz, ortstaxe, auszahlungenReinigung } from "./tools/finance";
 import { reinigungen, syncStatus, wochenplan } from "./tools/cleaning";
 import { reinigungZuweisen, buchungNotiz, gaestezahlKorrigieren, syncAusloesen, reinigungStatus, waescheStatus } from "./tools/write";
@@ -14,6 +14,7 @@ export const TOOLS: ToolDef[] = [
   // Stufe 1 — lesen
   wohnungenList,
   buchungenList,
+  gaestezahlOffen,
   anreisenAbreisen,
   belegung,
   reinigungen,

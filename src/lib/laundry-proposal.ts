@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { addDays, todayVienna } from "./mcp/format";
 import { planLaundry, planningGuestCount, normalizeQuantity, DEFAULT_RESERVE } from "./laundry-order";
 import { logAudit } from "./audit";
+import { isGuestCountUnconfirmed } from "./guest-count";
 import type { LaundryQuantity } from "./laundry-quantity";
 import type { Actor } from "./booking-actions";
 
@@ -32,7 +33,10 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
     arrivals: rows.map((b) => {
       // Unbekannte Gästezahl (Booking.com) → volle Belegung annehmen, siehe planningGuestCount
       const g = planningGuestCount(b, b.apartment);
-      return { apartmentId: b.apartmentId, apartmentName: b.apartment.name, guestName: b.guestName, checkIn: b.checkIn, guestCount: g.guestCount, guestCountAssumed: g.assumed, apartment: b.apartment };
+      return {
+        apartmentId: b.apartmentId, apartmentName: b.apartment.name, guestName: b.guestName, checkIn: b.checkIn,
+        guestCount: g.guestCount, guestCountAssumed: g.assumed, guestCountUnconfirmed: isGuestCountUnconfirmed(b), apartment: b.apartment,
+      };
     }),
     count: count ? { countedOn: count.countedOn, quantities: normalizeQuantity(count.quantities) } : null,
     deliveries: deliveries.map((d) => ({

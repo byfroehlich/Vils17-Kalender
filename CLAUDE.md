@@ -388,6 +388,26 @@ je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug.
   ab heute erwartet). Migration: bisherige Lieferungen mit erreichtem Liefertag gelten als angekommen.
 - Tests: `tests/notifications-waesche.test.ts`, `tests/hunde-waesche.test.ts` (planLaundry, Ankunft).
 
+### Gästezahl unbestätigt (`src/lib/guest-count.ts`)
+
+Entscheidung Mathias 31.10.2026: Liefert ein Kanal (v.a. Booking.com über Smoobu) keine verlässliche
+Gästezahl, darf das **nicht still auf einen Notwert fallen** — es wird groß angezeigt und muss geklärt werden.
+- Erkennung im Sync: Smoobu ohne `adults` oder mit `adults = 0` → `Booking.guestCountUnknown = true`,
+  `guestCount` = Notwert 1 (+ Kinder). Bei jedem Sync neu gesetzt, solange nicht korrigiert.
+- **Unbestätigt** = `guestCountUnknown && !guestCountManual` (`isGuestCountUnconfirmed`, Filter
+  `UNCONFIRMED_GUEST_COUNT`). Quelle (`guestCountSource`): smoobu | von_hand | portal_mail | unbekannt.
+- Anzeige: roter Banner „Gästezahl unbekannt“ ganz oben im Dashboard (alle kommenden Buchungen, Link zur Buchung),
+  rotes Badge in Dashboard-Karten und Buchungsliste, roter Kasten im Buchungsdetail mit „… bestätigen“.
+- Push an Admin/Verwaltung **einmal je Buchung**, sobald die Anreise ≤ 30 Tage entfernt ist
+  (`guestCountReminderSentAt`, in `runReminders`); Tagesstatus nennt die Anzahl offener Gästezahlen (30 Tage).
+- Wäsche: Planung mit voller Belegung (siehe Wäsche-Abschnitt); Wäsche-Push und Dashboard-Hinweis sagen
+  „enthält N unbestätigte Gästezahl(en)“.
+- Klären: (a) Portal-Mail-Import trägt die Zahl ein — auch wenn sie dem Platzhalter entspricht, gilt sie dann als
+  bestätigt (`guestCountSource = "email"`); „Jetzt prüfen“ in den Einstellungen. (b) Eingabe/Bestätigen in der Buchung
+  (`setGuestCount`). (c) MCP: `buchungen_list` mit `gaestezahl_quelle`/`gaestezahl_bestaetigt`, Lese-Tool
+  `gaestezahl_offen`, dann `gaestezahl_korrigieren`.
+- Tests: `tests/gaestezahl.test.ts`.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für

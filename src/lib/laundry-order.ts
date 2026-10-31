@@ -41,6 +41,8 @@ export interface Arrival {
   guestCount: number;
   /** true = Gästezahl unbekannt, volle Belegung angenommen */
   guestCountAssumed?: boolean;
+  /** true = Gästezahl nicht bestätigt (Kanal lieferte keine, niemand hat sie geklärt) */
+  guestCountUnconfirmed?: boolean;
   apartment: LaundryConfig;
 }
 
@@ -101,6 +103,8 @@ export interface LaundryPlan {
     arrivals: { apartmentName: string; guestName: string; guestCount: number; guestCountAssumed: boolean }[];
   } | null;
   perApartment: { apartmentName: string; arrivals: number; guests: number; need: LaundryQuantity }[];
+  /** Anreisen im Zeitraum mit unbestätigter Gästezahl (Planung vorsichtig, aber unsicher) */
+  unconfirmedArrivals: number;
 }
 
 const KEYS = LAUNDRY_ITEMS.map((i) => i.key);
@@ -225,6 +229,7 @@ export function planLaundry(params: {
     shortBeforeDelivery: Array.from(short),
     firstShortage,
     perApartment: Array.from(byApt.values()),
+    unconfirmedArrivals: window.filter((a) => a.guestCountUnconfirmed).length,
   };
 }
 

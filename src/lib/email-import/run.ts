@@ -121,6 +121,11 @@ export async function runEmailImport(organizationId: string): Promise<EmailImpor
           data.guestCountManual = true;
           data.guestCountSource = "email";
           changes.push(`Gästezahl ${booking.guestCount} → ${parsed.guestCount}`);
+        } else if (!booking.guestCountManual) {
+          // Gleiche Zahl wie der Notwert/Smoobu-Wert — die Mail bestätigt sie (Warnung „Gästezahl unbekannt“ erlischt)
+          data.guestCountManual = true;
+          data.guestCountSource = "email";
+          changes.push(`Gästezahl ${parsed.guestCount} bestätigt`);
         }
       }
 
