@@ -518,6 +518,21 @@ am Vortag gereinigt werden kann.
   „Keine Vorgäste davor – Wohnung frei“.
 - Tests: `tests/abreisen.test.ts`.
 
+### Schlafzimmer-Frage bei 2 Gästen (`src/lib/bedroom-question.ts`)
+Entscheidung Mathias 31.10.2026: In Wohnungen mit `Apartment.askSeparateBedrooms = true` (per Migration nur das
+Penthouse) bekommt jede künftige Buchung (Anreise ab morgen) mit **genau 2 bestätigten Gästen** (nicht
+`isGuestCountUnconfirmed`) **einmal** eine feste Nachricht über Smoobu (`sendGuestMessage`):
+ein Schlafzimmer oder getrennt in beiden? Texte DE/EN **wörtlich** wie freigegeben in `BEDROOM_QUESTION_TEXT`
+(Platzhalter = erstes Wort des Gastnamens) — nicht ändern ohne neue Freigabe.
+- Sprache: Englisch, wenn der Portal-Hinweis „Sprache des Gastes: <xx>“ mit xx ≠ de enthält, sonst Deutsch.
+- Einmal je Buchung: `Booking.bedroomQuestionSentAt` wird vor dem Senden atomar gesetzt; lehnt Smoobu mit Status ab,
+  wird es zurückgesetzt (nächster Lauf versucht erneut), bei unklarem Netzfehler bleibt es gesetzt (lieber nicht doppelt).
+- Läuft in `runAutoSync` (App-Takt), nicht zwischen 21 und 7 Uhr Wien. Audit `guest.message.sent` mit
+  `zweck: "schlafzimmer_frage"`, Sprache, Zeichenzahl — nie der Text.
+- Michèle Podkowa (`cmsws2o2u001j2e0f89k4fwaa`) wurde am 31.10.2026 von Hand gefragt → per Migration als gesendet markiert.
+- Antworten („lieber getrennt“, „separate bedrooms“) erkennt die Sonderwunsch-Erkennung als Hinweis-Vorschlag.
+- Tests: `tests/schlafzimmer-frage.test.ts`.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {
