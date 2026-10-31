@@ -11,6 +11,7 @@ import { formatDate } from "@/lib/utils";
 import { listNoteSuggestions } from "@/lib/note-suggestions";
 import { NoteSuggestionsBox } from "@/components/messages/NoteSuggestionsBox";
 import { ChatDoneButton } from "@/components/messages/ChatDoneButton";
+import { formatMessageTime } from "@/lib/message-seen";
 
 export const dynamic = "force-dynamic";
 
@@ -68,6 +69,7 @@ export default async function MessagesPage() {
               <Link href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
                 <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{b.apartment.name} · {b.channelName ?? "Direkt"} · {formatDate(b.checkIn)}–{formatDate(b.checkOut)}</div>
                 <div style={{ fontWeight: 700, margin: "2px 0" }}>{b.guestName}</div>
+                <div style={{ fontSize: 12, color: last.time?.at ? "#fcd34d" : "rgba(255,255,255,0.45)", marginBottom: 2 }}>🕒 {formatMessageTime(last.time)}</div>
                 <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{last.text}</div>
               </Link>
               <div style={{ marginTop: 8 }}><ChatDoneButton bookingId={b.id} messageId={last.id} /></div>

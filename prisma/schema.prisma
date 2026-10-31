@@ -544,3 +544,17 @@ model NoteSuggestion {
   @@index([organizationId, status])
   @@map("note_suggestions")
 }
+
+/// Wann eine Gästenachricht zum ersten Mal gesehen wurde (Smoobu liefert keinen Zeitpunkt je Nachricht).
+/// initial = beim ersten Abruf des Chats schon vorhanden → Zeitpunkt unbekannt (älter).
+model GuestMessageSeen {
+  id             String   @id @default(cuid())
+  organizationId String
+  bookingId      String
+  messageId      String
+  firstSeenAt    DateTime @default(now())
+  initial        Boolean  @default(false)
+
+  @@unique([organizationId, bookingId, messageId])
+  @@index([bookingId])
+}

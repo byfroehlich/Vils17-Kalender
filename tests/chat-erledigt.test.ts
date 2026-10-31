@@ -10,7 +10,7 @@ import { fetchGuestMessages } from "@/lib/guest-messages";
 import { findUnansweredChats, markChatDone } from "@/lib/guest-chat-overview";
 
 let world: Awaited<ReturnType<typeof seedWorld>>;
-const msg = (id: string, von: "gast" | "gastgeber") => ({ id, von, text: `Nachricht ${id}`, betreff: null });
+const msg = (id: string, von: "gast" | "gastgeber") => ({ id, von, text: `Nachricht ${id}`, betreff: null, zeit: null });
 
 beforeEach(async () => {
   vi.useFakeTimers({ toFake: ["Date"] });

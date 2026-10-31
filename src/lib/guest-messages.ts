@@ -44,6 +44,19 @@ export interface GuestMessage {
   von: "gast" | "gastgeber";
   betreff: string | null;
   text: string;
+  /** Zeitpunkt laut Smoobu (ISO), falls die Antwort einen liefert — die öffentliche Doku nennt keinen */
+  zeit: string | null;
+}
+
+const TIME_FIELDS = ["createdAt", "created_at", "sentAt", "sent_at", "date", "created", "timestamp"] as const;
+function messageTime(m: Record<string, unknown>): string | null {
+  for (const f of TIME_FIELDS) {
+    const v = m[f];
+    if (typeof v !== "string" && typeof v !== "number") continue;
+    const d = typeof v === "number" ? new Date(v < 1e12 ? v * 1000 : v) : new Date(v.includes("T") || v.includes("Z") ? v : v.replace(" ", "T"));
+    if (!Number.isNaN(d.getTime())) return d.toISOString();
+  }
+  return null;
 }
 
 /** HTML grob zu Text, falls Smoobu keinen Klartext liefert */
@@ -68,6 +81,7 @@ function normalize(m: z.infer<typeof messageSchema>): GuestMessage {
     von: Number(m.type) === 1 ? "gast" : "gastgeber",
     betreff: m.subject?.trim() || null,
     text,
+    zeit: messageTime(m as Record<string, unknown>),
   };
 }
 

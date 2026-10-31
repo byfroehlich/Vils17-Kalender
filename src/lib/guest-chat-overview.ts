@@ -2,6 +2,7 @@ import { prisma } from "./prisma";
 import { fetchGuestMessages, lastMessage } from "./guest-messages";
 import { addDays, todayVienna } from "./mcp/format";
 import { logAudit } from "./audit";
+import { recordSeen, type MessageTime } from "./message-seen";
 
 // Chats, bei denen die letzte Nachricht vom Gast kommt — gemeinsam für die
 // Seite „Gästechat“ und das MCP-Tool offene_gaestenachrichten.
@@ -30,14 +31,15 @@ export async function findUnansweredChats(params: { organizationId: string; days
     },
   });
 
-  const open: { booking: (typeof rows)[number]; last: { id: string; text: string; betreff: string | null } }[] = [];
+  const open: { booking: (typeof rows)[number]; last: { id: string; text: string; betreff: string | null; time: MessageTime | null } }[] = [];
   const errors: { booking: (typeof rows)[number]; error: string }[] = [];
   for (const b of rows.slice(0, MAX_CHATS)) {
     try {
       const { messages } = await fetchGuestMessages(b.smoobuId as number, 3);
       const last = lastMessage(messages);
+      const times = await recordSeen(params.organizationId, b.id, messages).catch(() => null);
       // „Erledigt – keine Antwort nötig“ gilt nur bis zur markierten Nachricht; schreibt der Gast erneut, ist der Chat wieder offen.
-      if (last?.von === "gast" && last.id !== b.chatDoneMessageId) open.push({ booking: b, last: { id: last.id, text: last.text, betreff: last.betreff } });
+      if (last?.von === "gast" && last.id !== b.chatDoneMessageId) open.push({ booking: b, last: { id: last.id, text: last.text, betreff: last.betreff, time: times?.get(last.id) ?? null } });
     } catch (err) {
       errors.push({ booking: b, error: err instanceof Error ? err.message : String(err) });
     }
