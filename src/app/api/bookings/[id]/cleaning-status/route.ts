@@ -3,9 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { z } from "zod";
 import { setCleaningStatus, ActionError } from "@/lib/booking-actions";
+import { checkSchema, recordCleaningCheck, parsePhoto, IssueError } from "@/lib/issues";
 
 const schema = z.object({
   status: z.enum(["UNASSIGNED", "SELF_CLEAN", "ASSIGNED", "COMPLETED"]),
+  /** Pflicht-Check beim Erledigen (Inventar, Verbrauchsmaterial) — für Reinigungskräfte Pflicht */
+  check: checkSchema.optional(),
 });
 
 export async function PATCH(
@@ -25,12 +28,23 @@ export async function PATCH(
   const body = await req.json();
   const parsed = schema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: "Ungültige Daten" }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message ?? "Ungültige Daten" }, { status: 400 });
   }
 
   // CLEANER darf nur COMPLETED setzen (nicht zurücksetzen)
   if (isCleaner && parsed.data.status !== "COMPLETED") {
     return NextResponse.json({ error: "Nicht autorisiert" }, { status: 401 });
+  }
+
+  // Reinigungskräfte müssen beim Erledigen die Fragen zu Inventar und Verbrauchsmaterial beantworten
+  if (isCleaner && parsed.data.status === "COMPLETED" && !parsed.data.check) {
+    return NextResponse.json({ error: "Bitte zuerst Inventar und Verbrauchsmaterial bestätigen." }, { status: 400 });
+  }
+  try {
+    parsePhoto(parsed.data.check?.damagePhoto); // Foto vorab prüfen, bevor der Status sich ändert
+  } catch (err) {
+    if (err instanceof IssueError) return NextResponse.json({ error: err.message }, { status: 400 });
+    throw err;
   }
 
   try {
@@ -43,6 +57,14 @@ export async function PATCH(
       // CLEANER: nur eigene Aufträge
       ...(isCleaner ? { onlyCleanerId: session.user.id } : {}),
     });
+    if (parsed.data.status === "COMPLETED" && parsed.data.check) {
+      await recordCleaningCheck({
+        organizationId: session.user.organizationId,
+        bookingId: params.id,
+        check: parsed.data.check,
+        actor: { userId: session.user.id, name: session.user.name },
+      });
+    }
     return NextResponse.json({ success: true, assignment: updated });
   } catch (err) {
     if (err instanceof ActionError) return NextResponse.json({ error: err.message }, { status: err.status });

@@ -60,6 +60,7 @@ model Organization {
   mcpTokens    McpToken[]
   laundryCounts     LaundryCount[]
   laundryDeliveries LaundryDelivery[]
+  issues            Issue[]
 
   @@map("organizations")
 }
@@ -373,6 +374,9 @@ model CleaningAssignment {
   /// Warnung (Startfehler, Störung, zu lange) bereits gemeldet — nur einmal pro Auftrag
   dreameWarnedAt  DateTime?
 
+  /// Inventar-/Verbrauchs-Check beim Erledigen beantwortet
+  checkedAt       DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -454,4 +458,31 @@ model LaundryDelivery {
 
   @@index([organizationId, deliveryOn])
   @@map("laundry_deliveries")
+}
+
+// Mangel am Inventar oder Verbrauchsmaterial zum Nachkaufen — von der Reinigung beim
+// „Erledigt“ gemeldet oder von Hand erfasst. Hängt am Aufenthalt davor (Verursacher-
+// Zuordnung, Meldefristen der Portale: Airbnb 14 Tage nach Abreise).
+model Issue {
+  id                String       @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  apartmentId       String
+  /// "DAMAGE" (Schaden/Mangel) | "SUPPLY" (Verbrauchsmaterial nachkaufen)
+  kind              String
+  text              String
+  /// Reinigungsauftrag, bei dem gemeldet wurde (Reinigung vor der Anreise von bookingId)
+  assignmentId      String?
+  /// Aufenthalt davor = möglicher Verursacher
+  previousBookingId String?
+  photo             Bytes?
+  photoType         String?
+  reportedById      String?
+  reportedByName    String?
+  createdAt         DateTime     @default(now())
+  doneAt            DateTime?
+  doneNote          String?
+
+  @@index([organizationId, doneAt])
+  @@map("issues")
 }

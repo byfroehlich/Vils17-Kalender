@@ -6,6 +6,7 @@ import { reinigungZuweisen, buchungNotiz, gaestezahlKorrigieren, syncAusloesen, 
 import { gaesteNachrichten, offeneGaestenachrichten, gastAntworten } from "./tools/guests";
 import { hundeUebersicht, hundePruefen, hundeEintragen, hundegebuehrAnfordern, hundegebuehrStatus } from "./tools/pets";
 import { postfach, mailLesen, mailSenden } from "./tools/mail";
+import { maengel, mangelErfassen } from "./tools/issues";
 import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheReserve, waescheBetten } from "./tools/laundry";
 
 /** Alle Tools der Schnittstelle. tools/list zeigt nur die, deren Scope das Token hat. */
@@ -27,6 +28,7 @@ export const TOOLS: ToolDef[] = [
   waescheBedarf,
   postfach,
   mailLesen,
+  maengel,
   // Stufe 2 — schreiben (nur mit "bestaetigt": true)
   reinigungZuweisen,
   buchungNotiz,
@@ -44,6 +46,7 @@ export const TOOLS: ToolDef[] = [
   waescheReserve,
   waescheBetten,
   mailSenden,
+  mangelErfassen,
 ] as unknown as ToolDef[];
 
 export function findTool(name: string): ToolDef | undefined {
