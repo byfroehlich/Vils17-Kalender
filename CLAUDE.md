@@ -630,14 +630,18 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 
 ## Geplante Features (später)
 
-### Saugroboter-Automatisierung (Dreame Wischi X50 Ultra)
-- Gerät: **Dreame Wischi X50 Ultra**, gesteuert über Dreame Home App
-- Dreame Konto-ID: **CT115077**
-- Ziel: Roboter startet automatisch um 10:00 Uhr an jedem Abreisetag
-- Umsetzung: Render-Cron um 10:00 prüft ob heute Checkout-Tag → schickt Start-Befehl an Dreame Cloud API
-- Benötigt als Render-Umgebungsvariablen: `DREAME_EMAIL`, `DREAME_PASSWORD`
-- Zuständig für: **Penthouse No. 17 – Vils** (apartmentId beim Sync ermitteln)
-- Die Dreame Cloud API ist nicht offiziell dokumentiert, aber gut bekannt aus Open-Source-Projekten (python-dreame, HA-Integration)
+### Saugroboter (Dreame) — umgesetzt (`src/lib/dreame.ts`, `src/lib/dreame-runner.ts`)
+Entscheidung Mathias 31.10.2026: Start **um 10:00 Uhr am Abreisetag** (Check-out-Zeit), egal wann
+die Gäste tatsächlich gehen. Roboter steht nur im **Penthouse** (`Apartment.dreameEnabled`, Schalter
+in Einstellungen → Unterkunft).
+- `runDreame` ist idempotent: ab 10:00 einmal starten (`dreameStartedAt`), danach Status prüfen →
+  fertig (`dreameDoneAt`) bzw. Warnung bei Startfehler, Störung (Status 4), > 3 h Laufzeit oder fehlenden
+  Zugangsdaten — je Auftrag nur einmal (`dreameWarnedAt`). Push an Admin/Verwaltung + Audit.
+- Auslöser: `POST /api/cron/dreame` (Cron alle 15 Min, `x-cron-secret`) und als Rückfallebene `runAutoSync`.
+  `/api/cron/dreame-start` und `-status` leiten dorthin weiter.
+- ENV: `DREAME_EMAIL`, `DREAME_PASSWORD`, optional `DREAME_DEVICE_ID`. Dreame-Cloud ist inoffiziell
+  (nachgebaut) — kann sich ohne Vorwarnung ändern; dann kommt eine Warnung, nichts geht kaputt.
+- Tests: `tests/dreame.test.ts`.
 
 ### Reinigungsstatistik
 - Welche Reinigungskraft wie oft im Einsatz
