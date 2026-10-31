@@ -424,9 +424,10 @@ Regeln:
 - Tests: `tests/mailbox.test.ts` (gefälschter IMAP-Server, abgefangener SMTP).
 
 ### Mängel & Einkauf (`src/lib/issues.ts`, Seite `/issues` „Mängel“)
-Entscheidung Mathias 31.10.2026: Beim „Erledigt“ muss die Reinigungskraft zwei Pflichtfragen beantworten
+Entscheidung Mathias 31.10.2026: Beim „Erledigt“ muss die Reinigungskraft drei Pflichtfragen beantworten
 (`CompletionCheckDialog`): Ist alles heil? (sonst Text + optional Foto) und Muss Verbrauchsmaterial
-nachgekauft werden? (sonst Text). Ohne Antworten lehnt `cleaning-status` das Erledigen für CLEANER ab.
+nachgekauft werden? (sonst Text) und Duschabflüsse geprüft? (bodentiefe Duschen setzen sich schnell zu;
+sonst Text → Mangel „Abfluss: …“, Ergänzung 31.10.2026). Ohne Antworten lehnt `cleaning-status` das Erledigen für CLEANER ab.
 - Jede Meldung = `Issue` (DAMAGE | SUPPLY), hängt am **Aufenthalt davor** (`previousBookingId`, möglicher
   Verursacher). Bei Airbnb wird die Frist „Gast anschreiben bis Abreise + 14 Tage“ angezeigt.
 - Push sofort an Admin/Verwaltung; Foto in der DB (verkleinert, max. 3 MB), Abruf nur Admin/Verwaltung.

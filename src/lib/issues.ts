@@ -34,7 +34,10 @@ export const checkSchema = z.object({
   damagePhoto: z.string().max(5_000_000).optional(),
   suppliesOk: z.boolean(),
   supplies: z.string().trim().max(1000).optional(),
+  drainsOk: z.boolean(),
+  drain: z.string().trim().max(1000).optional(),
 }).strict().superRefine((v, ctx) => {
+  if (!v.drainsOk && !v.drain) ctx.addIssue({ code: "custom", path: ["drain"], message: "Bitte beschreiben, welcher Abfluss schlecht läuft." });
   if (!v.inventoryOk && !v.damage) ctx.addIssue({ code: "custom", path: ["damage"], message: "Bitte kurz beschreiben, was kaputt ist oder fehlt." });
   if (!v.suppliesOk && !v.supplies) ctx.addIssue({ code: "custom", path: ["supplies"], message: "Bitte angeben, was nachgekauft werden muss." });
 });
@@ -96,13 +99,18 @@ export async function recordCleaningCheck(params: {
     await prisma.issue.create({ data: { ...base, kind: "SUPPLY", text: params.check.supplies } });
     created.push({ kind: "SUPPLY", text: params.check.supplies });
   }
+  if (!params.check.drainsOk && params.check.drain) {
+    const text = `Abfluss: ${params.check.drain}`;
+    await prisma.issue.create({ data: { ...base, kind: "DAMAGE", text } });
+    created.push({ kind: "DAMAGE", text });
+  }
   await prisma.cleaningAssignment.update({ where: { id: assignment.id }, data: { checkedAt: new Date() } });
   for (const c of created) await notify(params.organizationId, assignment.booking.apartment.name, c.kind, c.text, params.actor.name ?? null);
   if (created.length) {
     await logAudit({
       organizationId: params.organizationId, userId: params.actor.userId, action: "issue.reported",
       entityType: "CleaningAssignment", entityId: assignment.id,
-      details: { schaden: created.some((c) => c.kind === "DAMAGE"), nachkaufen: created.some((c) => c.kind === "SUPPLY"), foto: Boolean(photo) },
+      details: { schaden: created.some((c) => c.kind === "DAMAGE"), abfluss: !params.check.drainsOk, nachkaufen: created.some((c) => c.kind === "SUPPLY"), foto: Boolean(photo) },
     });
   }
   return { created: created.length };
