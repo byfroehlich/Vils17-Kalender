@@ -370,6 +370,8 @@ model CleaningAssignment {
   // Dreame Saugroboter
   dreameStartedAt DateTime?
   dreameDoneAt    DateTime?
+  /// Warnung (Startfehler, Störung, zu lange) bereits gemeldet — nur einmal pro Auftrag
+  dreameWarnedAt  DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
