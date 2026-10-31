@@ -482,6 +482,27 @@ sonst Text → Mangel „Abfluss: …“, Ergänzung 31.10.2026). Ohne Antworten
 - Admin kann Einträge von Hand anlegen und erledigen; MCP `maengel` (cleaning:read), `mangel_erfassen` (cleaning:write).
 - Audit ohne Freitext. Tests: `tests/issues.test.ts`.
 
+### Hinweis für die Reinigung & Sonderwünsche (`src/lib/special-requests.ts`, `src/lib/note-suggestions.ts`)
+Entscheidung Mathias 31.10.2026: **ein Feld** — `CleaningAssignment.notes` = „Hinweis für die Reinigung“
+(kein eigenes Sonderwunsch-Feld). Bestehende Hinweise bleiben unverändert.
+- **Markierung:** Aufträge mit Hinweis tragen das Badge `NoteBadge` („⭐ Hinweis“, bernsteinfarben) in allen Auftrags-
+  ansichten (MyJobsList, MyJobsCalendar, CleanerDashboard, CleaningSchedule, UpcomingBookings, BookingTable);
+  der Text steht ganz oben im Auftrag bzw. im Buchungsdetail. Aufträge ohne Hinweis sehen aus wie vorher.
+- **Quelle Gästechat:** Mathias pflegt Hinweise nicht von Hand. `scanNoteSuggestions` (in `runAutoSync`, gedrosselt
+  über `Organization.noteScanAt`, 30 Min) liest die Smoobu-Chats der Anreisen der nächsten 60 Tage; Stichwörter
+  DE + EN stehen nur in `special-requests.ts` (Kinderbett, Hochstuhl, Zustellbett, Sofa als Bett, getrennt/beide
+  Schlafzimmer, früher Check-in, später Check-out …; Verneinung davor zählt nicht). Je Gastnachricht höchstens ein
+  `NoteSuggestion` (unique `organizationId + messageId`), Status PENDING → ACCEPTED/REJECTED, Auszug ≤ 200 Zeichen.
+  Push an Admin/Verwaltung „Sonderwunsch erkannt: <Wohnung> <Anreisetag> – übernehmen?“.
+- **Bestätigen:** Seite `/messages` („Gäste“) Kasten „Hinweise für die Reinigung bestätigen“ (Text änderbar,
+  Zusatzbetten) → `POST /api/note-suggestions/[id]`; MCP `hinweis_vorschlaege` (messages:read), `hinweis_uebernehmen`
+  (cleaning:write, `bestaetigt`, `verwerfen`). Übernehmen hängt an `notes` an (nicht doppelt) und schickt der
+  zugewiesenen Reinigungskraft eine Push-Nachricht. Audit ohne Nachrichtentext.
+- **Zusatzbetten:** `CleaningAssignment.extraBeds` (0–3), beim Übernehmen oder im Buchungsdetail
+  (`PATCH /api/bookings/[id]/extra-beds`, `setExtraBeds`). `arrivalQuantity` rechnet je Zusatzbett ein
+  90er Spannbettlaken, einen Bett- und einen Kissenbezug dazu (planLaundry, Buchungsdetail).
+- Tests: `tests/hinweise.test.ts`.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {
