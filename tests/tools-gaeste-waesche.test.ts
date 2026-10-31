@@ -92,7 +92,7 @@ describe("gaeste_nachrichten", () => {
 
     const c = calls[0]!;
     expect(c.method).toBe("GET");
-    expect(new URL(c.url).searchParams.get("onlyRelatedToGuest")).toBe("true");
+    expect(new URL(c.url).searchParams.get("onlyRelatedToGuest")).toBe("false");
     expect(c.headers["X-API-Key"]).toBe("key-test");
     expect(c.headers["X-Signature"]).toBeTruthy();
     expect(c.headers["Api-Key"]).toBeUndefined();

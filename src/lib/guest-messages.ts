@@ -96,7 +96,9 @@ export async function fetchGuestMessages(smoobuId: number, maxPages = 5): Promis
   do {
     const url = new URL(`${SMOOBU_API_BASE}/reservations/${smoobuId}/messages`);
     url.searchParams.set("page", String(page));
-    url.searchParams.set("onlyRelatedToGuest", "true");
+    // "true" liefert nur Nachrichten VOM Gast (Typ 1) — unsere eigenen (Typ 2) fehlten dann im Chat
+    // und jeder Chat galt als unbeantwortet. Deshalb alle Nachrichten der Buchung holen.
+    url.searchParams.set("onlyRelatedToGuest", "false");
     const res = await smoobuRequest("GET", url.toString());
     if (!res.ok) {
       throw new GuestMessageError(
