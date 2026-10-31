@@ -26,7 +26,7 @@ const adminManagerItems: NavItem[] = [
   { href: "/calendar",   label: "Kalender",      icon: Calendar,        noClean: true, mobileOrder: 4 },
   { href: "/mail",       label: "Post",          icon: Mail,            noClean: true, mobileOrder: 5, mobileMore: true },
   { href: "/messages",   label: "Gäste",         icon: MessageCircle,   noClean: true, mobileOrder: 5, mobileMore: true },
-  { href: "/issues",     label: "Mängel",        icon: Wrench,          noClean: true, mobileOrder: 6, mobileMore: true },
+  { href: "/issues",     label: "Mängel",        icon: Wrench,          noClean: true, mobileOrder: 5 },
   { href: "/laundry",    label: "Wäsche",        icon: WashingMachine,  noClean: true, mobileOrder: 6, mobileMore: true },
   { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 7, mobileMore: true },
   { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 8, mobileMore: true },

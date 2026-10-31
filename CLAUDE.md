@@ -370,7 +370,7 @@ je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug.
 - Einziges Wäsche-Signal: **„Wäsche reicht nicht ab <Tag> – bestellen“**, wenn `planLaundry` für die nächsten
   14 Tage (`LAUNDRY_ALERT_DAYS`) eine Bestellmenge > 0 oder einen Engpass vor einer Lieferung meldet
   (`laundryAlert`). `plan.firstShortage` = erster Anreisetag, an dem ein betroffenes Teil unter die Reserve fällt,
-  mit den Anreisen dieses Tages (Wohnung, Gäste). Dashboard-Hinweis (rot bei Engpass ≤ 3 Tage), Wochenplan-Warnung
+  mit den Anreisen dieses Tages (Wohnung, Gäste). Zeile „Wäsche bestellen“ in „Zu erledigen“ (rot bei Engpass ≤ 3 Tage, öffnet `/laundry` mit Bestellmenge je Teil und „Bestand reicht bis …“), Wochenplan-Warnung
   `waesche_reicht_nicht`, Push an Admin/Verwaltung. Ohne erfassten Bestand keine Warnung, nur Hinweis „Bestand erfassen“.
 - **Push dynamisch je Lage** (Saison: laufend kurzfristige Buchungen/Stornos): Fingerabdruck aus erstem Engpasstag,
   betroffenen Teilen, Bestellmenge und Engpässen vor Lieferung in `Organization.laundryAlertKey`. Gleiche Lage →
@@ -396,7 +396,7 @@ Gästezahl, darf das **nicht still auf einen Notwert fallen** — es wird groß 
   `guestCount` = Notwert 1 (+ Kinder). Bei jedem Sync neu gesetzt, solange nicht korrigiert.
 - **Unbestätigt** = `guestCountUnknown && !guestCountManual` (`isGuestCountUnconfirmed`, Filter
   `UNCONFIRMED_GUEST_COUNT`). Quelle (`guestCountSource`): smoobu | von_hand | portal_mail | unbekannt.
-- Anzeige: roter Banner „Gästezahl unbekannt“ ganz oben im Dashboard (alle kommenden Buchungen, Link zur Buchung),
+- Anzeige: Zeile „Gästezahl unbekannt“ in der Dashboard-Karte „Zu erledigen“ (rot bei Anreise ≤ 7 Tage, Link zur Buchung),
   rotes Badge in Dashboard-Karten und Buchungsliste, roter Kasten im Buchungsdetail mit „… bestätigen“.
 - Push an Admin/Verwaltung **einmal je Buchung**, sobald die Anreise ≤ 30 Tage entfernt ist
   (`guestCountReminderSentAt`, in `runReminders`); Tagesstatus nennt die Anzahl offener Gästezahlen (30 Tage).
@@ -532,6 +532,21 @@ ein Schlafzimmer oder getrennt in beiden? Texte DE/EN **wörtlich** wie freigege
 - Michèle Podkowa (`cmsws2o2u001j2e0f89k4fwaa`) wurde am 31.10.2026 von Hand gefragt → per Migration als gesendet markiert.
 - Antworten („lieber getrennt“, „separate bedrooms“) erkennt die Sonderwunsch-Erkennung als Hinweis-Vorschlag.
 - Tests: `tests/schlafzimmer-frage.test.ts`.
+
+### Dashboard „Zu erledigen“ (`src/lib/todo.ts`, `TodoCard`, `WeekCard`)
+Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltung, Mathias' Mutter), ruhig und klar:
+- **Oben EINE Karte „Zu erledigen“** (`loadTodos`), eine Zeile je Punkt, Tipp öffnet den Punkt, sortiert nach
+  Farbe (rot → bernstein → neutral), dann Termin, dann Art (`sortTodos`). Punkte: Absagen (rot), Reinigung ohne
+  Reinigungskraft (14 Tage; rot ≤ 3 Tage), Wäsche bestellen (rot bei Engpass ≤ 3 Tage; ohne Zählung neutral
+  „Bestand erfassen“), Gästezahl unbekannt (rot ≤ 7 Tage), offene Mängel (Schaden/Abfluss bernstein, Einkauf neutral,
+  📷 bei Foto), Hinweise bestätigen (→ `/messages#hinweise`), unbeantwortete Gästechats (Smoobu, Zeitbudget
+  `CHAT_CHECK_BUDGET_MS`; sonst Hinweis „konnten nicht geprüft werden“), Hundegebühren (anfordern bernstein,
+  angefordert neutral). Leer → „✓ Alles erledigt“. Die Karte lädt per `Suspense`, der Rest erscheint sofort.
+- **Darunter „Diese Woche“** (`loadWeek`, heute + 6 Tage): Abreisen, Anreisen, Reinigung mit Reinigungskraft und ⭐.
+- Entfernt: StatsCards, WarningBanner, AbsagenBanner, GuestCountBanner, LaundryStockHint, WeekStrip,
+  UpcomingBookings, CleaningToday. Sync-Stand (`SyncButton`) bleibt. Keine Finanzzahlen auf dem Dashboard.
+- Navigation: „Mängel“ steht in der mobilen Hauptleiste (nicht mehr unter „Mehr“).
+- Tests: `tests/zu-erledigen.test.ts`.
 
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
@@ -682,7 +697,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - Smoobu Webhook eingerichtet (Echtzeit-Updates bei neuer Buchung)
 - Cron-Job alle 15 Min (render.yaml)
 - Channel Manager Adapter Pattern (`src/lib/channel-manager/`)
-- Dashboard: Stats-Karten, Buchungsliste, 14-Tage-Warnbanner, Dreher-Warnung
+- Dashboard: seit 31.10.2026 „Zu erledigen“ + „Diese Woche“ (siehe oben)
 - Kalender: durchgehende Buchungsbalken mit Farbwechsel, getrennte/gemeinsame Ansicht
 - Einstellungen-Seite: Apartment-Name, Farbe, löschen; Kalenderansicht konfigurieren
 - CleaningAssignment wird automatisch bei jedem neuen Import erstellt
