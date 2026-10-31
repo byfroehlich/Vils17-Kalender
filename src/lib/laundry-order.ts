@@ -43,7 +43,24 @@ export interface Arrival {
   guestCountAssumed?: boolean;
   /** true = Gästezahl nicht bestätigt (Kanal lieferte keine, niemand hat sie geklärt) */
   guestCountUnconfirmed?: boolean;
+  /** Zusatzbetten für diese Anreise (CleaningAssignment.extraBeds, 0–3) */
+  extraBeds?: number;
   apartment: LaundryConfig;
+}
+
+/**
+ * Wäsche einer Anreise inkl. Zusatzbetten (Entscheidung Mathias 31.10.2026): je Zusatzbett
+ * (Zustellbett, Sofa als Bett) ein 90er Spannbettlaken, ein Bett- und ein Kissenbezug.
+ */
+export function arrivalQuantity(a: Pick<Arrival, "guestCount" | "extraBeds" | "apartment">): LaundryQuantity {
+  const q = calculateLaundryQuantity(a.guestCount, a.apartment);
+  const extra = Math.max(0, Math.min(3, a.extraBeds ?? 0));
+  if (extra) {
+    q.sheets90 += extra;
+    q.duvetCovers += extra;
+    q.pillowCases += extra;
+  }
+  return q;
 }
 
 /**
@@ -127,7 +144,7 @@ function combine(a: LaundryQuantity, b: LaundryQuantity, sign = 1): LaundryQuant
 }
 
 function usage(arrivals: Arrival[]): LaundryQuantity {
-  return arrivals.reduce((sum, a) => combine(sum, calculateLaundryQuantity(a.guestCount, a.apartment)), emptyLaundryQuantity());
+  return arrivals.reduce((sum, a) => combine(sum, arrivalQuantity(a)), emptyLaundryQuantity());
 }
 
 const t = (d: Date) => d.getTime();
@@ -212,7 +229,7 @@ export function planLaundry(params: {
     const cur = byApt.get(a.apartmentId) ?? { apartmentName: a.apartmentName, arrivals: 0, guests: 0, need: emptyLaundryQuantity() };
     cur.arrivals++;
     cur.guests += a.guestCount;
-    cur.need = combine(cur.need, calculateLaundryQuantity(a.guestCount, a.apartment));
+    cur.need = combine(cur.need, arrivalQuantity(a));
     byApt.set(a.apartmentId, cur);
   }
 
