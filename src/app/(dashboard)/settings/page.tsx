@@ -48,6 +48,17 @@ export default async function SettingsPage() {
       <EmailImportCard />
 
       <Link
+        href="/settings/push"
+        style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 16, padding: "14px 18px", textDecoration: "none" }}
+      >
+        <span>
+          <span style={{ display: "block", fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>Push-Benachrichtigungen</span>
+          <span style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.45)", marginTop: 2 }}>Wer hat ein Gerät angemeldet, was wurde wann zugestellt</span>
+        </span>
+        <span style={{ color: "rgba(255,255,255,0.4)" }}>›</span>
+      </Link>
+
+      <Link
         href="/settings/schnittstelle"
         style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.10)", borderRadius: 16, padding: "14px 18px", textDecoration: "none" }}
       >

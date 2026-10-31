@@ -48,7 +48,7 @@ describe("/api/mcp", () => {
     const list = await call("tools/list");
     const names = list.body.result.tools.map((t: any) => t.name).sort();
     expect(names).toEqual([
-      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "gaestezahl_offen", "hunde_uebersicht", "maengel", "ortstaxe", "push_status",
+      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "gaestezahl_offen", "hunde_uebersicht", "maengel", "ortstaxe", "push_protokoll", "push_status",
       "reinigungen", "sync_status", "umsatz", "waesche_bedarf", "wochenplan", "wohnungen_list",
     ]);
     // Jedes Tool hat Beschreibung und JSON-Schema

@@ -8,7 +8,7 @@ import { hundeUebersicht, hundePruefen, hundeEintragen, hundegebuehrAnfordern, h
 import { postfach, mailLesen, mailSenden } from "./tools/mail";
 import { maengel, mangelErfassen } from "./tools/issues";
 import { hinweisVorschlaege, hinweisUebernehmen } from "./tools/hints";
-import { pushStatus, pushTest, reinigungNachricht } from "./tools/push";
+import { pushStatus, pushTest, reinigungNachricht, pushProtokoll } from "./tools/push";
 import { stammgaeste } from "./tools/regular-guests";
 import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheLieferungAngekommen, waescheReserve, waescheBetten } from "./tools/laundry";
 
@@ -35,6 +35,7 @@ export const TOOLS: ToolDef[] = [
   maengel,
   hinweisVorschlaege,
   pushStatus,
+  pushProtokoll,
   stammgaeste,
   // Stufe 2 — schreiben (nur mit "bestaetigt": true)
   reinigungZuweisen,

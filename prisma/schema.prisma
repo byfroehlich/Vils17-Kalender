@@ -418,6 +418,26 @@ model CleaningAssignment {
 
 // ─── Push Subscriptions ───────────────────────────────────────────────────────
 
+/// Versandprotokoll Push (Entscheidung Mathias 01.11.2026): wer wann welche Benachrichtigung bekommen hat
+/// und ob der Push-Dienst (z. B. Apple) sie angenommen hat. Nur Titel, kein Nachrichtentext.
+model PushLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  userName       String
+  title          String
+  devices        Int
+  sent           Int
+  failed         Int
+  removed        Int
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("push_logs")
+}
+
 model PushSubscription {
   id             String @id @default(cuid())
   userId         String
