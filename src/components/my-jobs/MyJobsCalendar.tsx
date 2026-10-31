@@ -14,6 +14,7 @@ import { de } from "date-fns/locale";
 import { JobCard, OpenAssignment, Assignment } from "./MyJobsList";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { NoteBadge } from "@/components/ui/NoteBadge";
 import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "rgba(255,255,255,0.14)",
@@ -200,11 +201,12 @@ export function MyJobsCalendar({
             <div key={a.id} style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 16, padding: "14px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
                 <div>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)" }}>{a.booking.apartment.name}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: "rgba(255,255,255,0.90)", display: "flex", alignItems: "center", gap: 6 }}>{a.booking.apartment.name}{a.notes?.trim() && <NoteBadge />}</p>
                   <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 2 }}>
                     {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}
                     {a.booking.arrivalTime && ` · ab ${a.booking.arrivalTime}`}
                   </p>
+                  {a.notes?.trim() && <p style={{ fontSize: 13, fontWeight: 600, color: "#fde68a", marginTop: 4, whiteSpace: "pre-wrap" as const }}>⭐ {a.notes}</p>}
                 </div>
                 <button onClick={() => claimJob(a.booking.id)} disabled={loadingId === a.booking.id}
                   style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0 }}>
@@ -309,6 +311,8 @@ function MonthView({
     isEnd: boolean;
     isSingleDay: boolean;
     isArrivalDay: boolean;
+    /** Auftrag hat einen Hinweis für die Reinigung (⭐) */
+    hasNote: boolean;
   };
 
   function getBarsForDay(day: Date): BarInfo[] {
@@ -331,6 +335,7 @@ function MonthView({
           isEnd: isSameDay(d, co),
           isSingleDay: isSameDay(ci, co),
           isArrivalDay: isSameDay(d, ci),
+          hasNote: !!a.notes?.trim(),
         });
       }
     }
@@ -350,6 +355,7 @@ function MonthView({
           isEnd: isSameDay(d, co),
           isSingleDay: isSameDay(ci, co),
           isArrivalDay: isSameDay(d, ci),
+          hasNote: !!a.notes?.trim(),
         });
       }
     }
@@ -449,6 +455,7 @@ function MonthView({
                           {/* Rechte Hälfte: anreisende Buchung */}
                           <div style={{ flex: 1, backgroundColor: arrBgColor, borderTop: arr.isOpen ? `2px dashed ${arr.color}` : "none", borderBottom: arr.isOpen ? `2px dashed ${arr.color}` : "none", borderLeft: "none", borderRight: arr.isOpen && dayIndex === 6 ? `2px dashed ${arr.color}` : "none", opacity: arr.isOpen ? 0.75 : 1, borderRadius: arrBrRight, display: "flex", alignItems: "center", overflow: "hidden", paddingLeft: 3 }}>
                             {!arr.isOpen && <span style={{ fontSize: 9, fontWeight: 800, color: arrTxt, whiteSpace: "nowrap" as const, lineHeight: 1 }}>{arr.guestCount}G</span>}
+                            {arr.hasNote && <span title="Hinweis für die Reinigung" style={{ fontSize: 9, lineHeight: 1, marginLeft: 1 }}>⭐</span>}
                           </div>
                         </div>
                       );
@@ -490,6 +497,9 @@ function MonthView({
                             <span style={{ fontSize: 9, fontWeight: 800, color: txtColor, whiteSpace: "nowrap" as const, lineHeight: 1 }}>
                               {bar.guestCount}G
                             </span>
+                          )}
+                          {bar.isArrivalDay && bar.hasNote && (
+                            <span title="Hinweis für die Reinigung" style={{ fontSize: 9, lineHeight: 1, marginLeft: 1 }}>⭐</span>
                           )}
                           {bar.isAbsage && barLeft && !bar.isArrivalDay && (
                             <span style={{ fontSize: 9, fontWeight: 700, color: "rgba(255,255,255,0.9)" }}>⚠</span>

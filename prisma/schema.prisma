@@ -55,6 +55,8 @@ model Organization {
   // keine neue Meldung; ändert eine Buchung/Storno die Lage → neue Meldung; reicht es
   // wieder → null (Entscheidung Mathias 31.10.2026)
   laundryAlertKey  String?
+  // Letzter Lauf der Sonderwunsch-Erkennung in den Gästechats (gedrosselt, siehe note-suggestions.ts)
+  noteScanAt       DateTime?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -65,6 +67,7 @@ model Organization {
   laundryCounts     LaundryCount[]
   laundryDeliveries LaundryDelivery[]
   issues            Issue[]
+  noteSuggestions   NoteSuggestion[]
 
   @@map("organizations")
 }
@@ -322,6 +325,7 @@ model Booking {
 
   cleaningAssignment CleaningAssignment?
   emailImports       EmailImport[]
+  noteSuggestions    NoteSuggestion[]
 
   @@index([organizationId, checkIn])
   @@index([organizationId, checkOut])
@@ -342,7 +346,12 @@ model CleaningAssignment {
   cleaner     User?          @relation(fields: [cleanerId], references: [id], onDelete: SetNull)
   status      CleaningStatus @default(UNASSIGNED)
   isSelfClean Boolean        @default(false)
+  // „Hinweis für die Reinigung“ (z.B. Kinderbett) — EIN Feld, keine eigene Sonderwunsch-Spalte
+  // (Entscheidung Mathias 31.10.2026). Vorschläge aus dem Gästechat landen erst nach Bestätigung hier.
   notes       String?
+  // Zusätzliche Betten (Zustellbett, Sofa als Bett) für diese Anreise: je Bett ein 90er Spannbettlaken,
+  // ein Bett- und ein Kissenbezug zusätzlich in der Wäscheplanung (0–3)
+  extraBeds   Int            @default(0)
 
   assignedAt DateTime?
   notifiedAt DateTime?
@@ -498,4 +507,34 @@ model Issue {
 
   @@index([organizationId, doneAt])
   @@map("issues")
+}
+
+// ─── Hinweis-Vorschläge aus dem Gästechat ─────────────────────────────────────
+// Entscheidung Mathias 31.10.2026: Sonderwünsche (Kinderbett, Hochstuhl, Zustellbett …) werden
+// in den Gästechats (Smoobu) erkannt und als Vorschlag abgelegt. Erst nach „Übernehmen“ werden sie
+// an CleaningAssignment.notes angehängt. Jede Nachricht wird nur einmal verwertet.
+
+model NoteSuggestion {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookingId      String
+  booking        Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  // Smoobu-Nachrichten-ID — je Nachricht höchstens ein Vorschlag
+  messageId      String
+  // Vorgeschlagener Hinweistext, z.B. "Kinderbett, Hochstuhl"
+  proposedText   String
+  // Auszug aus der Gästenachricht (≤ 200 Zeichen) zum Gegenprüfen
+  excerpt        String
+  // Vorgeschlagene Zusatzbetten (aus „Zustellbett“, „Sofa als Bett“ …)
+  extraBeds      Int          @default(0)
+  // PENDING | ACCEPTED | REJECTED
+  status         String       @default("PENDING")
+  createdAt      DateTime     @default(now())
+  decidedAt      DateTime?
+  decidedById    String?
+
+  @@unique([organizationId, messageId])
+  @@index([organizationId, status])
+  @@map("note_suggestions")
 }
