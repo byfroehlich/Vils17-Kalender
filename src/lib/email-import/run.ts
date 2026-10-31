@@ -1,6 +1,6 @@
 import { prisma } from "../prisma";
 import { logAudit } from "../audit";
-import { fetchUnreadMails, isImapConfigured } from "./imap";
+import { fetchNewMails, isImapConfigured } from "./imap";
 import { parsePortalMail } from "./parse";
 import { findBooking, type MatchCandidate } from "./match";
 import { addDays, subDays } from "date-fns";
@@ -15,7 +15,7 @@ export interface EmailImportStats {
 }
 
 /**
- * Liest ungelesene Portal-Mails, ordnet sie Buchungen zu und ergänzt die
+ * Liest neue Portal-Mails (ohne sie als gelesen zu markieren), ordnet sie Buchungen zu und ergänzt die
  * Angaben, die Smoobu nicht liefert (Gästezahl, Haustiere, Sonderwünsche).
  *
  * Grundsätze:
@@ -32,7 +32,8 @@ export async function runEmailImport(organizationId: string): Promise<EmailImpor
     throw new Error("IMAP nicht konfiguriert");
   }
 
-  const mails = await fetchUnreadMails();
+  const mails = await fetchNewMails(async (messageId) =>
+    Boolean(await prisma.emailImport.findUnique({ where: { messageId }, select: { id: true } })));
   stats.gelesen = mails.length;
 
   for (const mail of mails) {

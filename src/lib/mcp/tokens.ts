@@ -15,8 +15,8 @@ export const SCOPE_LABELS: Record<Scope, string> = {
   "cleaning:read": "Reinigungen und Wäsche lesen",
   "cleaning:write": "Reinigungen zuweisen, Status, Wäschestatus, Notizen, Gästezahl, Sync auslösen",
   "finance:read": "Umsatz, Ortstaxe, Auszahlungen Reinigung lesen",
-  "messages:read": "Gästenachrichten (Smoobu) lesen",
-  "messages:write": "Gästen antworten (nur nach Bestätigung)",
+  "messages:read": "Gästenachrichten (Smoobu) und Postfach lesen",
+  "messages:write": "Gästen antworten und Mails senden (nur nach Bestätigung)",
 };
 
 export function isScope(s: string): s is Scope {
