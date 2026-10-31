@@ -99,7 +99,7 @@ export function LaundryPlanner({ todayKey, plan, lastCount, deliveries, recently
           <table style={{ width: "100%", fontSize: 13, color: "rgba(255,255,255,0.85)", borderCollapse: "collapse" }}>
             <thead>
               <tr style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                <th style={{ textAlign: "left" }}>Teil</th><th style={cell}>Bedarf</th><th style={cell}>Reserve</th><th style={cell}>Keller</th><th style={cell}>unterwegs</th><th style={cell}>Bestellen</th>
+                <th style={{ textAlign: "left" }}>Teil</th><th style={cell}>Bedarf</th><th style={cell}>Reserve</th><th style={cell}>Im Keller</th><th style={cell}>Unterwegs</th><th style={cell}>Bestellen</th>
               </tr>
             </thead>
             <tbody>
@@ -107,9 +107,9 @@ export function LaundryPlanner({ todayKey, plan, lastCount, deliveries, recently
                 <tr key={i.key} style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
                   <td style={{ padding: "6px 0" }}>{i.emoji} {i.label}</td>
                   <td style={cell}>{plan.need[i.key]}</td>
-                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>+{plan.reserve[i.key]}</td>
-                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>{plan.stockToday ? `−${Math.max(0, plan.stockToday[i.key])}` : "?"}</td>
-                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>{plan.incoming[i.key] ? `−${plan.incoming[i.key]}` : "–"}</td>
+                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>{plan.reserve[i.key]}</td>
+                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>{plan.stockToday ? Math.max(0, plan.stockToday[i.key]) : "?"}</td>
+                  <td style={{ ...cell, color: "rgba(255,255,255,0.55)" }}>{plan.incoming[i.key] ? plan.incoming[i.key] : "–"}</td>
                   <td style={{ ...cell, fontWeight: 700, color: plan.order[i.key] ? "#5eead4" : "rgba(255,255,255,0.5)" }}>{plan.order[i.key]}</td>
                 </tr>
               ))}
@@ -117,7 +117,7 @@ export function LaundryPlanner({ todayKey, plan, lastCount, deliveries, recently
           </table>
         </div>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginTop: 10 }}>
-          Bestellen = Bedarf + Reserve − Bestand im Keller − bestellt und unterwegs. Die Reserve bleibt nach allen Anreisen immer im Keller.
+          Alle Zahlen sind Stückzahlen. Bestellen = Bedarf + Reserve − im Keller − unterwegs (nie unter 0). Die Reserve bleibt nach allen Anreisen immer im Keller.
         </p>
       </div>
 

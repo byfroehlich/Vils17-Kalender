@@ -3,12 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { formatDate } from "@/lib/utils";
-import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react";
+import { AlertCircle, CalendarCheck, Users } from "lucide-react";
 import { CleanerList } from "./CleanerList";
 import { RateBadge } from "@/components/ui/RateBadge";
 import { NoteBadge } from "@/components/ui/NoteBadge";
 
-import { calculateLaundryQuantity, fittedSheetsTotal } from "@/lib/laundry-quantity";
 interface Assignment {
   id: string;
   status: string;
@@ -106,24 +105,6 @@ function AssignmentRow({ a }: { a: Assignment }) {
   );
 }
 
-function LaundryRow({ a }: { a: Assignment }) {
-  const qty = calculateLaundryQuantity(a.booking.guestCount, a.booking.apartment);
-  return (
-    <Link href={`/bookings/${a.booking.id}`} style={rowGlass}>
-      <div style={{ width: 3, alignSelf: "stretch", borderRadius: 4, flexShrink: 0, backgroundColor: a.booking.apartment.color ?? "#14B8A6" }} />
-      <div style={{ width: 72, flexShrink: 0 }}>
-        <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.85)" }}>{formatDate(a.booking.checkOut)}</p>
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.35)" }}>{a.booking.apartment.name}</p>
-      </div>
-      <div style={{ flex: 1, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" as const }}>
-        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛏 {fittedSheetsTotal(qty)}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛁 {qty.towels}</span>
-        <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🍽 {qty.kitchen}</span>
-      </div>
-    </Link>
-  );
-}
-
 function EmptyState({ label }: { label: string }) {
   return (
     <div style={{ background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 16, padding: "32px 24px", textAlign: "center", color: "rgba(255,255,255,0.35)", fontSize: 14 }}>
@@ -132,7 +113,7 @@ function EmptyState({ label }: { label: string }) {
   );
 }
 
-type Tab = "open" | "planned" | "laundry" | "cleaners";
+type Tab = "open" | "planned" | "cleaners";
 
 export function CleaningSchedule({
   assignments,
@@ -151,14 +132,9 @@ export function CleaningSchedule({
   const planned = assignments.filter(a =>
     a.status === "ASSIGNED" || a.status === "SELF_CLEAN" || a.isSelfClean
   );
-  // Wäsche: nur Info, was je anstehender Reinigung gebraucht wird. Kein Status pro Buchung —
-  // bestellt wird nach Bestand im Keller (/laundry, Entscheidung Mathias 31.10.2026)
-  const laundry = assignments.filter(a => a.status !== "COMPLETED");
-
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number; urgent?: boolean }[] = [
     { key: "open",     label: "Offen",    icon: <AlertCircle className="w-4 h-4" />,    count: open.length,     urgent: open.length > 0 },
     { key: "planned",  label: "Geplant",  icon: <CalendarCheck className="w-4 h-4" />,  count: planned.length },
-    { key: "laundry",  label: "Wäsche",   icon: <WashingMachine className="w-4 h-4" />, count: laundry.length },
     { key: "cleaners", label: "Reiniger", icon: <Users className="w-4 h-4" />,           count: cleaners.length },
   ];
 
@@ -218,18 +194,6 @@ export function CleaningSchedule({
           {planned.length === 0
             ? <EmptyState label="Keine geplanten Reinigungen in den nächsten 60 Tagen." />
             : planned.map(a => <AssignmentRow key={a.id} a={a} />)
-          }
-        </div>
-      )}
-
-      {tab === "laundry" && (
-        <div className="space-y-2">
-          <Link href="/laundry" style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", padding: "10px 14px", borderRadius: 12, background: "rgba(13,148,136,0.15)", border: "1px solid rgba(13,148,136,0.35)", textDecoration: "none" }}>
-            Wäsche wird nach Bestand im Keller bestellt, nicht pro Buchung. Mengen je Anreise hier nur zur Info — <strong style={{ color: "#5EEAD4" }}>Bestand &amp; Bestellung →</strong>
-          </Link>
-          {laundry.length === 0
-            ? <EmptyState label="Keine anstehenden Reinigungen." />
-            : laundry.map(a => <LaundryRow key={`l-${a.id}`} a={a} />)
           }
         </div>
       )}
