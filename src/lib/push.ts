@@ -3,15 +3,40 @@ import { prisma } from "./prisma";
 import type { Role } from "@prisma/client";
 
 let initialized = false;
+let initError: string | null = null;
+
+/** VAPID_MAILTO darf als reine Adresse eingetragen sein – web-push verlangt "mailto:" bzw. eine URL. */
+export function normalizeVapidSubject(raw: string | undefined): string {
+  const v = (raw ?? "").trim();
+  if (!v) return "mailto:info@vils17.at";
+  if (/^(mailto:|https?:\/\/)/i.test(v)) return v;
+  if (v.includes("@")) return `mailto:${v}`;
+  return "mailto:info@vils17.at";
+}
+
 function init() {
   if (initialized) return;
-  const pub = process.env.VAPID_PUBLIC_KEY;
-  const priv = process.env.VAPID_PRIVATE_KEY;
-  const mailto = process.env.VAPID_MAILTO ?? "mailto:info@vils17.at";
-  if (!pub || !priv) return;
-  webpush.setVapidDetails(mailto, pub, priv);
-  initialized = true;
+  const pub = process.env.VAPID_PUBLIC_KEY?.trim();
+  const priv = process.env.VAPID_PRIVATE_KEY?.trim();
+  if (!pub || !priv) {
+    initError = !pub ? "VAPID_PUBLIC_KEY fehlt" : "VAPID_PRIVATE_KEY fehlt";
+    return;
+  }
+  try {
+    webpush.setVapidDetails(normalizeVapidSubject(process.env.VAPID_MAILTO), pub, priv);
+    initialized = true;
+    initError = null;
+  } catch (err) {
+    // Früher stürzte hier jeder Versand ab (z. B. VAPID_MAILTO ohne "mailto:") – jetzt sichtbar statt still.
+    initError = `VAPID-Schlüssel ungültig: ${(err as Error).message}`;
+    console.error("[push]", initError);
+  }
 }
+
+/** Letzte Versandergebnisse (im Speicher des laufenden Dienstes) für die Diagnose. */
+type SendLog = { at: Date; devices: number; sent: number; failed: number; removed: number; lastError: string | null };
+let lastSend: SendLog | null = null;
+let lastFailure: { at: Date; status: number | null; message: string } | null = null;
 
 export type PushPayload = {
   title: string;
@@ -59,13 +84,45 @@ export async function sendPushToUsers(userIds: string[], payload: PushPayload): 
           result.removed++;
         } else {
           result.failed++;
+          lastFailure = { at: new Date(), status: status ?? null, message: (err as Error).message.slice(0, 300) };
           console.error("[push] Versand fehlgeschlagen:", status, (err as Error).message);
         }
       }
     })
   );
 
+  lastSend = { at: new Date(), ...result, lastError: lastFailure?.message ?? null };
   return result;
+}
+
+/** Diagnose: ist Push eingerichtet, wer hat wie viele Geräte angemeldet, was ist zuletzt passiert. */
+export async function pushDiagnostics(orgId: string) {
+  init();
+  const users = await prisma.user.findMany({
+    where: { organizationId: orgId },
+    select: {
+      name: true, role: true, active: true,
+      pushSubscriptions: { select: { endpoint: true, createdAt: true }, orderBy: { createdAt: "desc" } },
+    },
+    orderBy: { name: "asc" },
+  });
+  return {
+    configured: initialized,
+    initError,
+    publicKeySet: !!process.env.VAPID_PUBLIC_KEY,
+    privateKeySet: !!process.env.VAPID_PRIVATE_KEY,
+    subject: normalizeVapidSubject(process.env.VAPID_MAILTO),
+    users: users.map((u) => ({
+      name: u.name,
+      role: u.role,
+      active: u.active,
+      devices: u.pushSubscriptions.length,
+      services: Array.from(new Set(u.pushSubscriptions.map((s) => { try { return new URL(s.endpoint).host; } catch { return "?"; } }))),
+      newest: u.pushSubscriptions[0]?.createdAt ?? null,
+    })),
+    lastSend,
+    lastFailure,
+  };
 }
 
 export async function sendPushToRole(
