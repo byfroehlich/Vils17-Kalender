@@ -7,7 +7,7 @@ import { gaesteNachrichten, offeneGaestenachrichten, gastAntworten } from "./too
 import { hundeUebersicht, hundePruefen, hundeEintragen, hundegebuehrAnfordern, hundegebuehrStatus } from "./tools/pets";
 import { postfach, mailLesen, mailSenden } from "./tools/mail";
 import { maengel, mangelErfassen } from "./tools/issues";
-import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheReserve, waescheBetten } from "./tools/laundry";
+import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheLieferungAngekommen, waescheReserve, waescheBetten } from "./tools/laundry";
 
 /** Alle Tools der Schnittstelle. tools/list zeigt nur die, deren Scope das Token hat. */
 export const TOOLS: ToolDef[] = [
@@ -43,6 +43,7 @@ export const TOOLS: ToolDef[] = [
   hundegebuehrStatus,
   waescheBestandErfassen,
   waescheLieferungErfassen,
+  waescheLieferungAngekommen,
   waescheReserve,
   waescheBetten,
   mailSenden,

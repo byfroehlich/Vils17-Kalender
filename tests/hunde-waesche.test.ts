@@ -12,7 +12,7 @@ import { findTool } from "@/lib/mcp/registry";
 import { SCOPES } from "@/lib/mcp/tokens";
 import { detectDogs, petFee, petFeeMessage } from "@/lib/pets";
 import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
-import { planLaundry, DEFAULT_RESERVE } from "@/lib/laundry-order";
+import { planLaundry, laundryAlert, DEFAULT_RESERVE } from "@/lib/laundry-order";
 import { isAutomationMessage } from "@/lib/guest-messages";
 import { resetDb, seedWorld } from "./fixtures";
 
@@ -137,7 +137,7 @@ describe("planLaundry (Bestand, Reserve, Lieferungen)", () => {
     const p = planLaundry({
       arrivals,
       count: { countedOn: d("2026-10-27"), quantities: q({ beds: 10, towels: 12, duvetCovers: 8, bathMats: 4 }) },
-      deliveries: [{ deliveryOn: d("2026-10-29"), quantities: q({ towels: 4 }) }],
+      deliveries: [{ deliveryOn: d("2026-10-29"), arrivedOn: d("2026-10-29"), quantities: q({ towels: 4 }) }],
       today: d("2026-10-30"),
       end: d("2026-11-13"),
     });
@@ -154,7 +154,7 @@ describe("planLaundry (Bestand, Reserve, Lieferungen)", () => {
     const p = planLaundry({
       arrivals,
       count: { countedOn: d("2026-10-29"), quantities: q({ duvetCovers: 2 }) },
-      deliveries: [{ deliveryOn: d("2026-11-03"), quantities: q({ duvetCovers: 10 }) }],
+      deliveries: [{ deliveryOn: d("2026-11-03"), arrivedOn: null, quantities: q({ duvetCovers: 10 }) }],
       today: d("2026-10-30"),
       end: d("2026-11-13"),
       reserve: q({ duvetCovers: 2 }),
@@ -162,6 +162,36 @@ describe("planLaundry (Bestand, Reserve, Lieferungen)", () => {
     expect(p.incoming.duvetCovers).toBe(10);
     expect(p.order.duvetCovers).toBe(0); // 6 + 2 − 2 − 10 < 0
     expect(p.shortBeforeDelivery).toContain("duvetCovers"); // 01.11.: 4 Gäste, nur 2 da
+  });
+
+  it("Lieferung zählt erst nach „im Keller angekommen“ zum Bestand; überfällige bleibt unterwegs", () => {
+    const base = { arrivals, count: { countedOn: d("2026-10-27"), quantities: q({ towels: 10 }) }, today: d("2026-10-30"), end: d("2026-11-13") };
+    const unterwegs = planLaundry({ ...base, deliveries: [{ deliveryOn: d("2026-10-29"), arrivedOn: null, quantities: q({ towels: 4 }) }] });
+    expect(unterwegs.stockToday!.towels).toBe(10 - 2);
+    expect(unterwegs.incoming.towels).toBe(4);
+    expect(unterwegs.overdueDeliveries).toBe(1);
+
+    const angekommen = planLaundry({ ...base, deliveries: [{ deliveryOn: d("2026-10-29"), arrivedOn: d("2026-10-30"), quantities: q({ towels: 4 }) }] });
+    expect(angekommen.stockToday!.towels).toBe(10 - 2 + 4);
+    expect(angekommen.incoming.towels).toBe(0);
+    expect(angekommen.overdueDeliveries).toBe(0);
+    // Bestellmenge bleibt gleich — die Lieferung wandert nur von „unterwegs“ in den Bestand
+    expect(angekommen.order).toEqual(unterwegs.order);
+
+    // früher angekommen als geplant: zählt sofort
+    const frueh = planLaundry({ ...base, deliveries: [{ deliveryOn: d("2026-11-04"), arrivedOn: d("2026-10-30"), quantities: q({ towels: 4 }) }] });
+    expect(frueh.stockToday!.towels).toBe(12);
+    expect(frueh.incoming.towels).toBe(0);
+  });
+
+  it("laundryAlert: nur mit Bestand, bei Bestellmenge oder Engpass", () => {
+    const ohne = laundryAlert(planLaundry({ arrivals, count: null, deliveries: [], today: d("2026-10-30"), end: d("2026-11-13") }));
+    expect(ohne).toMatchObject({ orderNeeded: false, noStock: true });
+    const viel = q(Object.fromEntries(Object.keys(DEFAULT_RESERVE).map((k) => [k, 50])));
+    const genug = laundryAlert(planLaundry({ arrivals, count: { countedOn: d("2026-10-29"), quantities: viel }, deliveries: [], today: d("2026-10-30"), end: d("2026-11-13") }));
+    expect(genug).toMatchObject({ orderNeeded: false, noStock: false, orderItems: [] });
+    const knapp = laundryAlert(planLaundry({ arrivals, count: { countedOn: d("2026-10-29"), quantities: { ...viel, towels: 1 } }, deliveries: [], today: d("2026-10-30"), end: d("2026-11-13") }));
+    expect(knapp).toMatchObject({ orderNeeded: true, orderItems: ["towels"] });
   });
 });
 
@@ -300,6 +330,23 @@ describe("wochenplan & waesche_bedarf", () => {
     const r3 = await call("waesche_bedarf", {});
     expect(r3.result.bestellmenge["Badvorleger"]).toBe(0);
     expect(r3.result.achtung).toMatch(/Badvorleger/); // 30.10. + 01.11. Anreisen vor der Lieferung, nur 1 da
+    expect(r3.result.offene_lieferungen).toHaveLength(1);
+
+    // Ankunft bestätigen: Vorschau ändert nichts, dann zählt die Lieferung zum Bestand
+    const a0 = await call("waesche_lieferung_angekommen", {});
+    expect(a0.result.vorschau).toBe(true);
+    expect((await prisma.laundryDelivery.findFirstOrThrow()).arrivedAt).toBeNull();
+    const a1 = await call("waesche_lieferung_angekommen", { mengen: { badvorleger: 3 }, bestaetigt: true });
+    expect(a1.result).toMatchObject({ ausgefuehrt: true, angekommen_am: "2026-10-30" });
+    expect((await prisma.laundryDelivery.findFirstOrThrow()).arrivedAt).not.toBeNull();
+    const r3b = await call("waesche_bedarf", {});
+    expect(r3b.result.bestand_heute["Badvorleger"]).toBe(1 + 3);
+    expect(r3b.result.bereits_bestellt["Badvorleger"]).toBe(0);
+    expect(r3b.result.offene_lieferungen).toHaveLength(0);
+    expect(r3b.result.achtung).toBeUndefined();
+    const a2 = await call("waesche_lieferung_angekommen", { bestaetigt: true });
+    expect(a2.result).toMatchObject({ ausgefuehrt: false });
+    expect(await prisma.auditLog.count({ where: { action: "laundry.delivery.arrived" } })).toBe(1);
 
     await call("waesche_reserve", { mengen: { badvorleger: 5 }, bestaetigt: true });
     const r4 = await call("waesche_bedarf", {});

@@ -51,6 +51,9 @@ model Organization {
   // Wäsche-Reserve je Teil, die nach allen Anreisen immer noch im Keller liegen soll
   // ({ beds: 3, towels: 3, … }); null = Vorgabe aus laundry-stock.ts
   laundryReserve   Json?
+  // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem zuletzt „Wäsche reicht nicht“ gemeldet wurde
+  // (Entscheidung Mathias 31.10.2026: Wäsche nach Bestand, höchstens eine Meldung pro Tag)
+  laundryAlertSentOn String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -453,6 +456,9 @@ model LaundryDelivery {
   // Bestellnummer o.ä.
   reference      String?
   cancelled      Boolean      @default(false)
+  // Lieferung im Keller angekommen (bestätigt). Erst dann zählt sie zum Bestand,
+  // vorher gilt sie als „bestellt/unterwegs“ (Entscheidung Mathias 31.10.2026)
+  arrivedAt      DateTime?
   createdById    String?
   createdAt      DateTime     @default(now())
 

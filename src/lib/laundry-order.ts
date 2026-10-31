@@ -7,8 +7,12 @@ import { calculateLaundryQuantity, emptyLaundryQuantity, LAUNDRY_ITEMS, type Lau
 //    kommt fleckig von der Wäscherei; zwei Gäste in getrennten Betten).
 //  - Es gibt einen Startbestand im Keller, der erfasst wird.
 //
+// Entscheidung Mathias 31.10.2026: Wäsche gibt es nicht mehr pro Buchung, sondern als Bestand im
+// Keller. Eine Lieferung zählt erst zum Bestand, wenn sie als „im Keller angekommen“ bestätigt ist;
+// bis dahin ist sie „bestellt/unterwegs“ (auch wenn ihr Liefertag schon vorbei ist).
+//
 // Rechnung:
-//   Bestand heute  = letzte Zählung + Lieferungen danach (bis heute) − Anreisen danach (vor heute)
+//   Bestand heute  = letzte Zählung + angekommene Lieferungen danach (bis heute) − Anreisen danach (vor heute)
 //   Bedarf         = Wäsche aller Anreisen im Zeitraum
 //   Bestellmenge   = Bedarf + Reserve − Bestand heute − bereits bestellte Lieferungen im Zeitraum (nie < 0)
 // Eine Zählung gilt am Ende ihres Tages (Anreisen am Zähltag sind schon versorgt).
@@ -43,7 +47,10 @@ export interface StockCount {
 }
 
 export interface Delivery {
+  /** geplanter Liefertag */
   deliveryOn: Date;
+  /** Kalendertag, an dem die Lieferung im Keller angekommen ist; null = noch unterwegs */
+  arrivedOn: Date | null;
   quantities: LaundryQuantity;
 }
 
@@ -55,8 +62,10 @@ export interface LaundryPlan {
   reserve: LaundryQuantity;
   /** null = noch kein Bestand erfasst */
   stockToday: LaundryQuantity | null;
-  /** schon bestellt, Lieferung im Zeitraum */
+  /** schon bestellt, noch nicht angekommen, Liefertag im Zeitraum (oder schon überfällig) */
   incoming: LaundryQuantity;
+  /** bestellte Lieferungen, deren Liefertag vorbei ist, die aber noch nicht als angekommen bestätigt sind */
+  overdueDeliveries: number;
   /** zu bestellen */
   order: LaundryQuantity;
   /** Bestand am Ende des Zeitraums, wenn wie vorgeschlagen bestellt wird */
@@ -115,13 +124,17 @@ export function planLaundry(params: {
   if (count) {
     const usedBefore = usage(params.arrivals.filter((a) => after(a.checkIn) && t(a.checkIn) < t(today)));
     const delivered = params.deliveries
-      .filter((d) => after(d.deliveryOn) && t(d.deliveryOn) <= t(today))
+      .filter((d) => d.arrivedOn && after(d.arrivedOn) && t(d.arrivedOn) <= t(today))
       .reduce((s, d) => combine(s, d.quantities), emptyLaundryQuantity());
     stockToday = combine(combine(count.quantities, delivered), usedBefore, -1);
   }
 
-  const incomingList = params.deliveries.filter((d) => t(d.deliveryOn) > t(today) && t(d.deliveryOn) < t(end) && after(d.deliveryOn));
+  // Unterwegs: noch nicht angekommen. Überfällige Lieferungen werden „heute“ erwartet.
+  const incomingList = params.deliveries
+    .filter((d) => !d.arrivedOn && t(d.deliveryOn) < t(end))
+    .map((d) => ({ ...d, deliveryOn: t(d.deliveryOn) < t(today) ? today : d.deliveryOn }));
   const incoming = incomingList.reduce((s, d) => combine(s, d.quantities), emptyLaundryQuantity());
+  const overdueDeliveries = params.deliveries.filter((d) => !d.arrivedOn && t(d.deliveryOn) < t(today)).length;
 
   const order = emptyLaundryQuantity();
   for (const k of KEYS) {
@@ -156,9 +169,35 @@ export function planLaundry(params: {
     reserve,
     stockToday,
     incoming,
+    overdueDeliveries,
     order,
     stockAfter: stockToday ? combine(combine(combine(stockToday, incoming), order), need, -1) : null,
     shortBeforeDelivery: Array.from(short),
     perApartment: Array.from(byApt.values()),
+  };
+}
+
+// ─── Meldung „Wäsche reicht nicht“ ────────────────────────────────────────────
+// Einziges Wäsche-Signal in der App (Entscheidung Mathias 31.10.2026) — keine Warnung pro Buchung mehr.
+
+export interface LaundryAlert {
+  /** true = es muss bestellt werden oder ein Teil geht vor einer Lieferung aus */
+  orderNeeded: boolean;
+  /** Teile mit Bestellmenge > 0 */
+  orderItems: (keyof LaundryQuantity)[];
+  /** Teile, die schon vor einer Lieferung ausgehen */
+  shortItems: (keyof LaundryQuantity)[];
+  /** noch kein Bestand erfasst — dann lässt sich „reicht nicht“ nicht sagen */
+  noStock: boolean;
+}
+
+export function laundryAlert(plan: LaundryPlan): LaundryAlert {
+  const orderItems = KEYS.filter((k) => plan.order[k] > 0);
+  const noStock = plan.stockToday === null;
+  return {
+    orderNeeded: !noStock && (orderItems.length > 0 || plan.shortBeforeDelivery.length > 0),
+    orderItems,
+    shortItems: plan.shortBeforeDelivery,
+    noStock,
   };
 }
