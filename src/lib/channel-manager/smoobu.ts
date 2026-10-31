@@ -187,7 +187,8 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
       // komplett, können wir die echte Zahl nicht kennen — dann wird 1 als
       // Notwert gesetzt UND das protokolliert, damit eine falsche Wäschemenge
       // nicht unbemerkt bleibt.
-      const hasAdults = typeof r.adults === "number";
+      // adults = 0 ist ebenso keine verwertbare Angabe (Entscheidung Mathias 31.10.2026: unbekannt ≠ Notwert)
+      const hasAdults = typeof r.adults === "number" && r.adults > 0;
       const guestCount = (hasAdults ? (r.adults as number) : 1) + (r.children ?? 0);
       if (!hasAdults) {
         console.warn(

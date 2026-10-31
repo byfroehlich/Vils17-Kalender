@@ -3,6 +3,7 @@ import { sendPushToRole, sendPushToUsers } from "./push";
 import { loadLaundryPlan } from "./laundry-proposal";
 import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "./laundry-order";
 import { laundryText, LAUNDRY_ITEMS } from "./laundry-quantity";
+import { UNCONFIRMED_GUEST_COUNT, GUEST_COUNT_WARN_DAYS } from "./guest-count";
 
 // ─── Zeit in Vils (Europe/Vienna) ─────────────────────────────────────────────
 // Buchungsdaten liegen als UTC-Mitternacht des Kalendertags in der DB
@@ -50,7 +51,7 @@ function shortApt(name: string): string {
  */
 export async function runReminders(organizationId: string) {
   const today = viennaDateKey();
-  const result = { cleanerReminders: 0, adminReminders: 0, laundryReminders: 0 };
+  const result = { cleanerReminders: 0, adminReminders: 0, laundryReminders: 0, guestCountReminders: 0 };
 
   const openBase = {
     organizationId,
@@ -105,6 +106,30 @@ export async function runReminders(organizationId: string) {
       data: { adminReminderSentAt: new Date() },
     });
     result.adminReminders = urgent.length;
+  }
+
+  // Admin: Gästezahl unbekannt (Kanal lieferte keine), Anreise in ≤ 30 Tagen — je Buchung einmal
+  // (Entscheidung Mathias 31.10.2026: nicht still auf einen Notwert fallen)
+  const unknown = await prisma.booking.findMany({
+    where: {
+      organizationId,
+      status: "confirmed",
+      ...UNCONFIRMED_GUEST_COUNT,
+      guestCountReminderSentAt: null,
+      checkIn: { gte: dayStart(today), lt: dayStart(today, GUEST_COUNT_WARN_DAYS + 1) },
+    },
+    select: { id: true, checkIn: true, apartment: { select: { name: true } } },
+    orderBy: { checkIn: "asc" },
+  });
+  if (unknown.length > 0) {
+    const list = unknown.slice(0, 4).map((b) => `${shortApt(b.apartment.name)} ${shortDate(b.checkIn)}`).join(", ");
+    await sendPushToRole(organizationId, ["ADMIN", "MANAGER"], {
+      title: unknown.length === 1 ? "⚠️ Gästezahl unbekannt" : `⚠️ Gästezahl bei ${unknown.length} Buchungen unbekannt`,
+      body: `${list}${unknown.length > 4 ? " …" : ""} — bitte klären (Portal prüfen, in der Buchung eintragen)`,
+      url: unknown.length === 1 ? `/bookings/${unknown[0].id}` : "/dashboard",
+    });
+    await prisma.booking.updateMany({ where: { id: { in: unknown.map((b) => b.id) } }, data: { guestCountReminderSentAt: new Date() } });
+    result.guestCountReminders = unknown.length;
   }
 
   // Admin: Wäsche-Bestand im Keller reicht nicht (eine Meldung je neuer Lage, nicht pro Buchung)
@@ -189,6 +214,9 @@ export async function maybeSendLaundryAlert(organizationId: string, now = new Da
   const parts: string[] = [];
   if (alert.orderItems.length) parts.push(`fehlt: ${laundryText(plan.order)}`);
   if (alert.shortItems.length) parts.push(`vor der nächsten Lieferung knapp: ${alert.shortItems.map(label).join(", ")}`);
+  if (plan.unconfirmedArrivals) {
+    parts.push(`enthält ${plan.unconfirmedArrivals === 1 ? "eine unbestätigte Gästezahl" : `${plan.unconfirmedArrivals} unbestätigte Gästezahlen`} (volle Belegung angenommen)`);
+  }
   parts.push("Jetzt bestellen");
 
   await sendPushToRole(organizationId, ["ADMIN", "MANAGER"], {
@@ -256,6 +284,12 @@ export async function maybeSendDailyStatus(organizationId: string): Promise<bool
       : "⚠️ noch offen";
     return `${apt}: ${who}`;
   });
+
+  // Unbestätigte Gästezahlen der nächsten 30 Tage — bleiben im Tagesstatus, bis sie geklärt sind
+  const unconfirmed = await prisma.booking.count({
+    where: { organizationId, status: "confirmed", ...UNCONFIRMED_GUEST_COUNT, checkIn: { gte: dayStart(today), lt: dayStart(today, GUEST_COUNT_WARN_DAYS + 1) } },
+  });
+  if (unconfirmed > 0) lines.push(`⚠️ Gästezahl unbekannt: ${unconfirmed} ${unconfirmed === 1 ? "Buchung" : "Buchungen"}`);
 
   await sendPushToRole(organizationId, ["ADMIN", "MANAGER"], {
     title: jobs.length === 1 ? "Heute: 1 Reinigung" : `Heute: ${jobs.length} Reinigungen`,

@@ -285,6 +285,9 @@ model Booking {
   // true = der Channel Manager hat keine Gästezahl geliefert (guestCount ist nur ein Notwert).
   // Die Wäscheplanung rechnet dann mit der vollen Belegung der Wohnung (vorsichtig).
   guestCountUnknown Boolean @default(false)
+  // Einmalige Push-Warnung „Gästezahl unbekannt“ (≤ 30 Tage vor Anreise) verschickt
+  // (Entscheidung Mathias 31.10.2026: unbestätigte Gästezahl muss sichtbar sein und geklärt werden)
+  guestCountReminderSentAt DateTime?
   petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
   // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
   petSource  String?
