@@ -146,17 +146,18 @@ const euro = (n: number) => `${n.toLocaleString("de-AT", { minimumFractionDigits
  */
 export function petFeeMessage(p: { guestName: string; dogs: number; nights: number; amount: number; paymentText?: string | null }): string {
   const vorname = p.guestName.trim().split(/\s+/)[0] ?? p.guestName;
-  const hund = p.dogs === 1 ? "Ihren Hund" : `Ihre ${p.dogs} Hunde`;
+  const hund = p.dogs === 1 ? "eurem Hund" : `euren ${p.dogs} Hunden`;
   const zahlung = p.paymentText?.trim() || "[ZAHLUNGSWEG EINTRAGEN]";
+  // Entscheidung Mathias 31.10.2026: angefordert wird erst, wenn die Gäste vor Ort sind – daher „bis zur Abreise“.
   return [
     `Hallo ${vorname},`,
     "",
-    `wir freuen uns auf Ihren Besuch – und auf ${hund}!`,
-    `Für Hunde berechnen wir ${euro(PET_FEE_PER_NIGHT)} pro Hund und Nacht. Bei ${p.nights} ${p.nights === 1 ? "Nacht" : "Nächten"} sind das ${euro(p.amount)}.`,
-    "Die Gebühr ist im Buchungspreis nicht enthalten. Bitte begleichen Sie sie bis zur Anreise:",
+    `schön, dass ihr mit ${hund} bei uns seid – wir hoffen, ihr habt eine richtig schöne Zeit in Vils!`,
+    `Für Hunde berechnen wir ${euro(PET_FEE_PER_NIGHT)} pro Hund und Nacht. Bei ${p.nights} ${p.nights === 1 ? "Nacht" : "Nächten"} sind das ${euro(p.amount)}. Das ist im Buchungspreis nicht enthalten.`,
+    "Magst du den Betrag bitte bis zur Abreise begleichen?",
     zahlung,
     "",
-    "Vielen Dank und bis bald!",
+    "Danke dir und liebe Grüße",
     "Mathias",
   ].join("\n");
 }
