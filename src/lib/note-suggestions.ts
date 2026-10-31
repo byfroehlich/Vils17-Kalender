@@ -1,5 +1,6 @@
 import { prisma } from "./prisma";
 import { fetchGuestMessages } from "./guest-messages";
+import { recordSeen } from "./message-seen";
 import { detectSpecialRequests } from "./special-requests";
 import { sendPushToRole, sendPushToUsers } from "./push";
 import { logAudit } from "./audit";
@@ -77,6 +78,7 @@ export async function scanNoteSuggestions(organizationId: string, opts: { force?
       continue;
     }
     result.scanned++;
+    await recordSeen(organizationId, b.id, messages).catch(() => null);
     for (const m of messages) {
       if (m.von !== "gast" || known.has(m.id)) continue;
       const hit = detectSpecialRequests(m.text);

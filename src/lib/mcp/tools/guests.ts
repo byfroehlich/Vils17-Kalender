@@ -5,6 +5,7 @@ import { day, channelGroup } from "../format";
 import { wohnungFilter, resolveApartmentId } from "../shared";
 import { fetchGuestMessages, sendGuestMessage, lastMessage, GuestMessageError } from "../../guest-messages";
 import { findUnansweredChats, MAX_CHATS, markChatDone } from "../../guest-chat-overview";
+import { formatMessageTime } from "../../message-seen";
 import { logAudit } from "../../audit";
 
 // ─── Gästenachrichten (Smoobu) ────────────────────────────────────────────────
@@ -95,7 +96,7 @@ export const offeneGaestenachrichten = defineTool({
       geprueft: r.checked,
       ...(r.truncated ? { hinweis: `Mehr als ${MAX_CHATS} Buchungen im Zeitraum — nur die ersten ${MAX_CHATS} geprüft. Zeitraum verkürzen.` } : {}),
       unbeantwortet: r.open.length,
-      buchungen: r.open.map((o) => ({ ...kopf(o.booking as Awaited<ReturnType<typeof loadBooking>>), nachricht_id: o.last.id, letzte_nachricht: o.last.text.slice(0, 500), betreff: o.last.betreff })),
+      buchungen: r.open.map((o) => ({ ...kopf(o.booking as Awaited<ReturnType<typeof loadBooking>>), nachricht_id: o.last.id, eingegangen: formatMessageTime(o.last.time), letzte_nachricht: o.last.text.slice(0, 500), betreff: o.last.betreff })),
       ...(r.errors.length ? { fehler: r.errors.map((e) => ({ buchung_id: e.booking.id, gast: e.booking.guestName, fehler: e.error })) } : {}),
       hinweis_portale: "Antworten, die direkt in der Airbnb- oder Booking-App geschrieben wurden, sieht Smoobu nicht — solche Chats erscheinen trotzdem als offen.",
     };

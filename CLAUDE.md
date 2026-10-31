@@ -350,6 +350,16 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
   (`POST /api/bookings/[id]/chat-done`, `markChatDone`), MCP `gaestechat_erledigt` (messages:write, `bestaetigt`).
   Gespeichert wird die ID der letzten Gastnachricht (`Booking.chatDoneMessageId`); schreibt der Gast erneut, ist der
   Chat wieder offen. An den Gast geht nichts. Tests: `tests/chat-erledigt.test.ts`.
+- **Zeitpunkt der Gästenachricht** (`src/lib/message-seen.ts`, Entscheidung Mathias 31.10.2026): Smoobu liefert laut Doku
+  keinen Zeitpunkt je Nachricht. Liefert die Antwort doch ein Feld (`createdAt`, `date` …), gilt es (`GuestMessage.zeit`);
+  sonst merkt sich die App den ersten Abruf (`GuestMessageSeen.firstSeenAt`, Hinweis-Scan alle 30 Min + Seitenaufruf)
+  → „eingegangen spätestens …“. Beim allerersten Abruf eines Chats vorhandene Nachrichten: „Zeit unbekannt (älter)“.
+  Anzeige auf `/messages`, MCP `offene_gaestenachrichten` (`eingegangen`). Tests: `tests/nachricht-zeit.test.ts`.
+
+### Post: Wischen zum Löschen (`src/components/mail/SwipeRow.tsx`)
+Entscheidung Mathias 31.10.2026: In der Mail-Liste wie in Apple Mail nach links wischen → roter „Papierkorb“-Knopf;
+weit wischen (> 45 % Breite) verschiebt sofort in den Papierkorb (wiederherstellbar, kein Löschen). Senkrechtes
+Scrollen bleibt unberührt; im Papierkorb-Ordner ist Wischen aus.
 
 ### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
 

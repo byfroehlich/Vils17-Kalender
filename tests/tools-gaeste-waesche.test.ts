@@ -88,7 +88,7 @@ describe("gaeste_nachrichten", () => {
     const r = await call("gaeste_nachrichten", { buchung_id: world.bookings.b2.id });
     expect(r.ok).toBe(true);
     expect(r.result).toMatchObject({ gast: "Bernd Huber", wartet_auf_antwort: true, anzahl: 2 });
-    expect(r.result.nachrichten[1]).toEqual({ id: "12", von: "gast", betreff: "Frage", text: "Gibt es ein Kinderbett?" });
+    expect(r.result.nachrichten[1]).toEqual({ id: "12", von: "gast", betreff: "Frage", text: "Gibt es ein Kinderbett?", zeit: null });
 
     const c = calls[0]!;
     expect(c.method).toBe("GET");
@@ -107,8 +107,8 @@ describe("gaeste_nachrichten", () => {
 
   it("lastMessage ordnet nach numerischer ID, nicht nach Lieferreihenfolge", () => {
     const m = lastMessage([
-      { id: "30", von: "gastgeber", betreff: null, text: "b" },
-      { id: "4", von: "gast", betreff: null, text: "a" },
+      { id: "30", von: "gastgeber", betreff: null, text: "b", zeit: null },
+      { id: "4", von: "gast", betreff: null, text: "a", zeit: null },
     ]);
     expect(m?.id).toBe("30");
   });

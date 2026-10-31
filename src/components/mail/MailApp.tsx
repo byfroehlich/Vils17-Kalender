@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Mail, Inbox, Send, Trash2, Archive, FileText, ShieldAlert, Folder, RefreshCw, PenSquare, ArrowLeft, Reply, ReplyAll, Forward, Paperclip, Star, MailOpen, Search, X, Image as ImageIcon, Download } from "lucide-react";
+import { SwipeRow } from "./SwipeRow";
 
 // ─── Mail-Bereich: kleines Mailprogramm für info@vils17.at ────────────────────
 // Liste → Mail → Antworten. Alles live vom Server (IMAP), nichts zwischengespeichert.
@@ -290,8 +291,9 @@ export function MailApp({ address, canSend }: { address: string | null; canSend:
           const sent = currentFolder?.specialUse === "\\Sent" || currentFolder?.specialUse === "\\Drafts";
           const name = sent ? `An: ${person(m.to[0])}${m.to.length > 1 ? ` +${m.to.length - 1}` : ""}` : person(m.from[0]) || "(unbekannt)";
           return (
-            <button key={`${m.folder}-${m.uid}`} onClick={() => openMail(m)} disabled={opening}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: m.seen ? "transparent" : "rgba(20,184,166,0.10)", border: 0, borderTop: i ? "1px solid rgba(255,255,255,0.10)" : 0, color: "#fff", cursor: "pointer" }}>
+            <SwipeRow key={`${m.folder}-${m.uid}`} enabled={currentFolder?.specialUse !== "\\Trash"} onTap={() => { if (!opening) openMail(m); }} onDelete={() => patch(m, { move: "trash" })}>
+            <div role="button" tabIndex={0}
+              style={{ display: "block", width: "100%", textAlign: "left", padding: "12px 16px", background: m.seen ? "transparent" : "rgba(20,184,166,0.10)", borderTop: i ? "1px solid rgba(255,255,255,0.10)" : 0, color: "#fff", cursor: "pointer" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                 {!m.seen && <span style={{ width: 8, height: 8, borderRadius: 999, background: "#14B8A6", flexShrink: 0 }} />}
                 <span style={{ fontSize: 14, fontWeight: m.seen ? 500 : 700, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
@@ -301,7 +303,8 @@ export function MailApp({ address, canSend }: { address: string | null; canSend:
                 <span style={{ fontSize: 12, color: muted, flexShrink: 0 }}>{shortDate(m.date)}</span>
               </div>
               <div style={{ fontSize: 13, color: m.seen ? "rgba(255,255,255,0.70)" : "rgba(255,255,255,0.92)", marginTop: 2, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", paddingLeft: m.seen ? 0 : 16 }}>{m.subject || "(kein Betreff)"}</div>
-            </button>
+            </div>
+            </SwipeRow>
           );
         })}
         {loading && <p style={{ padding: 16, fontSize: 13, color: muted }}>Lädt …</p>}
