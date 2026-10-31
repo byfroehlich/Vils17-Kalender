@@ -6,6 +6,7 @@ import { syncBookings } from "./sync";
 import { runReminders, maybeSendDailyStatus } from "./notifications";
 import { scanNoteSuggestions } from "./note-suggestions";
 import { runBedroomQuestions } from "./bedroom-question";
+import { runReviewRequests } from "./review-request";
 
 type SyncStats = Awaited<ReturnType<typeof syncBookings>>;
 
@@ -77,6 +78,8 @@ export async function runAutoSync(organizationId: string, force = false) {
     await runDreame({ organizationId }).catch((e) => console.error("[sync] Saugroboter:", e instanceof Error ? e.message : e));
     // Schlafzimmer-Frage bei 2 Gästen (Penthouse) — einmal je Buchung, nicht nachts
     await runBedroomQuestions(organizationId).catch((e) => console.error("[sync] Schlafzimmer-Frage:", e instanceof Error ? e.message : e));
+    // Bewertungsanfrage nach der Abreise — nur mit REVIEW_REQUEST_ENABLED=true, einmal je Buchung, 8–21 Uhr
+    await runReviewRequests(organizationId).catch((e) => console.error("[sync] Bewertungsanfrage:", e instanceof Error ? e.message : e));
     // Sonderwünsche in Gästechats → Vorschläge „Hinweis für die Reinigung“ (gedrosselt, idempotent)
     await scanNoteSuggestions(organizationId).catch((e) => console.error("[sync] Hinweise:", e instanceof Error ? e.message : e));
     await runReminders(organizationId).catch((e) => console.error("[sync] Warnungen:", e));

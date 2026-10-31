@@ -549,6 +549,27 @@ ein Schlafzimmer oder getrennt in beiden? Texte DE/EN **wörtlich** wie freigege
 - Antworten („lieber getrennt“, „separate bedrooms“) erkennt die Sonderwunsch-Erkennung als Hinweis-Vorschlag.
 - Tests: `tests/schlafzimmer-frage.test.ts`.
 
+### Bewertungsanfrage (`src/lib/review-request.ts`)
+Entscheidung Mathias 31.10.2026: Gäste, die schon bewertet haben, bekommen keine Bewertungsanfrage mehr. Statt
+Smoobu-Vorlage 6 (Abreise + 2 Tage, 8:00, an alle) schickt die App die Anfrage selbst über `sendGuestMessage`.
+- **Schalter:** nur mit `REVIEW_REQUEST_ENABLED=true` (Vorgabe aus). Erst einschalten, wenn Vorlage 6 in Smoobu
+  abgeschaltet ist — sonst bekommen Gäste zwei Nachrichten. Optional `REVIEW_REQUEST_FROM=JJJJ-MM-TT` (Tag des
+  Umstiegs): ältere Abreisen werden nicht nachgeholt, weil Smoobu sie schon angeschrieben hat.
+- **Fällig:** bestätigt, mit `smoobuId`, kein Block-Kanal, Abreise vor 2 Tagen (Kalendertag Wien), ab 8:00 bis 21:00 Wien;
+  verpasste Fälle bis Abreise vor 7 Tagen werden nachgeholt, älter nie.
+- **Airbnb:** vorher Postfach info@vils17.at prüfen (Kopfdaten über Sequenznummern, kein SEARCH, nichts als gelesen
+  markiert; alle Ordner außer Gesendet/Entwürfe/Spam). Mail von `automated@airbnb.com` seit Anreise, Betreff mit dem
+  Vornamen und „hat eine …-Sterne-Bewertung hinterlassen“ / „hat dir eine Bewertung geschrieben“ (auch „left a … review“ /
+  „wrote you a review“) → keine Anfrage, `reviewRequestSkippedAt` + `reviewRequestSkipReason`. „wartet auf deine Bewertung“
+  ist kein Signal. Postfach nicht eingerichtet/erreichbar → in diesem Lauf nichts senden (nicht blind).
+- **Booking.com / Direkt:** kein Signal verfügbar → Anfrage wird gesendet.
+- Texte DE/EN **wörtlich** in `REVIEW_REQUEST_TEXT` (Platzhalter Vorname, Kanal); Direktbuchung: Satz ohne Kanal
+  („… über eine kurze Bewertung freuen.“). Sprache wie bei der Schlafzimmer-Frage. Nicht ändern ohne neue Freigabe.
+- Einmal je Buchung: `Booking.reviewRequestSentAt` atomar vor dem Senden; Smoobu-Ablehnung mit Status → zurückgesetzt,
+  unklarer Netzfehler → bleibt gesetzt. Läuft in `runAutoSync` (App-Takt). Audit `guest.message.sent`
+  (`zweck: "bewertungsanfrage"`) bzw. `guest.review_request.skipped` — nie Text, Namen oder Adressen.
+- Tests: `tests/bewertungsanfrage.test.ts`.
+
 ### Dashboard „Zu erledigen“ (`src/lib/todo.ts`, `TodoCard`, `WeekCard`)
 Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltung, Mathias' Mutter), ruhig und klar:
 - **Oben EINE Karte „Zu erledigen“** (`loadTodos`), eine Zeile je Punkt, Tipp öffnet den Punkt, sortiert nach

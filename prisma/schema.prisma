@@ -38,32 +38,32 @@ enum SubscriptionPlan {
 // ─── Multi-Tenant ─────────────────────────────────────────────────────────────
 
 model Organization {
-  id               String           @id @default(cuid())
-  name             String
-  slug             String           @unique
-  plan             SubscriptionPlan @default(FREE)
-  stripeCustomerId String?
+  id                String           @id @default(cuid())
+  name              String
+  slug              String           @unique
+  plan              SubscriptionPlan @default(FREE)
+  stripeCustomerId  String?
   // Zeitpunkt des letzten erfolgreichen Smoobu-Syncs — steuert die
   // Selbstaktualisierung der App und zeigt, ob der Cron wirklich läuft
-  lastSyncAt       DateTime?
+  lastSyncAt        DateTime?
   // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem der Tagesstatus verschickt wurde
   dailyStatusSentOn String?
   // Wäsche-Reserve je Teil, die nach allen Anreisen immer noch im Keller liegen soll
   // ({ beds: 3, towels: 3, … }); null = Vorgabe aus laundry-stock.ts
-  laundryReserve   Json?
+  laundryReserve    Json?
   // Fingerabdruck der zuletzt gemeldeten Wäsche-Lage („reicht nicht ab …“): gleiche Lage →
   // keine neue Meldung; ändert eine Buchung/Storno die Lage → neue Meldung; reicht es
   // wieder → null (Entscheidung Mathias 31.10.2026)
-  laundryAlertKey  String?
+  laundryAlertKey   String?
   // Letzter Lauf der Sonderwunsch-Erkennung in den Gästechats (gedrosselt, siehe note-suggestions.ts)
-  noteScanAt       DateTime?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  noteScanAt        DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  users        User[]
-  apartments   Apartment[]
-  emailImports EmailImport[]
-  mcpTokens    McpToken[]
+  users             User[]
+  apartments        Apartment[]
+  emailImports      EmailImport[]
+  mcpTokens         McpToken[]
   laundryCounts     LaundryCount[]
   laundryDeliveries LaundryDelivery[]
   issues            Issue[]
@@ -235,15 +235,15 @@ model Apartment {
   active      Boolean @default(true)
 
   // Wäsche-Konfiguration
-  laundryBedsDivisor     Int @default(2) // 1 Bettset pro N Gäste (aufgerundet), z.B. 2 = 1 Set pro Doppelzimmer
-  laundryTowelsPerGuest  Int @default(1) // Handtücher pro Gast
-  laundryKitchenCount    Int @default(1) // Küchenhandtücher pro Buchung (fix)
+  laundryBedsDivisor    Int   @default(2) // 1 Bettset pro N Gäste (aufgerundet), z.B. 2 = 1 Set pro Doppelzimmer
+  laundryTowelsPerGuest Int   @default(1) // Handtücher pro Gast
+  laundryKitchenCount   Int   @default(1) // Küchenhandtücher pro Buchung (fix)
   // Betten in Belegungsreihenfolge für Spannbettlaken-Größen, z.B. [{"width":200,"persons":2},{"width":180,"persons":2},{"width":90,"persons":1}]
   // null = Vorgabe über laundryBedsDivisor (180er)
-  laundryBeds            Json?
+  laundryBeds           Json?
 
   // Dreame Saugroboter
-  dreameEnabled Boolean @default(false)
+  dreameEnabled       Boolean @default(false)
   // Bei genau 2 Gästen automatisch fragen: ein Schlafzimmer oder getrennt? (Penthouse, Entscheidung Mathias 31.10.2026)
   askSeparateBedrooms Boolean @default(false)
 
@@ -275,46 +275,51 @@ model Booking {
   id             String @id @default(cuid())
   organizationId String // denormalisiert für einfache Abfragen ohne JOIN
 
-  smoobuId    Int?    @unique
+  smoobuId    Int?      @unique
   apartmentId String
   apartment   Apartment @relation(fields: [apartmentId], references: [id])
 
-  guestName  String
-  guestEmail String?
-  guestPhone String?
-  guestCount Int     @default(1)
+  guestName                String
+  guestEmail               String?
+  guestPhone               String?
+  guestCount               Int       @default(1)
   // true = Gästezahl wurde von Hand korrigiert; der Sync überschreibt sie dann
   // nicht mehr (Smoobu liefert für manche Kanäle keine Gästezahl)
-  guestCountManual Boolean @default(false)
+  guestCountManual         Boolean   @default(false)
   // Woher die abweichende Gästezahl stammt: "manual" (Eingabe) oder "email" (Portal-Mail)
-  guestCountSource String?
+  guestCountSource         String?
   // true = der Channel Manager hat keine Gästezahl geliefert (guestCount ist nur ein Notwert).
   // Die Wäscheplanung rechnet dann mit der vollen Belegung der Wohnung (vorsichtig).
-  guestCountUnknown Boolean @default(false)
+  guestCountUnknown        Boolean   @default(false)
   // Einmalige Push-Warnung „Gästezahl unbekannt“ (≤ 30 Tage vor Anreise) verschickt
   // (Entscheidung Mathias 31.10.2026: unbestätigte Gästezahl muss sichtbar sein und geklärt werden)
   guestCountReminderSentAt DateTime?
   // Schlafzimmer-Frage an den Gast verschickt (einmal je Buchung, src/lib/bedroom-question.ts)
-  bedroomQuestionSentAt DateTime?
+  bedroomQuestionSentAt    DateTime?
+  // Bewertungsanfrage nach der Abreise verschickt (einmal je Buchung, src/lib/review-request.ts)
+  reviewRequestSentAt      DateTime?
+  // Bewertungsanfrage bewusst nicht verschickt (z.B. Airbnb-Bewertung liegt schon vor) + Grund
+  reviewRequestSkippedAt   DateTime?
+  reviewRequestSkipReason  String?
   /// Gästechat als erledigt markiert („keine Antwort nötig“) bis zu dieser Nachricht (Smoobu-ID); neue Gastnachricht → wieder offen
-  chatDoneMessageId     String?
-  petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
+  chatDoneMessageId        String?
+  petCount                 Int? // Hunde (kein Portal liefert dafür ein eigenes Feld)
   // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
-  petSource  String?
+  petSource                String?
   // Kurzer Auszug der Stelle, an der der Hund erkannt wurde (zum Gegenprüfen)
-  petHint    String?
+  petHint                  String?
   // Hundegebühr (nur wo das Portal sie nicht selbst kassiert, v.a. Booking.com):
   // null = noch nichts unternommen, REQUESTED = beim Gast angefordert, PAID, WAIVED = erlassen
-  petFeeStatus      String?
-  petFeeAmount      Float?   // Betrag der Anforderung (festgehalten beim Anfordern/Bezahlen)
-  petFeeRequestedAt DateTime?
-  petFeePaidAt      DateTime?
+  petFeeStatus             String?
+  petFeeAmount             Float? // Betrag der Anforderung (festgehalten beim Anfordern/Bezahlen)
+  petFeeRequestedAt        DateTime?
+  petFeePaidAt             DateTime?
   // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
-  channelNotice String?
+  channelNotice            String?
   // Sondersatz-Vermerk, beim Eingang der Buchung von der Wohnung übernommen und
   // danach nie mehr verändert ("70-€-Buchung für Vanessa")
-  premiumRate          Float?
-  premiumRateCleanerId String?
+  premiumRate              Float?
+  premiumRateCleanerId     String?
 
   checkIn       DateTime
   checkOut      DateTime
@@ -322,7 +327,7 @@ model Booking {
   departureTime String? // "10:00"
 
   channelName String? // "Airbnb", "Booking.com", "Direkt"
-  price       Float?  // Brutto-Buchungspreis aus Smoobu
+  price       Float? // Brutto-Buchungspreis aus Smoobu
   currency    String? @default("EUR")
   status      String  @default("confirmed") // confirmed, cancelled, pending
 
@@ -364,13 +369,13 @@ model CleaningAssignment {
   notifiedAt DateTime?
 
   // Reiniger-Absage
-  cleanerUnavailable     Boolean  @default(false)
+  cleanerUnavailable     Boolean   @default(false)
   cleanerUnavailableNote String?
   cleanerUnavailableAt   DateTime?
   // Wer hat abgesagt — bleibt erhalten wenn jemand anderes den Job übernimmt,
   // damit der Absagende die Buchung weiterhin als "abgesagt" sieht
-  declinedById String?
-  declinedBy   User?   @relation("AssignmentDeclinedBy", fields: [declinedById], references: [id], onDelete: SetNull)
+  declinedById           String?
+  declinedBy             User?     @relation("AssignmentDeclinedBy", fields: [declinedById], references: [id], onDelete: SetNull)
 
   // Wäsche
   laundryStatus      LaundryStatus @default(OPEN)
@@ -401,7 +406,7 @@ model CleaningAssignment {
   dreameWarnedAt  DateTime?
 
   /// Inventar-/Verbrauchs-Check beim Erledigen beantwortet
-  checkedAt       DateTime?
+  checkedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
