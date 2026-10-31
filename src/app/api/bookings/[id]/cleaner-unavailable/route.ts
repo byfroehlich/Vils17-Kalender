@@ -44,7 +44,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
       // damit der Absagende die Buchung weiterhin sieht
       declinedById: isDecline ? (assignment.cleanerId ?? session.user.id) : null,
       // Status auf UNASSIGNED setzen damit andere zusagen können.
-      // cleanerId bleibt gesetzt damit AbsagenBanner den Namen anzeigen kann.
+      // cleanerId bleibt gesetzt damit „Zu erledigen“ (Dashboard) den Namen anzeigen kann.
       ...(isDecline ? { status: "UNASSIGNED" } : {}),
     },
   });
