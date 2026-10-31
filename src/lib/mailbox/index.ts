@@ -1,4 +1,4 @@
-import { ImapFlow, type ListResponse, type MessageAddressObject, type MessageStructureObject } from "imapflow";
+import { ImapFlow, type FetchMessageObject, type ListResponse, type MessageAddressObject, type MessageStructureObject } from "imapflow";
 import { simpleParser, type AddressObject } from "mailparser";
 import MailComposer from "nodemailer/lib/mail-composer";
 import { mailboxConfig, smtpTransport, type MailboxConfig } from "./config";
@@ -147,28 +147,42 @@ export async function listMessages(params: { folder?: string; page?: number; pag
   const q = params.query?.trim();
 
   return withImap((client) => withFolder(client, folder, async () => {
-    const criteria: Record<string, unknown> = q ? { or: [{ from: q }, { to: q }, { subject: q }, { body: q }] } : { all: true };
+    const toSummary = (m: FetchMessageObject): MailSummary => ({
+      uid: m.uid,
+      folder,
+      from: addr(m.envelope?.from),
+      to: addr(m.envelope?.to),
+      subject: m.envelope?.subject ?? "",
+      date: m.envelope?.date ? new Date(m.envelope.date).toISOString() : null,
+      seen: m.flags?.has("\\Seen") ?? false,
+      answered: m.flags?.has("\\Answered") ?? false,
+      flagged: m.flags?.has("\\Flagged") ?? false,
+      hasAttachments: hasAttachment(m.bodyStructure),
+      size: m.size ?? null,
+    });
+    const query = { uid: true, envelope: true, flags: true, bodyStructure: true, size: true } as const;
+    const messages: MailSummary[] = [];
+
+    // Ohne Filter: über Sequenznummern blättern (neueste = höchste Nummer) — kein SEARCH nötig
+    if (!q && !params.unseenOnly) {
+      const exists = client.mailbox ? client.mailbox.exists : 0;
+      const hi = exists - (page - 1) * pageSize;
+      const lo = Math.max(1, hi - pageSize + 1);
+      if (hi >= 1) {
+        for await (const m of client.fetch(`${lo}:${hi}`, query)) messages.push(toSummary(m));
+      }
+      messages.sort((a, b) => b.uid - a.uid);
+      return { total: exists, page, pageSize, messages };
+    }
+
+    const criteria: Record<string, unknown> = q ? { or: [{ from: q }, { to: q }, { subject: q }, { body: q }] } : {};
     if (params.unseenOnly) criteria.seen = false;
     const found = await client.search(criteria, { uid: true });
-    const uids = (Array.isArray(found) ? found : []).sort((a, b) => b - a);
+    if (found === false) throw new MailboxError("Suche im Postfach fehlgeschlagen.");
+    const uids = found.sort((a, b) => b - a);
     const slice = uids.slice((page - 1) * pageSize, page * pageSize);
-    const messages: MailSummary[] = [];
     if (slice.length) {
-      for await (const m of client.fetch(slice, { uid: true, envelope: true, flags: true, bodyStructure: true, size: true }, { uid: true })) {
-        messages.push({
-          uid: m.uid,
-          folder,
-          from: addr(m.envelope?.from),
-          to: addr(m.envelope?.to),
-          subject: m.envelope?.subject ?? "",
-          date: m.envelope?.date ? new Date(m.envelope.date).toISOString() : null,
-          seen: m.flags?.has("\\Seen") ?? false,
-          answered: m.flags?.has("\\Answered") ?? false,
-          flagged: m.flags?.has("\\Flagged") ?? false,
-          hasAttachments: hasAttachment(m.bodyStructure),
-          size: m.size ?? null,
-        });
-      }
+      for await (const m of client.fetch(slice, query, { uid: true })) messages.push(toSummary(m));
       messages.sort((a, b) => b.uid - a.uid);
     }
     return { total: uids.length, page, pageSize, messages };

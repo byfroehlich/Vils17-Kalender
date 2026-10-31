@@ -25,11 +25,13 @@ vi.mock("imapflow", async () => {
   const { simpleParser } = await import("mailparser");
   const toAddr = (a: any) => (a ? a.value.map((v: any) => ({ name: v.name, address: v.address })) : []);
   class ImapFlow {
+    mailbox: { path: string; exists: number } | false = false;
     async connect() { imap.connects++; }
     async logout() {}
     async getMailboxLock(path: string) {
       if (!imap.folders[path]) throw new Error("no such mailbox");
       imap.current = path;
+      this.mailbox = { path, exists: imap.folders[path]!.length };
       return { release() {} };
     }
     async list() {
@@ -39,10 +41,19 @@ vi.mock("imapflow", async () => {
     async search(q: any) {
       const all = imap.folders[imap.current]!;
       const term = q.or?.[0]?.from?.toLowerCase();
+      if (q.all) throw new Error("SEARCH ALL sollte nicht nötig sein");
       return all.filter((m) => (!term || m.raw.toLowerCase().includes(term)) && (q.seen !== false || !m.flags.has("\\Seen")) && (!q.since || true)).map((m) => m.uid);
     }
-    async *fetch(uids: number[], query: any) {
-      for (const m of imap.folders[imap.current]!.filter((x) => uids.includes(x.uid))) {
+    async *fetch(range: number[] | string, query: any, opts?: { uid?: boolean }) {
+      const all = imap.folders[imap.current]!;
+      let pick: FakeMsg[];
+      if (typeof range === "string") {
+        // Sequenznummern lo:hi (1-basiert)
+        const [lo, hi] = range.split(":").map(Number);
+        pick = all.slice(lo! - 1, hi!);
+        if (opts?.uid) throw new Error("Test erwartet Sequenzbereich ohne uid");
+      } else pick = all.filter((x) => range.includes(x.uid));
+      for (const m of pick) {
         const p = await simpleParser(m.raw);
         yield { uid: m.uid, flags: new Set(m.flags), size: m.raw.length, envelope: { messageId: p.messageId, subject: p.subject, date: p.date, from: toAddr(p.from), to: toAddr(p.to) }, bodyStructure: { type: "text/plain" }, ...(query.source ? { source: Buffer.from(m.raw) } : {}) };
       }
