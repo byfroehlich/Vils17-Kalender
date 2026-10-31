@@ -11,6 +11,7 @@ import { RateBadge } from "@/components/ui/RateBadge";
 import { GuestChat } from "@/components/bookings/GuestChat";
 import { DogFeeCard } from "@/components/bookings/DogFeeCard";
 import { calculateLaundryQuantity, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { isGuestCountUnconfirmed } from "@/lib/guest-count";
 interface Cleaner {
   id: string;
   name: string;
@@ -35,6 +36,7 @@ interface Booking {
   smoobuId?: number | null;
   guestCount: number;
   guestCountManual?: boolean;
+  guestCountUnknown?: boolean;
   channelNotice?: string | null;
   premiumRate?: number | null;
   premiumRateCleanerId?: string | null;
@@ -243,6 +245,20 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
                   </span>
                 )}
               </div>
+              {isGuestCountUnconfirmed(booking) && (
+                <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 10, background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.45)" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#FCA5A5" }}>⚠ Gästezahl unbekannt</p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>
+                    Das Portal hat keine Gästezahl geliefert ({booking.guestCount} ist nur ein Platzhalter). Im Portal nachsehen, Zahl eintragen und bestätigen.
+                  </p>
+                  <button
+                    onClick={saveGuestCount}
+                    style={{ marginTop: 6, padding: "4px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", background: "rgba(239,68,68,0.25)", border: "1px solid rgba(239,68,68,0.5)", color: "#FECACA" }}
+                  >
+                    {guestCount === "" ? "Zahl eintragen" : `${guestCount} ${guestCount === 1 ? "Person" : "Personen"} bestätigen`}
+                  </button>
+                </div>
+              )}
               {booking.guestCountManual && (
                 <button
                   onClick={resetGuestCount}

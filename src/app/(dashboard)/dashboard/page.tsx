@@ -11,6 +11,8 @@ import { SyncButton } from "@/components/dashboard/SyncButton";
 import { WeekStrip } from "@/components/dashboard/WeekStrip";
 import { CleaningToday } from "@/components/dashboard/CleaningToday";
 import { LaundryStockHint } from "@/components/dashboard/LaundryStockHint";
+import { GuestCountBanner } from "@/components/dashboard/GuestCountBanner";
+import { UNCONFIRMED_GUEST_COUNT } from "@/lib/guest-count";
 import { loadLaundryPlan } from "@/lib/laundry-proposal";
 import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "@/lib/laundry-order";
 import { laundryText, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
@@ -156,6 +158,13 @@ export default async function DashboardPage() {
     cleaningUnassigned: !b.cleaningAssignment || b.cleaningAssignment.status === "UNASSIGNED",
   }));
 
+  // Gästezahl unbekannt (Kanal lieferte keine) — alle kommenden Buchungen, bis geklärt
+  const unconfirmedGuestCounts = await prisma.booking.findMany({
+    where: { organizationId: orgId, status: "confirmed", checkOut: { gte: now }, ...UNCONFIRMED_GUEST_COUNT },
+    orderBy: { checkIn: "asc" },
+    select: { id: true, guestName: true, checkIn: true, channelName: true, guestCount: true, apartment: { select: { name: true } } },
+  });
+
   // Wäsche nach Bestand: reicht es für die nächsten 14 Tage?
   const laundryHint = await (async () => {
     const today = todayVienna(now);
@@ -171,6 +180,7 @@ export default async function DashboardPage() {
     const parts: string[] = [];
     if (alert.orderItems.length) parts.push(`Bestellen: ${laundryText(r.plan.order)}`);
     if (alert.shortItems.length) parts.push(`vor der nächsten Lieferung knapp: ${alert.shortItems.map((k) => LAUNDRY_ITEMS.find((i) => i.key === k)?.label ?? k).join(", ")}`);
+    if (r.plan.unconfirmedArrivals) parts.push(`enthält ${r.plan.unconfirmedArrivals} unbestätigte Gästezahl${r.plan.unconfirmedArrivals === 1 ? "" : "en"} (volle Belegung angenommen)`);
     return {
       headline: first ? `Wäsche reicht nicht ab ${de(first.day)}` : "Wäsche reicht nicht für die nächsten 14 Tage",
       detail: parts.join(" · "),
@@ -226,6 +236,13 @@ export default async function DashboardPage() {
               checkinsToday={checkinsToday}
             />
           </div>
+
+          {/* Gästezahl unbekannt — ganz oben, rot */}
+          {unconfirmedGuestCounts.length > 0 && (
+            <div style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: "0.06s", opacity: 0 }}>
+              <GuestCountBanner bookings={unconfirmedGuestCounts} />
+            </div>
+          )}
 
           {/* Absagen-Warnung */}
           {declinedAssignments.length > 0 && (
