@@ -1,5 +1,7 @@
 "use client";
 
+import type { PreviousDeparture } from "@/lib/departure-format";
+import { PreviousDepartureLine } from "@/components/ui/PreviousDepartureLine";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatDateLong, formatDateShort } from "@/lib/utils";
@@ -27,6 +29,8 @@ export interface Assignment {
   foreignDecline?: boolean;
   cleaner?: { name: string } | null;
   nextGuestCount?: number | null;
+  /** Abreise der Vorgäste in dieser Wohnung (vom Server) */
+  previousDeparture?: PreviousDeparture | null;
   /** Satz dieses Auftrags (lib/rates.ts) */
   rate?: number;
   /** Sondersatz, z.B. 70 € Penthouse */
@@ -48,6 +52,8 @@ export interface OpenAssignment {
   id: string;
   notes?: string | null;
   nextGuestCount?: number | null;
+  /** Abreise der Vorgäste in dieser Wohnung (vom Server) */
+  previousDeparture?: PreviousDeparture | null;
   /** Sondersatz, den ICH beim Zusagen bekäme */
   isPremium?: boolean;
   premiumRate?: number | null;
@@ -433,6 +439,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
                 bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
               </p>
               {b.arrivalTime && <p style={{ fontSize: 12, color: "rgba(255,255,255,0.50)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
+              <PreviousDepartureLine value={assignment.previousDeparture} />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
@@ -602,6 +609,7 @@ export function JobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
                 bis {formatDateShort(new Date(b.checkOut))}{b.departureTime && ` · Abreise bis ${b.departureTime} Uhr`}
               </p>
               {b.arrivalTime && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginTop: 1 }}>Anreise ab {b.arrivalTime} Uhr</p>}
+              <PreviousDepartureLine value={assignment.previousDeparture} />
             </div>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>

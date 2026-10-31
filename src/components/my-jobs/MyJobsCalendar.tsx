@@ -15,6 +15,8 @@ import { JobCard, OpenAssignment, Assignment } from "./MyJobsList";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { NoteBadge } from "@/components/ui/NoteBadge";
+import type { DepartureMarker } from "@/lib/departure-format";
+import { PreviousDepartureLine } from "@/components/ui/PreviousDepartureLine";
 import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
   background: "rgba(255,255,255,0.14)",
@@ -48,14 +50,28 @@ function getAptPair(baseColor: string): [string, string] {
   return [baseColor, lightenHex(baseColor, 0.38)];
 }
 
+/** Kurzname der Wohnung für die Abreise-Markierung („Penthouse No. 17 - Vils“ → „Penthouse“) */
+function shortApt(name: string): string {
+  return name.split(/\s+No\.|\s+-\s+/)[0]?.trim() || name;
+}
+
+/** Abreisen eines Tages (Kalendertag JJJJ-MM-TT in UTC, wie gespeichert) */
+function departuresOn(departures: DepartureMarker[], d: Date): DepartureMarker[] {
+  const key = format(d, "yyyy-MM-dd");
+  return departures.filter((x) => x.day === key);
+}
+
 export function MyJobsCalendar({
   myAssignments,
   openAssignments,
   isCleaner,
+  departures = [],
 }: {
   myAssignments: Assignment[];
   openAssignments: OpenAssignment[];
   isCleaner: boolean;
+  /** Abreisen BEIDER Wohnungen, ohne Gastnamen (Entscheidung Mathias 31.10.2026) */
+  departures?: DepartureMarker[];
 }) {
   const router = useRouter();
   const [view, setView] = useState<"month" | "year">("month");
@@ -139,6 +155,7 @@ export function MyJobsCalendar({
 
   const selectedAssignments = selectedDay ? assignmentsForDay(selectedDay) : [];
   const selectedOpen = selectedDay ? openForDay(selectedDay) : [];
+  const selectedDepartures = selectedDay ? departuresOn(departures, selectedDay) : [];
 
   return (
     <div className="space-y-4">
@@ -183,6 +200,7 @@ export function MyJobsCalendar({
         <MonthView
           myAssignments={myAssignments}
           openAssignments={openAssignments}
+          departures={departures}
           month={calMonth}
           onPrev={() => { setCalMonth(subMonths(calMonth, 1)); setSelectedDay(null); }}
           onNext={() => { setCalMonth(addMonths(calMonth, 1)); setSelectedDay(null); }}
@@ -192,11 +210,20 @@ export function MyJobsCalendar({
       )}
 
       {/* Ausgewählter Tag */}
-      {(selectedAssignments.length > 0 || selectedOpen.length > 0) && (
+      {(selectedAssignments.length > 0 || selectedOpen.length > 0 || selectedDepartures.length > 0) && (
         <div className="space-y-3">
           <p style={{ fontSize: 12, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>
             {formatDateLong(selectedDay!)}
           </p>
+          {selectedDepartures.length > 0 && (
+            <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 6 }}>
+              {selectedDepartures.map((d, i) => (
+                <span key={`${d.apartmentId}-${i}`} style={{ fontSize: 12, color: "rgba(255,255,255,0.55)", padding: "3px 10px", borderRadius: 9999, border: "1.5px dashed rgba(255,255,255,0.30)" }}>
+                  Abreise {shortApt(d.apartmentName)}
+                </span>
+              ))}
+            </div>
+          )}
           {selectedOpen.map((a) => (
             <div key={a.id} style={{ background: "rgba(16,185,129,0.08)", border: "1px solid rgba(16,185,129,0.25)", borderRadius: 16, padding: "14px 18px" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
@@ -207,6 +234,7 @@ export function MyJobsCalendar({
                     {a.booking.arrivalTime && ` · ab ${a.booking.arrivalTime}`}
                   </p>
                   {a.notes?.trim() && <p style={{ fontSize: 13, fontWeight: 600, color: "#fde68a", marginTop: 4, whiteSpace: "pre-wrap" as const }}>⭐ {a.notes}</p>}
+                  <PreviousDepartureLine value={a.previousDeparture} compact />
                 </div>
                 <button onClick={() => claimJob(a.booking.id)} disabled={loadingId === a.booking.id}
                   style={{ display: "flex", alignItems: "center", gap: 6, padding: "10px 16px", background: "rgba(16,185,129,0.85)", border: "none", borderRadius: 12, color: "white", fontWeight: 700, fontSize: 14, cursor: "pointer", flexShrink: 0 }}>
@@ -269,10 +297,11 @@ export function MyJobsCalendar({
 // ─── Monatsansicht mit admin-style Buchungsbalken ─────────────────────────────
 
 function MonthView({
-  myAssignments, openAssignments, month, onPrev, onNext, selectedDay, onSelectDay,
+  myAssignments, openAssignments, departures, month, onPrev, onNext, selectedDay, onSelectDay,
 }: {
   myAssignments: Assignment[];
   openAssignments: OpenAssignment[];
+  departures: DepartureMarker[];
   month: Date;
   onPrev: () => void;
   onNext: () => void;
@@ -392,7 +421,8 @@ function MonthView({
           const inMonth = isSameMonth(day, month);
           const today = isToday(day);
           const selected = selectedDay ? isSameDay(day, selectedDay) : false;
-          const hasAny = bars.length > 0 && inMonth;
+          const deps = inMonth ? departuresOn(departures, day) : [];
+          const hasAny = (bars.length > 0 || deps.length > 0) && inMonth;
           const hasAbsage = bars.some((b) => b.isAbsage) && inMonth;
           const dayIndex = (day.getDay() + 6) % 7; // 0=Mon … 6=Sun
 
@@ -426,6 +456,17 @@ function MonthView({
                   {format(day, "d")}
                 </span>
               </div>
+
+              {/* Abreisen (beide Wohnungen, auch fremde Reinigungen) — dezent, gestrichelt, grau */}
+              {deps.length > 0 && (
+                <div title={deps.map((d) => `Abreise ${shortApt(d.apartmentName)}`).join(", ")} style={{ display: "flex", justifyContent: "center", gap: 2, marginBottom: 2 }}>
+                  {Array.from(new Set(deps.map((d) => shortApt(d.apartmentName)))).map((n) => (
+                    <span key={n} style={{ fontSize: 8, lineHeight: "10px", fontWeight: 600, color: "rgba(255,255,255,0.50)", padding: "0 3px", borderRadius: 9999, border: "1px dashed rgba(255,255,255,0.35)", whiteSpace: "nowrap" as const }}>
+                      ↗{n.charAt(0)}
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {/* Buchungsbalken — admin-style mit Wechsel-Split */}
               {inMonth && (() => {
@@ -539,6 +580,10 @@ function MonthView({
         <span style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", display: "flex", alignItems: "center", gap: 4 }}>
           <span style={{ fontWeight: 700, fontSize: 9, background: "#14B8A6", color: "white", borderRadius: 3, padding: "0 3px" }}>4G</span>
           Gäste
+        </span>
+        <span style={{ fontSize: 11, color: "rgba(255,255,255,0.50)", display: "flex", alignItems: "center", gap: 4 }}>
+          <span style={{ fontSize: 8, fontWeight: 600, color: "rgba(255,255,255,0.55)", padding: "0 3px", borderRadius: 9999, border: "1px dashed rgba(255,255,255,0.35)" }}>↗P</span>
+          Abreise (alle Wohnungen)
         </span>
       </div>
     </div>

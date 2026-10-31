@@ -503,6 +503,21 @@ Entscheidung Mathias 31.10.2026: **ein Feld** — `CleaningAssignment.notes` = �
   90er Spannbettlaken, einen Bett- und einen Kissenbezug dazu (planLaundry, Buchungsdetail).
 - Tests: `tests/hinweise.test.ts`.
 
+### Abreisen der Vorgäste für Reinigungskräfte (`src/lib/departures.ts`, `src/lib/departure-format.ts`)
+Entscheidung Mathias 31.10.2026: Reinigungskräfte sehen nur ihre eigenen Aufträge (die Anreise, die sie
+vorbereiten), aber nicht, wann die Gäste davor abreisen — sie können nicht planen, ob am gleichen Tag oder schon
+am Vortag gereinigt werden kann.
+- **Server liefert** (`getMyJobsData` → `loadDepartureData`): `departures` = Abreisen **beider** Wohnungen
+  (bestätigte Buchungen, ca. 45 Tage zurück bis 400 Tage voraus) **ohne Gastnamen**, für ALLE Reinigungskräfte —
+  auch wenn es nicht ihre Reinigung ist; an jedem Auftrag `previousDeparture` (`findPreviousDeparture`: letzte
+  Abreise in derselben Wohnung am/vor dem Anreisetag; > 30 Tage leer → null).
+- **Kalender** (`MyJobsCalendar`): dezente, grau gestrichelte Markierung „↗P“/„↗L“ unter der Tageszahl, im
+  Tagesdetail „Abreise <Wohnung>“; eigene Reinigungen bleiben dominant. Legende „Abreise (alle Wohnungen)“.
+- **An jedem Auftrag** (`PreviousDepartureLine`, MyJobsList, CleanerDashboard, Kalender-Tagesdetail):
+  „Vorgäste reisen ab: Mi 04.11. (gleicher Tag)“ / „(Vortag frei)“ / „(3 Tage vorher frei)“, ohne Vorgäste
+  „Keine Vorgäste davor – Wohnung frei“.
+- Tests: `tests/abreisen.test.ts`.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {

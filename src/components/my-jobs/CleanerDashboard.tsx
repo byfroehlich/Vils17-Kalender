@@ -1,5 +1,7 @@
 "use client";
 
+import type { PreviousDeparture } from "@/lib/departure-format";
+import { PreviousDepartureLine } from "@/components/ui/PreviousDepartureLine";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -22,6 +24,8 @@ interface Assignment {
   cleanerUnavailableNote?: string | null;
   cleaner?: { name: string; cleanerRate: number } | null;
   nextGuestCount?: number | null;
+  /** Abreise der Vorgäste in dieser Wohnung (vom Server) */
+  previousDeparture?: PreviousDeparture | null;
   /** Satz dieses Auftrags (lib/rates.ts) — kann je Auftrag abweichen */
   rate?: number;
   booking: {
@@ -39,6 +43,8 @@ interface OpenAssignment {
   id: string;
   notes?: string | null;
   nextGuestCount?: number | null;
+  /** Abreise der Vorgäste in dieser Wohnung (vom Server) */
+  previousDeparture?: PreviousDeparture | null;
   booking: {
     id: string;
     guestCount: number;
@@ -387,6 +393,7 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
           </div>
+          <PreviousDepartureLine value={assignment.previousDeparture} compact />
           {assignment.notes?.trim() && (
             <p style={{ fontSize: 13, fontWeight: 600, color: "#fde68a", marginTop: 6, padding: "6px 10px", borderRadius: 10, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.30)", whiteSpace: "pre-wrap" as const }}>⭐ {assignment.notes}</p>
           )}
@@ -427,6 +434,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount} Gäste</span>
           </div>
+          <PreviousDepartureLine value={assignment.previousDeparture} compact />
         </div>
         <button
           onClick={onClaim}
