@@ -564,6 +564,27 @@ Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltun
 - Navigation: „Mängel“ steht in der mobilen Hauptleiste (nicht mehr unter „Mehr“).
 - Tests: `tests/zu-erledigen.test.ts`.
 
+### Stammgast-Funnel (`src/lib/regular-guests.ts`, `website/stammgast/`)
+Entscheidung Mathias 31.10.2026: Gäste scannen den QR-Code in der gedruckten Gästemappe, landen auf
+**vils17.at/stammgast/** und tragen sich freiwillig in eine eigene Stammgast-Liste ein (unabhängig von Airbnb/Booking).
+Rechtsgrundlage ist die Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; Werbung per E-Mail/WhatsApp § 174 TKG 2021).
+- Modell `RegularGuest`: Einwilligung **je Kanal getrennt** (`consentEmail`, `consentWhatsapp`), `consentText` = genau der
+  angehakte, sichtbare Text, `consentAt`. Eindeutig je `organizationId + email` (klein geschrieben): erneute Eintragung
+  aktualisiert und meldet wieder an, nie doppelt. Abmelden setzt `unsubscribedAt` (Zeile bleibt als Nachweis).
+- Öffentlich: `POST /api/public/stammgast` (nicht in der Middleware), CORS nur `https://vils17.at` und
+  `https://www.vils17.at` (OPTIONS beantwortet), Zod (Name 2–80, E-Mail, Telefon optional — Pflicht bei WhatsApp,
+  mind. eine Einwilligung, `consentText` Pflicht), Honeypot `website` (gefüllt → 200 ohne Speichern),
+  höchstens 5 Eintragungen je IP in 10 Min (im Speicher, je Instanz) → 429. Organisation: ENV `PUBLIC_ORG_SLUG`, sonst die erste.
+- Abmelden: `GET /api/public/stammgast/abmelden?token=…` (`unsubscribeToken`, zufällig) → kurze HTML-Bestätigung.
+  `unsubscribeUrl()` baut den Link — er gehört in jede Nachricht mit Angeboten.
+- Push „⭐ Neuer Stammgast eingetragen“ an Admin/Verwaltung nur bei Neueintragung, **ohne** Namen/Kontaktdaten.
+  Audit `regular_guest.signup` / `.updated` / `.unsubscribed` nur mit Kanal-Flags, nie mit Personendaten.
+- MCP `stammgaeste` (messages:read, nur lesen, `limit`/`cursor`): aktive Stammgäste mit Einwilligungen und `abmelde_link`;
+  abgemeldete nur mit `abgemeldete: true`. Kein Anlegen/Löschen über MCP.
+- Website: `website/stammgast/index.html` (noindex, nicht in der Sitemap, kein Tracking) sendet per fetch an
+  `https://vils17-kalender.onrender.com/api/public/stammgast`; Datenschutzerklärung Abschnitt „Stammgast-Liste“ (`#stammgast`).
+- Tests: `tests/stammgast.test.ts`.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {
