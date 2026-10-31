@@ -6,6 +6,7 @@ import {
   datum, wohnungFilter, pagingFields, monthPeriodFields,
   resolveApartmentId, resolveDays, resolveMonths, daysInMonth, paging, page,
 } from "../shared";
+import { isGuestCountUnconfirmed, guestCountSource, UNCONFIRMED_GUEST_COUNT } from "../../guest-count";
 
 // ─── wohnungen_list ───────────────────────────────────────────────────────────
 
@@ -63,7 +64,7 @@ export const buchungenList = defineTool({
   title: "Buchungen",
   description:
     "Listet Buchungen, die einen Zeitraum berühren (Aufenthalt überschneidet von–bis). Für Fragen wie „Wer ist im November da?“, " +
-    "„Welche Booking.com-Buchungen gibt es?“. Felder: Gast, Personen, Haustiere, Check-in/-out, Uhrzeiten, Kanal, Preis, Status, Hinweis. " +
+    "„Welche Booking.com-Buchungen gibt es?“. Felder: Gast, Personen (mit gaestezahl_quelle smoobu/von_hand/portal_mail/unbekannt und gaestezahl_bestaetigt), Haustiere, Check-in/-out, Uhrzeiten, Kanal, Preis, Status, Hinweis. " +
     "Der Preis ist der Betrag laut Smoobu (Auszahlung an Gastgeber, wenn Smoobu ihn liefert, sonst Gesamtpreis).",
   scope: "bookings:read",
   input: {
@@ -105,6 +106,8 @@ export const buchungenList = defineTool({
           gast: b.guestName,
           personen: b.guestCount,
           personen_von_hand_korrigiert: b.guestCountManual,
+          gaestezahl_quelle: guestCountSource(b),
+          gaestezahl_bestaetigt: !isGuestCountUnconfirmed(b),
           haustiere: b.petCount,
           check_in: day(b.checkIn),
           check_out: day(b.checkOut),
@@ -120,6 +123,53 @@ export const buchungenList = defineTool({
         take,
         skip
       ),
+    };
+  },
+});
+
+// ─── gaestezahl_offen ─────────────────────────────────────────────────────────
+
+export const gaestezahlOffen = defineTool({
+  name: "gaestezahl_offen",
+  title: "Unbestätigte Gästezahlen",
+  description:
+    "Listet kommende Buchungen, deren Gästezahl unbekannt ist: Das Portal (meist Booking.com über Smoobu) hat keine geliefert, " +
+    "in der App steht nur ein Platzhalter, und weder Hand-Eingabe noch Portal-Mail haben sie geklärt. " +
+    "Für „Wo fehlt die Gästezahl?“. Klären: im Portal/Extranet oder in den Bestätigungsmails (postfach, mail_lesen) nachsehen, " +
+    "dann gaestezahl_korrigieren. Die Wäscheplanung rechnet bis dahin mit voller Belegung.",
+  scope: "bookings:read",
+  input: {
+    tage: z.number().int().min(1).max(400).optional().describe("Anreisen in den nächsten N Tagen (Vorgabe 60)"),
+  },
+  async handler(args, ctx) {
+    const today = todayVienna();
+    const tage = args.tage ?? 60;
+    const rows = await prisma.booking.findMany({
+      where: {
+        organizationId: ctx.organizationId,
+        status: "confirmed",
+        ...UNCONFIRMED_GUEST_COUNT,
+        checkOut: { gte: today },
+        checkIn: { lt: addDays(today, tage) },
+      },
+      orderBy: { checkIn: "asc" },
+      include: { apartment: { select: { name: true } } },
+    });
+    return {
+      zeitraum: { von: day(today), bis: day(addDays(today, tage - 1)) },
+      anzahl: rows.length,
+      buchungen: rows.map((b) => ({
+        buchung_id: b.id,
+        wohnung: b.apartment.name,
+        gast: b.guestName,
+        check_in: day(b.checkIn),
+        check_out: day(b.checkOut),
+        kanal: channelGroup(b.channelName),
+        platzhalter_personen: b.guestCount,
+        smoobu_id: b.smoobuId,
+        push_gemeldet: b.guestCountReminderSentAt != null,
+      })),
+      hinweis: rows.length ? "Gästezahl im Portal oder in der Bestätigungsmail nachsehen und mit gaestezahl_korrigieren eintragen." : "Alle Gästezahlen sind bestätigt.",
     };
   },
 });
