@@ -50,6 +50,7 @@ export default async function LaundryPage({ searchParams }: { searchParams: { ta
         plan={p}
         lastCount={r.count ? { countedOn: day(r.count.countedOn), quantities: normalizeQuantity(r.count.quantities) } : null}
         deliveries={r.deliveries.map((d) => ({ id: d.id, deliveryOn: day(d.deliveryOn), quantities: normalizeQuantity(d.quantities), reference: d.reference }))}
+        recentlyArrived={r.recentlyArrived.map((d) => ({ id: d.id, arrivedOn: day(todayVienna(d.arrivedAt!)), quantities: normalizeQuantity(d.quantities), reference: d.reference }))}
       />
 
       {r.arrivalsInWindow.length > 0 && (

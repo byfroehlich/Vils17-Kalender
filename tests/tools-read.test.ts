@@ -191,8 +191,10 @@ describe("reinigungen", () => {
     const bernd = r.result.eintraege.find((e: any) => e.reinigungstag === "2026-10-30");
     expect(bernd).toMatchObject({
       status: "ASSIGNED", reinigungskraft: "Kerstin", naechste_gaeste: 4, haustiere: 1,
-      waesche: { status: "offen", bettsets: 2, handtuecher: 8, kuechentuecher: 1 },
+      waesche: { bettsets: 2, handtuecher: 8, kuechentuecher: 1 },
     });
+    // Kein Wäschestatus pro Buchung mehr (Wäsche nach Bestand, 31.10.2026)
+    expect(bernd.waesche.status).toBeUndefined();
   });
   it("filtert Absagen mit Grund", async () => {
     const r = await call("reinigungen", { ...range, nur_absagen: true });

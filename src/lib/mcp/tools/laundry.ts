@@ -2,10 +2,11 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { Prisma } from "@prisma/client";
 import { resolveApartmentId } from "../shared";
-import { defineTool, preview, bestaetigtSchema } from "../tool";
+import { defineTool, preview, bestaetigtSchema, ToolError } from "../tool";
 import { day, addDays, todayVienna, parseDay } from "../format";
 import { datum } from "../shared";
-import { loadLaundryPlan, saveLaundryCount, recordLaundryDelivery, setLaundryReserve } from "../../laundry-proposal";
+import { loadLaundryPlan, saveLaundryCount, recordLaundryDelivery, confirmLaundryDelivery, setLaundryReserve } from "../../laundry-proposal";
+import { normalizeQuantity } from "../../laundry-order";
 import { LAUNDRY_ITEMS, laundryText, emptyLaundryQuantity, parseLaundryBeds, calculateLaundryQuantity, type LaundryQuantity } from "../../laundry-quantity";
 import { logAudit } from "../../audit";
 
@@ -58,7 +59,7 @@ export const waescheBedarf = defineTool({
   title: "Wäsche-Bestellmenge",
   description:
     "Rechnet aus, wie viel Wäsche bestellt werden muss, damit sie in den nächsten N Tagen (Vorgabe 14) nicht ausgeht: " +
-    "Bedarf aller Anreisen + Reserve je Teil − Bestand im Keller (letzte Zählung, fortgeschrieben) − schon bestellte Lieferungen. " +
+    "Bedarf aller Anreisen + Reserve je Teil − Bestand im Keller (letzte Zählung, fortgeschrieben, nur angekommene Lieferungen) − bestellte, noch nicht angekommene Lieferungen. " +
     "Je Anreise 1 Badvorleger, Küchentücher; je Gast Waschlappen, kleines und großes Handtuch, Kissen- und Bettbezug; je belegtem Bett ein Spannbettlaken in seiner Größe (90/180/200, siehe waesche_betten). " +
     "Für „Wie viel Wäsche müssen wir bestellen?“. Bestellt nicht selbst.",
   scope: "cleaning:read",
@@ -80,8 +81,12 @@ export const waescheBedarf = defineTool({
       bedarf: liste(p.need),
       reserve: liste(p.reserve),
       bestand_heute: p.stockToday ? liste(p.stockToday) : null,
-      bereits_bestellt: liste(p.incoming),
+      bereits_bestellt: liste(p.incoming), // bestellt, noch nicht im Keller angekommen
       bestand_danach: p.stockAfter ? liste(p.stockAfter) : null,
+      ...(p.overdueDeliveries
+        ? { achtung_lieferung: `${p.overdueDeliveries} Lieferung(en) überfällig, noch nicht als angekommen bestätigt (zählen als unterwegs) — waesche_lieferung_angekommen` }
+        : {}),
+      offene_lieferungen: r.deliveries.map((d) => ({ lieferung_id: d.id, liefertag: day(d.deliveryOn), referenz: d.reference, mengen: laundryText(normalizeQuantity(d.quantities)) })),
       ...(p.shortBeforeDelivery.length
         ? { achtung: `Vor der nächsten Lieferung reicht es nicht bei: ${p.shortBeforeDelivery.map((k) => LAUNDRY_ITEMS.find((i) => i.key === k)?.label).join(", ")}` }
         : {}),
@@ -125,7 +130,7 @@ export const waescheLieferungErfassen = defineTool({
   name: "waesche_lieferung_erfassen",
   title: "Wäsche-Bestellung festhalten",
   description:
-    "Hält eine bei der Wäscherei aufgegebene Bestellung mit Liefertag fest; ab dem Liefertag zählt sie zum Bestand. " +
+    "Hält eine bei der Wäscherei aufgegebene Bestellung mit Liefertag fest. Sie zählt als „unterwegs“, bis sie mit waesche_lieferung_angekommen als im Keller angekommen bestätigt ist; erst dann zum Bestand. " +
     "Bestellt NICHT selbst. Ohne mengen wird die aktuelle Bestellmenge aus waesche_bedarf übernommen. Erst ohne bestaetigt (Vorschau), dann mit bestaetigt: true.",
   scope: "cleaning:write",
   write: true,
@@ -141,6 +146,62 @@ export const waescheLieferungErfassen = defineTool({
     if (!args.bestaetigt) return preview(`Lieferung am ${day(deliveryOn)} festhalten: ${laundryText(q) || "nichts"}.`, { mengen: liste(q) });
     await recordLaundryDelivery({ organizationId: ctx.organizationId, deliveryOn, quantities: q, reference: args.referenz ?? null, actor: { via: `mcp:${ctx.tokenName}` } });
     return { ausgefuehrt: true, liefertag: day(deliveryOn), mengen: liste(q) };
+  },
+});
+
+// ─── waesche_lieferung_angekommen ─────────────────────────────────────────────
+
+export const waescheLieferungAngekommen = defineTool({
+  name: "waesche_lieferung_angekommen",
+  title: "Wäsche-Lieferung im Keller angekommen",
+  description:
+    "Bestätigt, dass eine bestellte Wäsche-Lieferung im Keller angekommen ist — erst dann zählt sie zum Bestand. " +
+    "Für „Die Lieferung ist im Keller“. Ohne lieferung_id wird die einzige offene Lieferung genommen (bei mehreren: Liste in der Antwort, dann mit ID). " +
+    "Optional mengen = tatsächlich geliefert (nicht genannte Teile wie bestellt). Erst ohne bestaetigt (Vorschau), dann mit bestaetigt: true.",
+  scope: "cleaning:write",
+  write: true,
+  input: {
+    lieferung_id: z.string().min(1).optional().describe("ID aus waesche_bedarf → offene_lieferungen"),
+    angekommen_am: datum.optional().describe("Tag der Ankunft (Vorgabe heute)"),
+    mengen: mengen.optional().describe("Nur bei Teillieferung: tatsächlich gelieferte Mengen"),
+    bestaetigt: bestaetigtSchema,
+  },
+  async handler(args, ctx) {
+    const offen = await prisma.laundryDelivery.findMany({
+      where: { organizationId: ctx.organizationId, cancelled: false, arrivedAt: null },
+      orderBy: { deliveryOn: "asc" },
+    });
+    const zeile = (d: (typeof offen)[number]) => ({ lieferung_id: d.id, liefertag: day(d.deliveryOn), referenz: d.reference, mengen: laundryText(normalizeQuantity(d.quantities)) });
+    let d = args.lieferung_id ? offen.find((x) => x.id === args.lieferung_id) : offen.length === 1 ? offen[0] : undefined;
+    if (!d) {
+      if (args.lieferung_id) {
+        const any = await prisma.laundryDelivery.findFirst({ where: { id: args.lieferung_id, organizationId: ctx.organizationId } });
+        if (any?.arrivedAt) return { ausgefuehrt: false, hinweis: `Lieferung ist schon angekommen (${day(todayVienna(any.arrivedAt))}).` };
+        throw new ToolError(`Offene Lieferung „${args.lieferung_id}“ nicht gefunden`);
+      }
+      if (!offen.length) return { ausgefuehrt: false, hinweis: "Keine offene Lieferung — erst mit waesche_lieferung_erfassen festhalten." };
+      return { ausgefuehrt: false, hinweis: "Mehrere offene Lieferungen — bitte lieferung_id angeben.", offene_lieferungen: offen.map(zeile) };
+    }
+    const arrivedOn = args.angekommen_am ? parseDay(args.angekommen_am) : todayVienna();
+    const bestellt = normalizeQuantity(d.quantities);
+    const q = args.mengen ? toQuantity(args.mengen, bestellt) : undefined;
+    if (!args.bestaetigt) {
+      return preview(`Lieferung vom ${day(d.deliveryOn)} als am ${day(arrivedOn)} im Keller angekommen bestätigen: ${laundryText(q ?? bestellt) || "nichts"}.`, {
+        lieferung: zeile(d),
+        ...(q ? { geliefert: liste(q) } : {}),
+      });
+    }
+    // Ankunftstag heute → Zeitpunkt jetzt; sonst der genannte Kalendertag
+    const arrivedAt = args.angekommen_am && day(arrivedOn) !== day(todayVienna()) ? arrivedOn : new Date();
+    const r = await confirmLaundryDelivery({
+      organizationId: ctx.organizationId,
+      id: d.id,
+      arrivedAt,
+      ...(q ? { quantities: q } : {}),
+      actor: { via: `mcp:${ctx.tokenName}` },
+    });
+    if (r.status !== "confirmed") return { ausgefuehrt: false, hinweis: r.status === "already" ? "Lieferung war schon als angekommen bestätigt." : "Lieferung nicht gefunden." };
+    return { ausgefuehrt: true, lieferung_id: d.id, angekommen_am: day(arrivedOn), mengen: liste(q ?? bestellt) };
   },
 });
 

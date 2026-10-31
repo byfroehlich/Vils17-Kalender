@@ -10,6 +10,11 @@ import { AbsagenBanner } from "@/components/dashboard/AbsagenBanner";
 import { SyncButton } from "@/components/dashboard/SyncButton";
 import { WeekStrip } from "@/components/dashboard/WeekStrip";
 import { CleaningToday } from "@/components/dashboard/CleaningToday";
+import { LaundryStockHint } from "@/components/dashboard/LaundryStockHint";
+import { loadLaundryPlan } from "@/lib/laundry-proposal";
+import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "@/lib/laundry-order";
+import { laundryText, LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { todayVienna, day } from "@/lib/mcp/format";
 import Link from "next/link";
 
 const GERMAN_DAYS   = ["Sonntag","Montag","Dienstag","Mittwoch","Donnerstag","Freitag","Samstag"];
@@ -62,20 +67,20 @@ export default async function DashboardPage() {
       orderBy: { checkOut: "asc" },
       include: { apartment: true, cleaningAssignment: { include: { cleaner: true } } },
     }),
-    // Problem bookings (upcoming with open cleaning or laundry)
+    // Problem bookings: anstehende Reinigung nicht organisiert. Wäsche zählt hier nicht —
+    // sie läuft über den Bestand (Hinweis unten, Entscheidung Mathias 31.10.2026)
     prisma.booking.findMany({
       where: {
         organizationId: orgId, status: "confirmed", checkIn: { gte: now, lte: in14Days },
         OR: [
           { cleaningAssignment: null },
-          { cleaningAssignment: { status: "UNASSIGNED" } },
-          { cleaningAssignment: { laundryStatus: "OPEN" } },
+          { cleaningAssignment: { status: "UNASSIGNED", isSelfClean: false } },
         ],
       },
       orderBy: { checkIn: "asc" },
       include: {
         apartment: { select: { name: true } },
-        cleaningAssignment: { select: { status: true, laundryStatus: true } },
+        cleaningAssignment: { select: { status: true } },
       },
     }),
     // Bookings for WeekStrip — broad 14-day window so client-side week calc works across timezones
@@ -148,9 +153,30 @@ export default async function DashboardPage() {
     guestName: b.guestName,
     checkIn: b.checkIn,
     apartment: b.apartment,
-    cleaningUnassigned: b.cleaningAssignment?.status === "UNASSIGNED",
-    laundryOpen: b.cleaningAssignment?.laundryStatus === "OPEN",
+    cleaningUnassigned: !b.cleaningAssignment || b.cleaningAssignment.status === "UNASSIGNED",
   }));
+
+  // Wäsche nach Bestand: reicht es für die nächsten 14 Tage?
+  const laundryHint = await (async () => {
+    const today = todayVienna(now);
+    const r = await loadLaundryPlan({ organizationId: orgId, today, days: LAUNDRY_ALERT_DAYS });
+    const alert = laundryAlert(r.plan);
+    if (alert.noStock) {
+      return { headline: "Wäsche: Bestand im Keller noch nicht erfasst", detail: "Ohne Zählung lässt sich nicht sagen, ob die Wäsche reicht.", urgent: false };
+    }
+    if (!alert.orderNeeded) return null;
+    const first = r.plan.firstShortage;
+    const de = (d: Date) => day(d).split("-").reverse().slice(0, 2).join(".") + ".";
+    const inDays = first ? Math.round((first.day.getTime() - today.getTime()) / 86_400_000) : null;
+    const parts: string[] = [];
+    if (alert.orderItems.length) parts.push(`Bestellen: ${laundryText(r.plan.order)}`);
+    if (alert.shortItems.length) parts.push(`vor der nächsten Lieferung knapp: ${alert.shortItems.map((k) => LAUNDRY_ITEMS.find((i) => i.key === k)?.label ?? k).join(", ")}`);
+    return {
+      headline: first ? `Wäsche reicht nicht ab ${de(first.day)}` : "Wäsche reicht nicht für die nächsten 14 Tage",
+      detail: parts.join(" · "),
+      urgent: inDays !== null && inDays <= LAUNDRY_ALERT_SHORT_NOTICE_DAYS,
+    };
+  })();
 
   const dateStr = `${GERMAN_DAYS[now.getDay()]}, ${now.getDate()}. ${GERMAN_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
 
@@ -212,6 +238,13 @@ export default async function DashboardPage() {
           {problemBookings.length > 0 && (
             <div style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: "0.08s", opacity: 0 }}>
               <WarningBanner bookings={problemBookings} />
+            </div>
+          )}
+
+          {/* Wäsche nach Bestand */}
+          {laundryHint && (
+            <div style={{ animation: "fadeUp 0.4s ease forwards", animationDelay: "0.09s", opacity: 0 }}>
+              <LaundryStockHint {...laundryHint} />
             </div>
           )}
 

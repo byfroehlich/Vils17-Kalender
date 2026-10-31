@@ -137,6 +137,7 @@ export async function syncBookings(organizationId: string): Promise<{
           guestEmail: res.guestEmail,
           guestPhone: res.guestPhone,
           guestCount: res.guestCount,
+          guestCountUnknown: res.guestCountUnknown ?? false,
           checkIn: res.checkIn,
           checkOut: res.checkOut,
           arrivalTime: res.arrivalTime,
@@ -190,7 +191,7 @@ export async function syncBookings(organizationId: string): Promise<{
           guestName: res.guestName,
           // Von Hand korrigierte Gästezahl nicht überschreiben — Smoobu liefert
           // für manche Kanäle keine Gästezahl, die Korrektur muss bestehen bleiben
-          ...(existing.guestCountManual ? {} : { guestCount: res.guestCount }),
+          ...(existing.guestCountManual ? {} : { guestCount: res.guestCount, guestCountUnknown: res.guestCountUnknown ?? false }),
           checkIn: res.checkIn,
           checkOut: res.checkOut,
           arrivalTime: res.arrivalTime,

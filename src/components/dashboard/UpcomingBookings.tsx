@@ -14,7 +14,6 @@ interface Booking {
   apartment: { name: string; color?: string | null };
   cleaningAssignment?: {
     status: string;
-    laundryStatus: string;
     cleaner?: { name: string } | null;
   } | null;
 }
@@ -59,11 +58,8 @@ const cleaningBadge: Record<string, BadgeInfo> = {
   ASSIGNED:   { bg: "rgba(13,148,136,0.18)", text: "#5EEAD4", label: "✓ Zugewiesen"      },
   COMPLETED:  { bg: "rgba(34,197,94,0.18)",  text: "#86EFAC", label: "✓ Erledigt"         },
 };
-const laundryBadge: Record<string, BadgeInfo> = {
-  OPEN:      { bg: "rgba(239,68,68,0.18)",  text: "#FCA5A5", label: "⚠ Wäsche offen"    },
-  ORDERED:   { bg: "rgba(245,158,11,0.18)", text: "#FCD34D", label: "◷ Wäsche bestellt"  },
-  AVAILABLE: { bg: "rgba(34,197,94,0.18)",  text: "#86EFAC", label: "✓ Wäsche vorhanden" },
-};
+// Wäsche wird nicht mehr pro Buchung angezeigt — sie läuft über den Bestand im Keller
+// (Seite /laundry, Entscheidung Mathias 31.10.2026).
 
 function SmallBadge({ bg, text, label }: BadgeInfo) {
   return (
@@ -121,10 +117,8 @@ export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[];
       {bookings.map((booking) => {
         const assignment     = booking.cleaningAssignment;
         const cleaningStatus = assignment?.status ?? "UNASSIGNED";
-        const laundryStatus  = assignment?.laundryStatus ?? "OPEN";
         const isDreher       = dreherIds.has(booking.id);
         const cb             = cleaningBadge[cleaningStatus];
-        const lb             = laundryBadge[laundryStatus];
         const datePill       = getDateStatus(booking.checkIn, booking.checkOut);
 
         return (
@@ -210,7 +204,6 @@ export function UpcomingBookings({ bookings, dreherIds }: { bookings: Booking[];
                       }
                     />
                   )}
-                  {lb && <SmallBadge {...lb} />}
                 </div>
               </div>
             </div>

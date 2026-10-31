@@ -286,8 +286,10 @@ const WAESCHE_TEXT: Record<string, string> = { OPEN: "offen", ORDERED: "bestellt
 
 export const waescheStatus = defineTool({
   name: "waesche_status",
-  title: "Wäschestatus setzen",
+  title: "Wäschestatus setzen (veraltet)",
   description:
+    "VERALTET (Entscheidung Mathias 31.10.2026): Wäsche wird nicht mehr pro Buchung geführt, sondern nach Bestand im Keller — " +
+    "dafür waesche_bedarf, waesche_lieferung_erfassen, waesche_lieferung_angekommen, waesche_bestand_erfassen. Ein „offener“ Wäschestatus ist KEIN Problem. " +
     "Setzt den Wäschestatus einer Reinigung auf offen, bestellt oder vorhanden, optional mit Notiz (z.B. Bestellnummer der Wäscherei). " +
     "Bei „bestellt“ werden Zeitpunkt und Mengen (nach Wäsche-Konfiguration der Wohnung) festgehalten. " +
     "Bestellt NICHT bei der Wäscherei — das passiert auf deren Website; dieses Tool hält nur den Stand in der App fest. " +

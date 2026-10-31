@@ -246,10 +246,12 @@ Gerät nicht angemeldet, Anmeldung abgelaufen oder Versand fehlgeschlagen.
 | Tagesstatus (ab 7 Uhr, 1× täglich) | Admin/Verwaltung: alle heutigen; Reiniger: eigene | `src/lib/notifications.ts` |
 | Reinigung frei (≤ 10 Tage) | Reiniger | `runReminders` |
 | Ohne Reinigungskraft (≤ 7 Tage) | Admin/Verwaltung | `runReminders` |
-| Wäsche nicht bestellt (≤ 3 Tage) | Admin/Verwaltung | `runReminders` |
+| Wäsche reicht nicht (Bestand, 14 Tage) — einmal je Lage, „Kurzfristig“ bei Engpass ≤ 3 Tage | Admin/Verwaltung | `maybeSendLaundryAlert` (in `runReminders`) |
 
 Warnungen werden gebündelt (eine Nachricht pro Art) und pro Auftrag nur einmal
-verschickt (`*ReminderSentAt`). `runReminders` und `maybeSendDailyStatus` laufen
+verschickt (`*ReminderSentAt`). Ausnahme Wäsche (31.10.2026): keine Warnung pro Buchung mehr, sondern
+eine pro **Lage** des Kellerbestands (Fingerabdruck in `Organization.laundryAlertKey`, siehe Wäsche-Abschnitt).
+Der Tagesstatus enthält keine Wäsche-Zeile mehr. `runReminders` und `maybeSendDailyStatus` laufen
 im Cron `push-reminders` **und** als Rückfallebene in `/api/sync/auto` — beides
 ist idempotent.
 
@@ -353,12 +355,38 @@ je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug.
 - **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
   die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
 - **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),
-  fortgeschrieben mit Anreisen (−) und `LaundryDelivery` (+ ab Liefertag).
+  fortgeschrieben mit Anreisen (−) und `LaundryDelivery` (+ ab bestätigter Ankunft `arrivedAt`).
 - Bestellmenge = Bedarf (Anreisen im Zeitraum) + Reserve − Bestand heute − schon bestellt; nie < 0.
   Warnung, wenn ein Teil vor einer Lieferung ausgeht.
 - Seite `/laundry` (Bestand zählen, Bestellung festhalten, Reserve ändern), MCP `waesche_bedarf`,
-  `waesche_bestand_erfassen`, `waesche_lieferung_erfassen`, `waesche_reserve`.
+  `waesche_bestand_erfassen`, `waesche_lieferung_erfassen`, `waesche_lieferung_angekommen`, `waesche_reserve`.
 - Bestellt wird auf der Website der Wäscherei; die App rechnet und hält fest.
+
+**Wäsche nach Bestand statt pro Buchung (Entscheidung Mathias 31.10.2026):**
+- Es gibt **keine** Wäsche-Warnung und keinen Wäsche-Status mehr pro Buchung (Dashboard, Buchungsliste,
+  Reinigungsplan, Buchungsdetail, Tagesstatus, MCP `reinigungen`/`wochenplan`). Die Spalten
+  `CleaningAssignment.laundryStatus`/`laundryReminderSentAt` bleiben in der DB (nicht destruktiv);
+  MCP `waesche_status` ist als veraltet beschrieben. Das Buchungsdetail zeigt nur noch die Menge für diese Anreise.
+- Einziges Wäsche-Signal: **„Wäsche reicht nicht ab <Tag> – bestellen“**, wenn `planLaundry` für die nächsten
+  14 Tage (`LAUNDRY_ALERT_DAYS`) eine Bestellmenge > 0 oder einen Engpass vor einer Lieferung meldet
+  (`laundryAlert`). `plan.firstShortage` = erster Anreisetag, an dem ein betroffenes Teil unter die Reserve fällt,
+  mit den Anreisen dieses Tages (Wohnung, Gäste). Dashboard-Hinweis (rot bei Engpass ≤ 3 Tage), Wochenplan-Warnung
+  `waesche_reicht_nicht`, Push an Admin/Verwaltung. Ohne erfassten Bestand keine Warnung, nur Hinweis „Bestand erfassen“.
+- **Push dynamisch je Lage** (Saison: laufend kurzfristige Buchungen/Stornos): Fingerabdruck aus erstem Engpasstag,
+  betroffenen Teilen, Bestellmenge und Engpässen vor Lieferung in `Organization.laundryAlertKey`. Gleiche Lage →
+  keine Wiederholung (App-Takt alle 5 Min); neue Buchung/Storno/Gästezahl ändert die Lage → neue Meldung;
+  reicht es wieder → Fingerabdruck gelöscht. Nachts (21–7 Uhr) wird nichts gesendet, die Meldung kommt ab 7 Uhr.
+  Titel z.B. „🧺 Wäsche reicht nicht ab Sa 07.11. (Penthouse, 2 Gäste)“, bei Engpass ≤ 3 Tage „⚠️ Kurzfristig: …“.
+- **Unbekannte Gästezahl:** Liefert Smoobu kein `adults` (Booking.com), setzt der Sync den Notwert 1 und
+  `Booking.guestCountUnknown = true`. Die Wäscheplanung rechnet dann vorsichtig mit der **vollen Belegung**
+  der Wohnung (Summe der Schlafplätze aus `laundryBeds`, `planningGuestCount`); Meldungen sagen „… Gäste angenommen“.
+  Eine von Hand / per Portal-Mail korrigierte Zahl (`guestCountManual`) gilt immer.
+- **Lieferung im Keller angekommen:** `LaundryDelivery.arrivedAt`. Eine Lieferung zählt erst zum Bestand, wenn sie
+  bestätigt ist (Knopf „Im Keller angekommen“ auf `/laundry`, `confirmLaundryDelivery`, MCP
+  `waesche_lieferung_angekommen` mit Vorschau/`bestaetigt`, optional tatsächlich gelieferte Mengen). Bis dahin gilt
+  sie als „unterwegs“ und mindert die Bestellmenge — auch wenn der Liefertag vorbei ist (dann „überfällig“, wird
+  ab heute erwartet). Migration: bisherige Lieferungen mit erreichtem Liefertag gelten als angekommen.
+- Tests: `tests/notifications-waesche.test.ts`, `tests/hunde-waesche.test.ts` (planLaundry, Ankunft).
 
 ### Portal-Mail-Import (`src/lib/email-import/`)
 

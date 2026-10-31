@@ -7,6 +7,8 @@ import { datum, wohnungFilter, pagingFields, resolveApartmentId, resolveDays, pa
 import { calculateLaundryQuantity, laundryText, fittedSheetsTotal } from "../../laundry-quantity";
 import { petFee, PET_FEE_LABEL } from "../../pets";
 import { isImapConfigured } from "../../email-import/imap";
+import { loadLaundryPlan } from "../../laundry-proposal";
+import { laundryAlert, LAUNDRY_ALERT_DAYS } from "../../laundry-order";
 
 const STATUS = ["UNASSIGNED", "ASSIGNED", "COMPLETED", "SELF_CLEAN"] as const;
 
@@ -17,7 +19,8 @@ const STATUS_TEXT: Record<string, string> = {
   SELF_CLEAN: "Selbstreinigung",
 };
 
-const LAUNDRY_TEXT: Record<string, string> = { OPEN: "offen", ORDERED: "bestellt", AVAILABLE: "vorhanden" };
+// Wäsche läuft nach Bestand im Keller, nicht pro Buchung (Entscheidung Mathias 31.10.2026) —
+// je Reinigung werden nur die Mengen genannt, kein Status.
 
 // ─── reinigungen ──────────────────────────────────────────────────────────────
 
@@ -25,16 +28,16 @@ export const reinigungen = defineTool({
   name: "reinigungen",
   title: "Reinigungen",
   description:
-    "Reinigungsaufträge mit Status (UNASSIGNED/ASSIGNED/COMPLETED/SELF_CLEAN), Reinigungskraft, Absagen und Wäsche " +
-    "(Status und Mengen nach der Wäsche-Konfiguration der Wohnung). Reinigungstag = Anreisetag der nächsten Gäste. " +
-    "Für „Welche Reinigungen sind noch offen?“, „Was hat Vanessa diesen Monat?“, „Wo fehlt die Wäsche?“.",
+    "Reinigungsaufträge mit Status (UNASSIGNED/ASSIGNED/COMPLETED/SELF_CLEAN), Reinigungskraft, Absagen und Wäschemengen " +
+    "(nach der Wäsche-Konfiguration der Wohnung, nur zur Info). Reinigungstag = Anreisetag der nächsten Gäste. " +
+    "Für „Welche Reinigungen sind noch offen?“, „Was hat Vanessa diesen Monat?“. Ob die Wäsche reicht: waesche_bedarf (Bestand im Keller).",
   scope: "cleaning:read",
   input: {
     von: datum.optional().describe("Erster Reinigungstag JJJJ-MM-TT (Vorgabe: heute)"),
     bis: datum.optional().describe("Letzter Reinigungstag, einschließlich (Vorgabe: von + 29 Tage)"),
     status: z.enum(STATUS).optional(),
     nur_absagen: z.boolean().optional().describe("Nur abgesagte Aufträge"),
-    nur_waesche_offen: z.boolean().optional().describe("Nur Aufträge, deren Wäsche noch nicht bestellt/vorhanden ist"),
+    nur_waesche_offen: z.boolean().optional().describe("Veraltet: alter Wäschestatus pro Buchung. Wäsche läuft nach Bestand — dafür waesche_bedarf"),
     reinigungskraft: z.string().optional().describe("ID oder Name (Teil) der Reinigungskraft"),
     wohnung: wohnungFilter,
     ...pagingFields,
@@ -111,7 +114,6 @@ export const reinigungen = defineTool({
             naechste_gaeste: a.booking.guestCount,
             haustiere: a.booking.petCount,
             waesche: {
-              status: LAUNDRY_TEXT[a.laundryStatus] ?? a.laundryStatus,
               bettsets: fittedSheetsTotal(qty),
               spannbettlaken: { "90er": qty.sheets90, "180er": qty.beds, "200er": qty.sheets200 },
               handtuecher: qty.towels,
@@ -183,8 +185,9 @@ export const wochenplan = defineTool({
   name: "wochenplan",
   title: "Wochenplan mit Warnungen",
   description:
-    "Planungsübersicht für die nächsten N Tage (Vorgabe 7): je Tag An- und Abreisen, Reinigungen mit Reinigungskraft und Wäschestatus, " +
-    "dazu eine Liste mit Warnungen — Reinigung ohne Reinigungskraft, abgesagte Reinigung, Wäsche noch offen (ab 3 Tage vorher), " +
+    "Planungsübersicht für die nächsten N Tage (Vorgabe 7): je Tag An- und Abreisen, Reinigungen mit Reinigungskraft und Wäschemenge, " +
+    "Wäsche-Lage nach Bestand im Keller (14 Tage), dazu eine Liste mit Warnungen — Reinigung ohne Reinigungskraft, abgesagte Reinigung, " +
+    "Wäsche reicht nicht (Bestand, nicht pro Buchung), " +
     "Wechseltag (Ab- und Anreise am selben Tag in derselben Wohnung), Hundegebühr nicht angefordert bzw. kurz vor Anreise unbezahlt. Für „Was steht an?“ und den Wochenstart.",
   scope: "cleaning:read",
   input: {
@@ -208,7 +211,7 @@ export const wochenplan = defineTool({
       include: {
         apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
         cleaningAssignment: {
-          select: { status: true, isSelfClean: true, cleanerUnavailable: true, laundryStatus: true, cleaner: { select: { name: true } } },
+          select: { status: true, isSelfClean: true, cleanerUnavailable: true, cleaner: { select: { name: true } } },
         },
       },
     });
@@ -225,13 +228,11 @@ export const wochenplan = defineTool({
         const a = b.cleaningAssignment;
         const selbst = !!a && (a.isSelfClean || a.status === "SELF_CLEAN");
         const zugewiesen = !!a && (selbst || ((a.status === "ASSIGNED" || a.status === "COMPLETED") && !a.cleanerUnavailable));
-        const waesche = a?.laundryStatus ?? "OPEN";
         const wechsel = abreisen.some((x) => x.apartmentId === b.apartmentId);
         const wo = `${b.apartment.name} (${b.guestName})`;
 
         if (a?.cleanerUnavailable) warnungen.push({ datum: key, art: "abgesagt", text: `Reinigung ${wo} abgesagt — neu zuweisen`, buchung_id: b.id });
         else if (!zugewiesen) warnungen.push({ datum: key, art: "ohne_reinigungskraft", text: `Reinigung ${wo} hat keine Reinigungskraft`, buchung_id: b.id });
-        if (!selbst && waesche === "OPEN" && inTagen <= 3) warnungen.push({ datum: key, art: "waesche_offen", text: `Wäsche für ${wo} noch nicht bestellt`, buchung_id: b.id });
         if (wechsel) warnungen.push({ datum: key, art: "wechseltag", text: `Wechseltag ${b.apartment.name}: Abreise und Anreise am selben Tag`, buchung_id: b.id });
         const fee = petFee(b);
         if (fee.state === "OFFEN") warnungen.push({ datum: key, art: "hundegebuehr_offen", text: `Hundegebühr ${wo}: ${fee.amount} € noch nicht angefordert`, buchung_id: b.id });
@@ -248,7 +249,6 @@ export const wochenplan = defineTool({
           wechsel,
           reinigung: selbst ? "Selbstreinigung" : a?.cleanerUnavailable ? "abgesagt" : a?.cleaner?.name ?? "offen",
           reinigung_status: a ? STATUS_TEXT[a.isSelfClean ? "SELF_CLEAN" : a.status] : "kein Auftrag",
-          waesche: LAUNDRY_TEXT[waesche],
           waesche_menge: laundryText(menge),
           ...(fee.state !== "KEINE" ? { hundegebuehr: `${PET_FEE_LABEL[fee.state]} (${fee.amount} €)` } : {}),
         };
@@ -261,8 +261,35 @@ export const wochenplan = defineTool({
       });
     }
 
+    // Wäsche nach Bestand (Entscheidung Mathias 31.10.2026) — eine Warnung für beide Wohnungen, nicht pro Buchung
+    const lw = await loadLaundryPlan({ organizationId: ctx.organizationId, today: start, days: LAUNDRY_ALERT_DAYS });
+    const la = laundryAlert(lw.plan);
+    const first = lw.plan.firstShortage;
+    const waescheBestand = la.noStock
+      ? { lage: "Bestand im Keller noch nicht erfasst (waesche_bestand_erfassen)" }
+      : la.orderNeeded
+        ? {
+            lage: first ? `reicht nicht ab ${day(first.day)}` : `reicht nicht für ${LAUNDRY_ALERT_DAYS} Tage`,
+            bestellen: laundryText(lw.plan.order) || null,
+            ...(la.shortItems.length ? { vor_lieferung_knapp: la.shortItems } : {}),
+            ...(first ? { ausloeser: first.arrivals.map((x) => `${x.apartmentName}, ${x.guestCount} Gäste${x.guestCountAssumed ? " (angenommen, Gästezahl unbekannt)" : ""}`) } : {}),
+          }
+        : { lage: `reicht für ${LAUNDRY_ALERT_DAYS} Tage inkl. Reserve` };
+    if (la.orderNeeded) {
+      warnungen.unshift({
+        datum: first ? day(first.day) : day(start),
+        art: "waesche_reicht_nicht",
+        text: `Wäsche reicht nicht${first ? ` ab ${day(first.day)}` : ""} — bestellen: ${laundryText(lw.plan.order) || "siehe waesche_bedarf"}`,
+        buchung_id: "",
+      });
+    }
+    if (lw.plan.overdueDeliveries) {
+      warnungen.push({ datum: day(start), art: "waesche_lieferung_ueberfaellig", text: `${lw.plan.overdueDeliveries} Wäsche-Lieferung(en) überfällig — angekommen? waesche_lieferung_angekommen`, buchung_id: "" });
+    }
+
     return {
       zeitraum: { von: day(start), bis: day(addDays(end, -1)) },
+      waesche_bestand: waescheBestand,
       warnungen_gesamt: warnungen.length,
       warnungen,
       tage: days.filter((t) => t.anreisen.length || t.abreisen.length),

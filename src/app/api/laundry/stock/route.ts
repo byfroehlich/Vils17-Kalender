@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { z } from "zod";
 import { authOptions } from "@/lib/auth";
-import { saveLaundryCount, recordLaundryDelivery, cancelLaundryDelivery, setLaundryReserve } from "@/lib/laundry-proposal";
+import { saveLaundryCount, recordLaundryDelivery, cancelLaundryDelivery, confirmLaundryDelivery, setLaundryReserve } from "@/lib/laundry-proposal";
 import { normalizeQuantity } from "@/lib/laundry-order";
 import { parseDay } from "@/lib/mcp/format";
 
@@ -14,6 +14,7 @@ const schema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("count"), countedOn: dayStr, quantities: qty, notes: z.string().max(500).optional() }),
   z.object({ action: z.literal("delivery"), deliveryOn: dayStr, quantities: qty, reference: z.string().max(200).optional() }),
   z.object({ action: z.literal("cancelDelivery"), id: z.string().min(1) }),
+  z.object({ action: z.literal("arrived"), id: z.string().min(1) }),
   z.object({ action: z.literal("reserve"), quantities: qty }),
 ]);
 
@@ -37,6 +38,11 @@ export async function POST(req: NextRequest) {
     case "cancelDelivery":
       if (!(await cancelLaundryDelivery({ organizationId, id: a.id, actor }))) return NextResponse.json({ error: "Lieferung nicht gefunden" }, { status: 404 });
       break;
+    case "arrived": {
+      const r = await confirmLaundryDelivery({ organizationId, id: a.id, actor });
+      if (r.status === "notFound") return NextResponse.json({ error: "Lieferung nicht gefunden" }, { status: 404 });
+      break;
+    }
     case "reserve":
       await setLaundryReserve({ organizationId, reserve: normalizeQuantity(a.quantities), actor });
       break;

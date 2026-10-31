@@ -12,7 +12,6 @@ interface Assignment {
   id: string;
   status: string;
   isSelfClean: boolean;
-  laundryStatus: string;
   cleanerId?: string | null;
   cleaner?: { name: string } | null;
   booking: {
@@ -52,14 +51,6 @@ const cleaningBadge: Record<string, { bg: string; color: string }> = {
 };
 const cleaningLabels: Record<string, string> = {
   UNASSIGNED: "Offen", SELF_CLEAN: "Selbstreinigung", ASSIGNED: "Zugewiesen", COMPLETED: "Erledigt",
-};
-const laundryBadge: Record<string, { bg: string; color: string }> = {
-  OPEN:      { bg: "rgba(239,68,68,0.18)",  color: "#FCA5A5" },
-  ORDERED:   { bg: "rgba(245,158,11,0.18)", color: "#FCD34D" },
-  AVAILABLE: { bg: "rgba(34,197,94,0.18)",  color: "#86EFAC" },
-};
-const laundryLabels: Record<string, string> = {
-  OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
 };
 
 const rowGlass: React.CSSProperties = {
@@ -114,7 +105,6 @@ function AssignmentRow({ a }: { a: Assignment }) {
 
 function LaundryRow({ a }: { a: Assignment }) {
   const qty = calculateLaundryQuantity(a.booking.guestCount, a.booking.apartment);
-  const badge = laundryBadge[a.laundryStatus] ?? { bg: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.6)" };
   return (
     <Link href={`/bookings/${a.booking.id}`} style={rowGlass}>
       <div style={{ width: 3, alignSelf: "stretch", borderRadius: 4, flexShrink: 0, backgroundColor: a.booking.apartment.color ?? "#14B8A6" }} />
@@ -127,9 +117,6 @@ function LaundryRow({ a }: { a: Assignment }) {
         <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🛁 {qty.towels}</span>
         <span style={{ fontSize: 11, fontWeight: 600, background: "rgba(255,255,255,0.1)", color: "rgba(255,255,255,0.75)", padding: "3px 8px", borderRadius: 8 }}>🍽 {qty.kitchen}</span>
       </div>
-      <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 20, background: badge.bg, color: badge.color, flexShrink: 0, whiteSpace: "nowrap" }}>
-        {laundryLabels[a.laundryStatus] ?? a.laundryStatus}
-      </span>
     </Link>
   );
 }
@@ -161,8 +148,9 @@ export function CleaningSchedule({
   const planned = assignments.filter(a =>
     a.status === "ASSIGNED" || a.status === "SELF_CLEAN" || a.isSelfClean
   );
-  // Wäsche: alles außer bereits erledigte Buchungen mit vorhandener Wäsche
-  const laundry = assignments.filter(a => !(a.laundryStatus === "AVAILABLE" && a.status === "COMPLETED"));
+  // Wäsche: nur Info, was je anstehender Reinigung gebraucht wird. Kein Status pro Buchung —
+  // bestellt wird nach Bestand im Keller (/laundry, Entscheidung Mathias 31.10.2026)
+  const laundry = assignments.filter(a => a.status !== "COMPLETED");
 
   const tabs: { key: Tab; label: string; icon: React.ReactNode; count?: number; urgent?: boolean }[] = [
     { key: "open",     label: "Offen",    icon: <AlertCircle className="w-4 h-4" />,    count: open.length,     urgent: open.length > 0 },
@@ -233,8 +221,11 @@ export function CleaningSchedule({
 
       {tab === "laundry" && (
         <div className="space-y-2">
+          <Link href="/laundry" style={{ display: "block", fontSize: 12, color: "rgba(255,255,255,0.7)", padding: "10px 14px", borderRadius: 12, background: "rgba(13,148,136,0.15)", border: "1px solid rgba(13,148,136,0.35)", textDecoration: "none" }}>
+            Wäsche wird nach Bestand im Keller bestellt, nicht pro Buchung. Mengen je Anreise hier nur zur Info — <strong style={{ color: "#5EEAD4" }}>Bestand &amp; Bestellung →</strong>
+          </Link>
           {laundry.length === 0
-            ? <EmptyState label="Keine offenen Wäschebestellungen." />
+            ? <EmptyState label="Keine anstehenden Reinigungen." />
             : laundry.map(a => <LaundryRow key={`l-${a.id}`} a={a} />)
           }
         </div>
