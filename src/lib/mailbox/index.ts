@@ -47,6 +47,9 @@ export interface MailMessage extends MailSummary {
   attachments: MailAttachment[];
 }
 
+/** So viele neueste Mails werden bei Suche/Filter durchsucht */
+const SEARCH_WINDOW = 1000;
+
 const FOLDER_ORDER = ["\\Inbox", "\\Sent", "\\Drafts", "\\Archive", "\\Junk", "\\Trash"];
 const FOLDER_LABELS: Record<string, string> = {
   "\\Inbox": "Posteingang", "\\Sent": "Gesendet", "\\Drafts": "Entwürfe", "\\Archive": "Archiv", "\\Junk": "Spam", "\\Trash": "Papierkorb",
@@ -175,17 +178,21 @@ export async function listMessages(params: { folder?: string; page?: number; pag
       return { total: exists, page, pageSize, messages };
     }
 
-    const criteria: Record<string, unknown> = q ? { or: [{ from: q }, { to: q }, { subject: q }, { body: q }] } : {};
-    if (params.unseenOnly) criteria.seen = false;
-    const found = await client.search(criteria, { uid: true });
-    if (found === false) throw new MailboxError("Suche im Postfach fehlgeschlagen.");
-    const uids = found.sort((a, b) => b - a);
-    const slice = uids.slice((page - 1) * pageSize, page * pageSize);
-    if (slice.length) {
-      for await (const m of client.fetch(slice, query, { uid: true })) messages.push(toSummary(m));
-      messages.sort((a, b) => b.uid - a.uid);
+    // Mit Filter: IMAP-SEARCH liefert bei Strato keine Treffer — daher die letzten
+    // SEARCH_WINDOW Mails holen und hier filtern (Absender, Empfänger, Betreff).
+    const exists = client.mailbox ? client.mailbox.exists : 0;
+    const needle = q?.toLowerCase();
+    const matches = (m: MailSummary) =>
+      (!params.unseenOnly || !m.seen) &&
+      (!needle || [m.subject, ...m.from.flatMap((a) => [a.name, a.address]), ...m.to.flatMap((a) => [a.name, a.address])].some((v) => v.toLowerCase().includes(needle)));
+    if (exists >= 1) {
+      for await (const m of client.fetch(`${Math.max(1, exists - SEARCH_WINDOW + 1)}:${exists}`, query)) {
+        const sm = toSummary(m);
+        if (matches(sm)) messages.push(sm);
+      }
     }
-    return { total: uids.length, page, pageSize, messages };
+    messages.sort((a, b) => b.uid - a.uid);
+    return { total: messages.length, page, pageSize, messages: messages.slice((page - 1) * pageSize, page * pageSize) };
   }));
 }
 

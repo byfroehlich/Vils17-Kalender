@@ -29,11 +29,11 @@ export const postfach = defineTool({
   title: "Postfach durchsuchen",
   description:
     "Listet Mails aus dem Vermietungs-Postfach info@vils17.at (Portale, Gäste, Behörden, alles rund ums Haus), neueste zuerst. " +
-    "Mit suche nach Absender, Empfänger, Betreff oder Text filtern. Markiert nichts als gelesen. Für den Inhalt: mail_lesen.",
+    "Mit suche nach Absender, Empfänger oder Betreff filtern. Markiert nichts als gelesen. Für den Inhalt: mail_lesen.",
   scope: "messages:read",
   input: {
     ordner,
-    suche: z.string().trim().max(200).optional().describe("Suchbegriff (Absender, Empfänger, Betreff, Text)"),
+    suche: z.string().trim().max(200).optional().describe("Suchbegriff (Absender, Empfänger, Betreff; durchsucht die neuesten 1000 Mails)"),
     nur_ungelesen: z.boolean().optional(),
     seite: z.number().int().min(1).max(100).optional(),
     pro_seite: z.number().int().min(1).max(50).optional().describe("Vorgabe 20"),

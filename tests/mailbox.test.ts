@@ -38,11 +38,8 @@ vi.mock("imapflow", async () => {
       const use: Record<string, string> = { INBOX: "\\Inbox", Sent: "\\Sent", Trash: "\\Trash" };
       return Object.keys(imap.folders).map((p) => ({ path: p, name: p, flags: new Set<string>(), specialUse: use[p], status: { unseen: imap.folders[p]!.filter((m) => !m.flags.has("\\Seen")).length } }));
     }
-    async search(q: any) {
-      const all = imap.folders[imap.current]!;
-      const term = q.or?.[0]?.from?.toLowerCase();
-      if (q.all) throw new Error("SEARCH ALL sollte nicht nötig sein");
-      return all.filter((m) => (!term || m.raw.toLowerCase().includes(term)) && (q.seen !== false || !m.flags.has("\\Seen")) && (!q.since || true)).map((m) => m.uid);
+    async search(_q: any): Promise<number[]> {
+      throw new Error("SEARCH wird nicht benutzt (Strato liefert keine Treffer)");
     }
     async *fetch(range: number[] | string, query: any, opts?: { uid?: boolean }) {
       const all = imap.folders[imap.current]!;
@@ -143,6 +140,10 @@ describe("postfach / mail_lesen", () => {
 
     const s = await call("postfach", { suche: "anna@example.com" });
     expect(s.result.mails.map((m: any) => m.uid)).toEqual([11]);
+    const b = await call("postfach", { suche: "ortstaxe" });
+    expect(b.result.mails.map((m: any) => m.uid)).toEqual([12]);
+    const u = await call("postfach", { nur_ungelesen: true });
+    expect(u.result.mails.map((m: any) => m.uid)).toEqual([11]);
   });
 
   it("mail_lesen liefert den Text und markiert NICHT als gelesen", async () => {

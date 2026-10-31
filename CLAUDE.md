@@ -418,6 +418,8 @@ Regeln:
   Anhänge immer als Download (`application/octet-stream`).
 - Audit `mail.sent` nur mit Anzahl Empfänger/Anhänge — nie Adressen, Betreff oder Text.
   `sanitizeForAudit` lässt keine Strings mit `@` durch.
+- **Kein IMAP-SEARCH:** liefert bei Strato keine Treffer. Liste über Sequenznummern, Suche/Filter
+  clientseitig über die neuesten 1000 Mails (Absender, Empfänger, Betreff — nicht im Text).
 - Kein Löschen über MCP; in der App nur „Papierkorb“ (verschieben, wiederherstellbar).
 - Tests: `tests/mailbox.test.ts` (gefälschter IMAP-Server, abgefangener SMTP).
 
