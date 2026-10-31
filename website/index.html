@@ -43,7 +43,16 @@ footer{padding:32px clamp(16px,6vw,96px) calc(32px + env(safe-area-inset-bottom,
 footer div{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
 footer nav{display:flex;gap:20px}
 :focus-visible{outline:2px solid var(--sage);outline-offset:4px}
-@media (max-width:820px){main{grid-template-columns:1fr} .unit{min-height:78svh} .intro{grid-template-columns:1fr}}
+.tl{padding:0 clamp(16px,6vw,96px) clamp(64px,10vh,120px)}
+.tl>div{max-width:1180px;margin:0 auto;background:#F2EADE;color:#1F2A26;border-radius:20px;padding:clamp(28px,5vw,56px);display:grid;grid-template-columns:1.3fr 1fr;gap:28px 56px;align-items:center}
+.tl h2{font:300 clamp(1.7rem,3.4vw,2.6rem)/1.1 var(--serif);color:#183626}
+.tl p{margin-top:.9rem;color:#4E5B55}
+.tl .tl-mark{display:flex;flex-direction:column;align-items:flex-start;gap:14px}
+.tl .tl-mark img{width:min(260px,70%);height:auto}
+.tl .tl-mark span{font-size:.875rem;letter-spacing:.12em;text-transform:uppercase;color:#183626}
+.tl a.tl-more{display:inline-block;margin-top:1.2rem;color:#183626;font-weight:600}
+.tl-badge{display:inline-flex;align-items:center;gap:8px;text-decoration:none;color:var(--mist)} .tl-badge img{width:22px;height:22px;flex:none} .tl-badge:hover{color:var(--paper)}
+@media (max-width:820px){main{grid-template-columns:1fr} .unit{min-height:78svh} .intro{grid-template-columns:1fr} .tl>div{grid-template-columns:1fr}}
 @media (prefers-reduced-motion:reduce){.unit img{transition:none}}
 </style>
 <script type="application/ld+json">
@@ -109,6 +118,17 @@ footer nav{display:flex;gap:20px}
   <p style="margin-top:1rem">Vils liegt im Außerfern in Tirol, direkt an der Grenze zum Allgäu. Füssen und Neuschwanstein sind rund 10 Minuten entfernt, Reutte etwa 15. Sie buchen hier direkt bei uns als Gastgeber.</p></div>
   <ul><li>Check-in ab 15 Uhr, Check-out bis 10 Uhr</li><li>Hunde nach Absprache, 15 € pro Hund und Nacht</li><li>Ortstaxe 3 € pro Person ab 15 Jahren und Nacht</li><li>WLAN inklusive</li></ul>
 </section>
-<footer><div><span>No. 17 · Josef-Ahorn-Weg 17 · 6682 Vils · Österreich</span><nav><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></nav></div></footer>
+<section class="tl" aria-labelledby="tlh">
+  <div>
+    <div>
+      <h2 id="tlh">Regional einkaufen, direkt in der Unterkunft.</h2>
+      <p>In Penthouse und Lodge steht ein kleiner Verkaufsstand mit Produkten von Erzeugern aus dem Allgäu und dem Außerfern, zum Beispiel Honig oder Chutney. Das Angebot wechselt mit den Jahreszeiten. Bezahlt wird per QR-Code direkt beim Erzeuger, ohne App und ohne Konto.</p>
+      <p>Wir sind als Frühstarter dabei bei TRULOC, dem Netzwerk, das Produzenten aus der Region mit Gästen und Einheimischen verbindet. Nach und nach kommen dort weitere Höfe und Verkaufsstellen aus der Umgebung dazu.</p>
+      <a class="tl-more" href="https://truloc.de" target="_blank" rel="noopener">Mehr über TRULOC →</a>
+    </div>
+    <div class="tl-mark"><span>Frühstarter-Partner</span><img src="/assets/truloc/truloc-wordmark.svg" alt="TRULOC" width="260" height="50"></div>
+  </div>
+</section>
+<footer><div><span>No. 17 · Josef-Ahorn-Weg 17 · 6682 Vils · Österreich</span><a class="tl-badge" href="https://truloc.de" target="_blank" rel="noopener"><img src="/assets/truloc/truloc-emblem.svg" alt="" width="22" height="22">Frühstarter-Partner von TRULOC</a><nav><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></nav></div></footer>
 </body>
 </html>
