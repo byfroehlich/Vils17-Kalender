@@ -90,6 +90,15 @@ describe("/api/mcp", () => {
     }
   });
 
+  it("Lese-Tools mit messages:read (inkl. stammgaeste)", async () => {
+    const org = await (await import("@/lib/prisma")).prisma.organization.findFirstOrThrow();
+    const msgToken = await createToken(org.id, ["messages:read"], "Nachrichten lesen");
+    const list = await call("tools/list", {}, msgToken);
+    const tools = list.body.result.tools;
+    expect(tools.map((t: any) => t.name).sort()).toEqual(["gaeste_nachrichten", "hinweis_vorschlaege", "hunde_pruefen", "mail_lesen", "offene_gaestenachrichten", "postfach", "stammgaeste"]);
+    expect(tools.find((t: any) => t.name === "stammgaeste").annotations.readOnlyHint).toBe(true);
+  });
+
   it("liefert Tool-Fehler als {error} mit isError", async () => {
     const res = await call("tools/call", { name: "buchungen_list", arguments: { wohnung: "Chalet" } });
     expect(res.body.result.isError).toBe(true);

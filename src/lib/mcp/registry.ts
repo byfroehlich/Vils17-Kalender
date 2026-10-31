@@ -9,6 +9,7 @@ import { postfach, mailLesen, mailSenden } from "./tools/mail";
 import { maengel, mangelErfassen } from "./tools/issues";
 import { hinweisVorschlaege, hinweisUebernehmen } from "./tools/hints";
 import { pushStatus, pushTest } from "./tools/push";
+import { stammgaeste } from "./tools/regular-guests";
 import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheLieferungAngekommen, waescheReserve, waescheBetten } from "./tools/laundry";
 
 /** Alle Tools der Schnittstelle. tools/list zeigt nur die, deren Scope das Token hat. */
@@ -34,6 +35,7 @@ export const TOOLS: ToolDef[] = [
   maengel,
   hinweisVorschlaege,
   pushStatus,
+  stammgaeste,
   // Stufe 2 — schreiben (nur mit "bestaetigt": true)
   reinigungZuweisen,
   pushTest,

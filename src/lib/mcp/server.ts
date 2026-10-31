@@ -15,7 +15,8 @@ Daten kommen aus Smoobu (Buchungen) und der App selbst (Reinigung, Wäsche, Abre
 - Postfach info@vils17.at (Portale, Gäste, Behörden, Haus): postfach listet/sucht, mail_lesen liest (markiert nichts als gelesen), mail_senden sendet erst mit "bestaetigt": true nach Freigabe von Empfänger, Betreff und Text.
 - Wäsche läuft nach Bestand im Keller, nicht pro Buchung (ein offener Wäschestatus einer Buchung ist kein Problem; waesche_status ist veraltet). Bestellt wird auf der Website der Wäscherei. Bestellmenge: waesche_bedarf (Vorgabe 14 Tage); Bestellung festhalten: waesche_lieferung_erfassen; „Lieferung ist im Keller“: waesche_lieferung_angekommen. Spannbettlaken je Bettgröße 90/180/200 nach waesche_betten.
 - Hunde: 15 € pro Hund und Nacht. Airbnb kassiert selbst; bei Booking.com/Direkt per hundegebuehr_anfordern (Text vorher freigeben). hunde_pruefen durchsucht die Chats.
-- Hinweis für die Reinigung (Kinderbett, Hochstuhl, Zustellbett, getrennt schlafen …): die App erkennt Sonderwünsche in den Gästechats; hinweis_vorschlaege listet sie, hinweis_uebernehmen übernimmt (Text änderbar, Zusatzbetten 0–3) oder verwirft.`;
+- Hinweis für die Reinigung (Kinderbett, Hochstuhl, Zustellbett, getrennt schlafen …): die App erkennt Sonderwünsche in den Gästechats; hinweis_vorschlaege listet sie, hinweis_uebernehmen übernimmt (Text änderbar, Zusatzbetten 0–3) oder verwirft.
+- Stammgäste: stammgaeste listet die Gäste, die sich selbst über die Gästemappe eingetragen haben. Angebote nur über Kanäle mit Einwilligung (E-Mail/WhatsApp), nie an abgemeldete; jede Werbe-Mail enthält den Abmelde-Link.`;
 
 /**
  * Baut pro Anfrage einen zustandslosen MCP-Server. Angemeldet werden nur die
