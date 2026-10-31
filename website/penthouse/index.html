@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Penthouse No. 17 Vils – Ferienwohnung in Vils, Tirol | Direkt buchen</title>
+<meta name="description" content="Penthouse No. 17 in Vils, Tirol: 110 m² für bis zu 5 Gäste, zwei Schlafzimmer, 30 m² Dachterrasse mit Bergblick. Offizielle Seite für die Direktbuchung.">
+<!-- TODO: echte Domain eintragen (canonical, og:url, og:image, sitemap.xml) -->
+<link rel="canonical" href="https://vils17.at/penthouse/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Penthouse No. 17 – Vils, Tirol">
+<meta property="og:description" content="110 m², Dachterrasse mit Bergblick, bis zu 5 Gäste. Direkt beim Gastgeber buchen.">
+<meta property="og:locale" content="de_AT">
+<meta property="og:url" content="https://vils17.at/penthouse/">
+<link rel="icon" href="/assets/favicon.svg">
+<!-- TODO: og:image = Foto Dachterrasse 1200x630, lokal unter /assets/og-penthouse-17.jpg, absolute URL -->
+<meta name="theme-color" content="#38544D">
+<link href="/assets/fonts.css" rel="stylesheet">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "VacationRental",
+  "name": "Penthouse No. 17",
+  "description": "Ferienwohnung mit 110 m² und 30 m² Dachterrasse mit Bergblick in Vils, Tirol.",
+  "address": { "@type": "PostalAddress", "addressLocality": "Vils", "addressRegion": "Tirol", "addressCountry": "AT" },
+  "checkinTime": "15:00",
+  "checkoutTime": "10:00",
+  "petsAllowed": true,
+  "containsPlace": {
+    "@type": "Accommodation",
+    "additionalType": "EntirePlace",
+    "occupancy": { "@type": "QuantitativeValue", "maxValue": 5 },
+    "numberOfBedrooms": 2,
+    "floorSize": { "@type": "QuantitativeValue", "value": 110, "unitCode": "MTK" },
+    "amenityFeature": [
+      { "@type": "LocationFeatureSpecification", "name": "WLAN", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Fußbodenheizung", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Dachterrasse mit Bergblick", "value": true },
+      { "@type": "LocationFeatureSpecification", "name": "Private Parkplätze", "value": true }
+    ]
+  }
+}
+</script>
+<style>
+:root{
+  --sage:#8EC0A3; --fir:#38544D; --deep:#1E302A; --slate:#3A4C56;
+  --mist:#DCE8DF; --paper:#F4F8F5; --sand:#C3D6C8;
+  --serif:"Fraunces","Iowan Old Style",Georgia,serif;
+  --sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+  box-sizing:border-box;
+}
+*,*::before,*::after{box-sizing:inherit;margin:0}
+html{background:var(--deep)}
+body{background:var(--deep);color:var(--paper);font:400 1.0625rem/1.6 var(--sans);-webkit-font-smoothing:antialiased;overflow-x:hidden}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--sage);outline-offset:4px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* Kopfleiste */
+.bar{position:fixed;inset:0 0 auto 0;z-index:50;display:flex;justify-content:space-between;align-items:center;
+  padding:calc(env(safe-area-inset-top,0px) + 14px) clamp(16px,4vw,44px) 14px;pointer-events:none}
+.bar a{pointer-events:auto;text-decoration:none}
+.glass{background:rgba(30,48,42,.42);backdrop-filter:blur(10px) saturate(1.2);-webkit-backdrop-filter:blur(10px) saturate(1.2);
+  border:1px solid rgba(244,248,245,.22);border-radius:999px}
+.home{display:flex;align-items:center;height:46px;padding:0 20px}
+.home svg{height:26px;width:auto;color:var(--paper);display:block}
+.cta{display:flex;align-items:center;height:46px;padding:0 20px;font:500 .9375rem/1 var(--sans);color:var(--paper)}
+.cta:hover{background:var(--paper);color:var(--fir)}
+
+/* Film */
+#film{position:relative}
+.stage{position:sticky;top:0;height:100vh;height:100lvh;overflow:hidden}
+#gl{position:absolute;inset:0;width:100%;height:100%;display:block;background:var(--deep)}
+.hero{position:absolute;inset:0;display:grid;place-items:center;z-index:3;pointer-events:none;will-change:opacity,transform}
+.hero-in{width:min(820px,82vw);text-align:center}
+.hero h1{color:var(--paper)}
+.hero h1 svg{width:100%;height:auto;display:block;clip-path:inset(0 100% 0 0);animation:write 2.4s cubic-bezier(.65,.05,.25,1) .3s forwards;
+  filter:drop-shadow(0 2px 24px rgba(20,32,28,.35))}
+.hero p{font:400 .9375rem/1 var(--sans);letter-spacing:.08em;color:var(--mist);margin-top:1.4rem;opacity:0;animation:fade 1.2s ease 2.2s forwards}
+.hint{position:absolute;left:50%;bottom:calc(env(safe-area-inset-bottom,0px) + 28px);transform:translateX(-50%);z-index:3;
+  font:500 .75rem/1 var(--sans);letter-spacing:.14em;color:var(--mist);opacity:0;animation:fade 1s ease 2.8s forwards;text-align:center}
+.hint i{display:block;width:1px;height:38px;margin:10px auto 0;background:linear-gradient(var(--mist),transparent);animation:drip 2s ease-in-out infinite}
+@keyframes write{to{clip-path:inset(0 0 0 0)}}
+@keyframes fade{to{opacity:1}}
+@keyframes drip{0%{transform:scaleY(0);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}51%{transform-origin:bottom}100%{transform:scaleY(0);transform-origin:bottom}}
+
+.beat{position:absolute;left:clamp(22px,6vw,96px);bottom:calc(env(safe-area-inset-bottom,0px) + clamp(70px,13vh,150px));z-index:4;
+  max-width:92vw;pointer-events:none}
+.beat .ln{white-space:nowrap}
+.beat.r{left:auto;right:clamp(22px,6vw,96px);text-align:right}
+.beat .ln{display:block;overflow:hidden;padding-bottom:.06em}
+.beat .ln>span{display:block;transform:translateY(110%);will-change:transform}
+.beat h2{font:300 clamp(2.6rem,7.4vw,6.6rem)/.98 var(--serif);font-variation-settings:"opsz" 144;letter-spacing:-.025em;
+  text-shadow:0 2px 40px rgba(20,32,28,.45)}
+.beat p{font:400 clamp(1rem,1.5vw,1.2rem)/1.45 var(--sans);max-width:30ch;margin-top:1rem;opacity:0;text-shadow:0 1px 18px rgba(20,32,28,.6)}
+.beat.r p{margin-left:auto}
+.beat small{display:block;font:500 .75rem/1 var(--sans);letter-spacing:.12em;margin-bottom:1rem;opacity:0;color:var(--mist)}
+.rail{position:absolute;right:clamp(12px,2vw,24px);top:50%;height:min(38vh,320px);width:2px;transform:translateY(-50%);z-index:5;background:rgba(244,248,245,.22);border-radius:2px}
+.rail b{position:absolute;left:0;top:0;width:100%;height:100%;background:var(--paper);transform-origin:top;transform:scaleY(0);border-radius:2px}
+
+/* statische Variante (reduzierte Bewegung / kein WebGL) */
+#static{display:none}
+.no-film #film{display:none}
+.no-film #static{display:block;padding-top:90px}
+#static figure{position:relative;margin:0}
+#static img{width:100%;height:auto;display:block}
+#static figcaption{padding:28px clamp(20px,6vw,96px) 56px;background:var(--deep)}
+#static figcaption strong{display:block;font:300 clamp(2rem,6vw,4rem)/1 var(--serif)}
+
+/* Essentials */
+#essentials{background:var(--paper);color:var(--fir);padding:clamp(96px,16vh,180px) clamp(20px,6vw,96px)}
+.ess{max-width:1180px;margin:0 auto}
+.ess h2{font:300 clamp(2rem,4.5vw,3.6rem)/1.05 var(--serif);max-width:18ch}
+.nums{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:32px;margin:clamp(48px,8vh,88px) 0;border-top:1px solid var(--sand);padding-top:32px}
+.nums p{margin:0}
+.nums b{display:block;font:300 clamp(3.4rem,8vw,6rem)/.9 var(--serif);font-variation-settings:"opsz" 144;color:var(--fir)}
+.nums span{display:block;margin-top:.5em;color:var(--slate)}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px 48px}
+.facts div{padding:14px 0;border-bottom:1px solid var(--sand)}
+.facts dt{font-weight:500}.facts dd{color:var(--slate);margin:0}
+.todo{display:inline-block;font:500 .75rem/1.3 var(--sans);background:#FFF3C4;color:#5A4A00;padding:2px 6px;border-radius:3px;margin-left:6px;vertical-align:middle}
+#buchen{background:var(--sage);color:var(--deep);padding:clamp(96px,16vh,180px) clamp(20px,6vw,96px) clamp(64px,10vh,120px)}
+.book{max-width:980px;margin:0 auto}
+.book h2{font:300 clamp(2.4rem,6vw,4.8rem)/1 var(--serif);font-variation-settings:"opsz" 144}
+.book p{max-width:52ch;margin-top:1rem}
+.smoobu{margin-top:40px;background:var(--paper);border-radius:6px;min-height:520px;padding:clamp(20px,4vw,40px);color:var(--fir)}
+.smoobu.placeholder{border:2px dashed var(--fir);display:grid;place-items:center;text-align:center}
+.smoobu.placeholder strong{font:400 1.4rem/1.2 var(--serif)}
+.smoobu.placeholder code{font-size:.85rem;background:var(--mist);padding:2px 6px;border-radius:3px}
+footer{background:var(--deep);color:var(--mist);padding:48px clamp(20px,6vw,96px) calc(48px + env(safe-area-inset-bottom,0px));font-size:.9375rem}
+footer .in{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:16px 40px;justify-content:space-between;align-items:center}
+footer .in svg{height:40px;width:auto;color:var(--sage)}
+.credits{max-width:1180px;margin:24px auto 0;font-size:.8125rem;opacity:.75;line-height:1.5}
+
+/* Lesbarkeit: weicher Schatten hinter dem Text, folgt der Textseite */
+.shade{position:absolute;inset:0;z-index:3;pointer-events:none;opacity:0;will-change:opacity}
+.shade i{position:absolute;inset:0;transition:opacity .6s ease}
+.shade .l{background:linear-gradient(to top,rgba(16,26,22,.82) 0%,rgba(16,26,22,.5) 30%,rgba(16,26,22,0) 62%),
+  radial-gradient(120% 70% at 0% 100%,rgba(16,26,22,.55) 0%,rgba(16,26,22,0) 60%)}
+.shade .r{opacity:0;background:linear-gradient(to top,rgba(16,26,22,.82) 0%,rgba(16,26,22,.5) 30%,rgba(16,26,22,0) 62%),
+  radial-gradient(120% 70% at 100% 100%,rgba(16,26,22,.55) 0%,rgba(16,26,22,0) 60%)}
+.beat h2{text-shadow:0 2px 28px rgba(16,26,22,.55),0 1px 3px rgba(16,26,22,.35)}
+.beat p{font-size:clamp(1.02rem,1.5vw,1.22rem);line-height:1.5;max-width:34ch;text-shadow:0 1px 12px rgba(16,26,22,.75),0 1px 2px rgba(16,26,22,.5)}
+.beat small{font-size:.8125rem;text-shadow:0 1px 8px rgba(16,26,22,.8)}
+.hero p{font-size:1.0625rem;text-shadow:0 1px 14px rgba(16,26,22,.8)}
+.hero::before{content:"";position:absolute;inset:0;background:radial-gradient(60% 55% at 50% 50%,rgba(16,26,22,.42),rgba(16,26,22,0) 75%);z-index:-1}
+@media (max-width:820px){.shade .l,.shade .r{background:linear-gradient(to top,rgba(16,26,22,.85) 0%,rgba(16,26,22,.55) 34%,rgba(16,26,22,0) 66%)}
+  .beat,.beat.r{left:22px;right:22px;text-align:left} .beat.r p{margin-left:0}}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="logo" viewBox="58 17 379 112"><path d="M80.5,124.2v-.5c.5-6.8,1.2-12.8,2.1-18.2.3-2.3,1.2-7.6,2.5-16-2.6,0-8.4-1-17.2-2.9-4.1-1-6.2-1.9-6.3-2.8v-.3c.2-.7.6-1.1,1.2-1.1s1.4.2,1.7.7c0,.7,0,1-.4,1h0c2,1,5,1.8,9,2.6,3.8.7,7.9,1.2,12.2,1.5,3.1-20.4,5.6-38.2,7.5-53.3.1-1.2.2-2.1.2-2.6v-.2c-.6-.2-.9-.5-1-.9.2-3.2.8-4.8,2-4.8s1.2.6,1.3,1.5c0,.5,0,.2,0,.9,0,3.2-1.8,17-5.3,41.3-1.5,10.2-2.5,16.2-2.7,18.1h1.1c2.4-8.3,5.2-16.5,8.6-24.5,2.7-6.4,5.7-12.6,9-18.7,2.1-3.8,4.8-8,8-12.3,5.2-6.7,10.3-10.7,15.2-12,.9-.2,1.7-.3,2.2-.3h.4c0,0,.2,0,.2,0,3.3,0,6,1.8,7.9,5.3,1.3,2.5,2,5.6,2.2,9.3,0,.8,0,1.5,0,2.3,0,8.4-2.6,17.1-7.7,26.3-6.3,10.6-15.1,18.1-26.4,22.5-3,1.1-5.8,1.8-8.6,2.4-3.8.7-7.2,1-10.1,1h0c-1.8,7.1-4,17.9-6.8,32.4-.5,2.5-.8,3.8-1.1,3.8h0c0,0-.1.1-.3.1-.6-.2-.9-.7-.9-1.7ZM83.5,111.1h0c0,.1,0,.1,0,.1h0ZM83.6,110.9h0c0,.1,0,.1,0,.1h0ZM83.6,110.7h0v.2h0v-.2ZM88.1,89.7h-.9l-3.5,20.9h0c0,0,0,0,0,0,1.8-8.8,3.3-15.8,4.4-21ZM90.3,88.3c4.4,0,9.4-.9,15.2-2.6,10.9-3.8,19.5-10.7,25.8-20.7,3.1-4.8,5.5-10.4,7.1-16.8,1-4.2,1.5-7.9,1.5-11.3v-1.5c-.4-5.4-1.3-9-4.1-11.8-1.2-1-2.6-1.5-4-1.5-3.5,0-7.3,2-12.3,7.1-3,3.3-5.3,6.1-6.9,8.6-5.2,7.7-9.8,16.2-13.9,25.4-2.6,5.8-5.1,12.3-7.3,19.4-.8,2.7-1.3,4.6-1.5,5.7h.3Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M126.7,96.2c-.7-1-.8-1.9-.8-2.9s.3-3,2-5.1c1.8-2.2,3.8-3,5.3-3s2.1.7,2.1,1.8-1.2,4-7.8,5.2v1c0,2.6,1.5,4,4.7,4s9.7-2,15.6-5.5c.8-.5,1.5-.9,2.2-1.5.2-.2.4-.2.6-.2s.3.2.3.3c0,.2-.2.4-.7.7-6.4,4.3-13.5,7.3-18.1,7.3s-4.1-.6-5.2-2.1ZM132.7,88.7c.2-.2.4-.4.5-.5.3-.4.5-.7.5-1s-.4-.6-.9-.6-1.6.4-2.6,1.2c-.2.2-.5.4-.8.8,0,0-.9,1-1.1,1.4l-.4.7c2.2-.4,3.7-.9,4.9-1.9Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M196.3,51.9h0c0,.7-.4,2-1.2,4-1.5,4.3-2.8,7.9-3.7,10.7h0c5.7,0,15.2-.2,28.3-.5.2,0,.4.1.5.4h0c0,.4-.5.6-1.4.6-8.4.2-17.6.4-27.8.5-7.7,22.6-8.6,40-8.6,40,0,2.8.4,5.2,1.1,7.3,0,0,0,.2,0,.4,0,.3-.2.5-.4.5-.5,0-1-.5-1.5-1.5-.4-1.1-.6-2.6-.6-4.4,0-8.1,2.7-22.2,8.1-42.2h-.3s-3.3,0-3.3,0c-4,7-8.3,13.7-12.9,20.2-1.5,2-2.6,3.2-3.1,3.8-2.8,3.3-5.1,4.9-6.7,4.9s-2.2-1.4-2.6-4.3c0-2.9-.2-4.4-.5-4.4h-.2c-.4,0-1.5,1.1-3.4,3.4-2.4,3.1-4.4,5.6-6.2,7.4-.4.4-.8.5-1.2.6-.4,0-.7-.2-.9-.7-.1-.3-.2-.6-.2-1v-.5c.2-2.6,1.6-6.4,4.2-11.5.6-1.1,1.2-1.7,1.9-1.7h0c.6.1.9.4.9.8v.2c0,.4-.4,1.1-1.1,2.1-2.2,3.9-3.4,7.1-3.7,9.5v.2c0,.2,0,.2.1.2.3,0,1-.8,2.2-2.3,1.8-2.4,3.4-4.4,4.8-6.1,1.4-1.4,2.5-2.1,3.3-2.1s1.4.9,1.6,2.8c0,1.1.2,2.2.5,3.4.4.9.9,1.4,1.6,1.4,3.3,0,10-8.7,20.1-26,.2-.2.2-.4.2-.5h0c-4.4,0-7.9,0-10.5,0h-8c-3.4,0-5.2-.3-5.5-1,0,0-.2-.2-.2-.5,0-.7.8-1.1,2.6-1.1,2.1,0,3.3.4,3.6.8,0,0,.1.2.1.3h0c6.3.3,12.3.4,17.9.4h.7c2.7-4.6,5.5-9.7,8.3-15.3.4-.7.9-1,1.4-1s1.2.6,1.3,1.7ZM189.6,66.6c1.5-5.1,2.7-9.4,3.8-12.9-.1,0-.8,1.4-2,3.8-2.3,4.2-4,7.2-5,9h3.2Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M190.3,102.3v-.5c0-1.3.4-5.2,1.1-11.7,1.7-11.9,3.9-21.9,6.6-30.1,1.5-4.5,3-8.2,4.5-11.1.8-1.3,1.7-2,2.5-2s1.1.1,1.3,1v.2c0,.6-.3,1.4-.9,2.3-.2.1-.4.2-.5.2h-.4c-2.4,4.1-4.4,9.1-6.1,15.2-2.1,7.4-3.9,17.2-5.2,29.6-.1,1.6-.3,2.7-.4,3.2h0s0,0,0,0c1.2-2.5,2.8-5.3,4.8-8.4,2.8-3.8,5.1-5.7,6.8-5.7s2,.2,2.7,1.7c.2.6.3,1.1.3,1.6l.2,3.8c.2,2.5,1.3,4.1,3.1,4.7.5,0,.9.2,1.3.2,3.1,0,7.6-2.2,13.6-6.5h.3c.3,0,.4.2.5.5h0c0,.4-.8,1-2.3,1.9-5.4,3.7-9.6,5.5-12.6,5.5s-4.2-1.4-5.3-4.1c-.4-1.1-.6-2-.7-2.8-.2-2.3-.4-3.6-1.1-4h-.4c-1,0-2.7,1.5-5.3,4.5-2,2.7-3.7,5.5-5.1,8.3-.8,1.6-1.4,2.6-1.8,3-.3.3-.6.4-.9.4s-.6-.3-.8-.9Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M243.6,85.7s0,0,0,.2v.2c0,.5-.4,2.1-1.3,4.8-.4,1.6-.6,2.9-.6,3.9s.2,1.7.7,1.9h.3c0,0,.3,0,.3,0,1.1,0,3-1.4,5.8-4.2,1-1,2.3-2.4,3.9-4.3.5-.5.8-.7,1.2-.7s.8.2.9.6c0,.2,0,.4,0,.5l-.9,4.4c-.2,1-.3,1.8-.3,2.6h0c0,.9.2,1.4.5,1.4.6.1.9.4.9.7,0,0,0,0,0,.2,0,.4-.2.6-.8.7h0c-1,0-1.6-.5-2-1.6-.1-.4-.2-1-.2-1.6,0-1.2.3-3.3,1-6.1-1.7,1.9-3.4,3.7-5,5.3-2.8,2.6-4.9,3.9-6.3,3.9h-.2c-1.1,0-1.8-1.1-2.1-3.3v-.7c0-1.7.6-4.1,1.8-7.1,0-.2,0-.3,0-.4h0c0,0,0-.3,0-.3h-.1c-.4,0-1.8,1-4.2,3.1-2,1.6-3.4,2.5-4.3,2.8,0,1.3-.4,2.8-1.2,4.5-.9,1.5-2.1,2.2-3.6,2.2s-2.1-.6-2.9-1.7c-.5-1-.8-1.9-.8-3v-.5c0-1.8.8-3.9,2.3-6.1.6-.6,1.2-.9,1.8-.9.6,0,.8.4.8.8h0c0,.8-.3,1.1-.8,1.1s-.7,0-.8.2c-1.4,1.9-2.1,3.7-2.1,5.4s.6,2.8,1.9,3.3c.3,0,.5,0,.7,0,1.2,0,2.2-.8,3-2.5.4-1,.5-2,.5-3h0c-1.1-.6-1.7-1.5-1.7-2.5s.3-1.3,1-1.5c0,0,.1,0,.2,0,.8,0,1.4,1.1,1.5,3.2.5,0,2.6-1.5,6.2-4.4,2-1.6,3.3-2.4,4.1-2.4.5,0,.7.3.7.7Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M266.8,85.6v.2c0,.4-.3.6-.9.8-.5,0-.9-.2-1.1-.2-1.1,0-1.8.6-2.1,1.8-.1.4-.2.8-.2,1.1v.3c0,1.8,1.4,3.6,4.2,5.5,1.6,1.2,2.8,2.1,3.5,2.8,0,0,.2.1.3.3,5.7-3,10.8-5.4,15.3-7.1,2.3-.8,3.7-1.3,4.1-1.3.3,0,.4.2.4.3,0,.3-.7.6-2,.9-2.5.9-5.1,2-7.9,3.3-2.4,1.1-7.1,3.4-9.3,4.8,1.8,2.7,2.7,5.3,2.7,7.9s-1.4,5.7-4.3,7.9c-1.8,1.2-3.8,1.8-5.8,1.8s-3.7-.7-5.1-2c-.8-.9-1.2-2-1.2-3.1v-.2c0-3.3,2.6-6.6,7.7-10.1,1.5-.9,2.8-1.7,3.9-2.2-1.2-1.2-2.7-2.3-4.5-3.5-2.5-1.8-3.8-3.8-3.8-5.9s.9-4,2.8-4.8c.5-.2,1-.2,1.5-.2,1.2,0,1.9.3,1.9.9ZM261.6,115.6c.4.1,1.2.2,2.2.3,3.9-.5,6.6-2.4,8-5.6.3-1.1.5-2.2.5-3.3,0-2.8-.9-5.1-2.8-7.2h0c-1.7.7-3.5,1.7-5.3,3.1-3.7,2.7-6,5.4-6,8.2s1.1,3.6,3.4,4.4Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M289.7,96.2c-.7-1-.8-1.9-.8-2.9s.3-3,2-5.1c1.8-2.2,3.8-3,5.3-3s2.1.7,2.1,1.8-1.2,4-7.8,5.2v1c0,2.6,1.5,4,4.7,4s9.7-2,15.6-5.5c.8-.5,1.5-.9,2.2-1.5.2-.2.4-.2.6-.2s.3.2.3.3c0,.2-.2.4-.7.7-6.4,4.3-13.5,7.3-18.1,7.3s-4.1-.6-5.2-2.1ZM295.7,88.7c.2-.2.4-.4.5-.5.3-.4.5-.7.5-1s-.4-.6-.9-.6-1.6.4-2.6,1.2c-.2.2-.5.4-.8.8,0,0-.9,1-1.1,1.4l-.4.7c2.2-.4,3.7-.9,4.9-1.9Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M332.1,81.4c.5-5.5,1.2-11,2-16.4.6-3.9,1.4-7.7,2.5-11.4.4-1.1.8-2.2,1.2-3.3.3-.7.7-1.4,1.1-2,.3-.4.6-.8,1-1.1,1.1-.9,2.3-.9,3.5,0,.6.5,1,1.1,1.4,1.8.6,1.1,1,2.3,1.3,3.6.7,2.5,1.2,5.1,1.5,7.7.4,3.5.9,7,1.3,10.6.1,1.2.3,2.4.4,3.6.2,1.8.4,3.6.6,5.5.4,3.9.9,7.8,1.4,11.7.6,4.6,1.4,9.2,2.5,13.8.3,1.5.8,2.9,1.5,4.3.1.2.2.4.4.6,0,0,0,.2.1.2,0,0,.1,0,.2.1,0,0,.2,0,.3,0s.2,0,.2-.1c0,0,0-.1.1-.2,0-.1.2-.3.2-.5,0-.3.2-.6.3-1,.3-1,.5-2,.7-3,.9-5.2,1.7-10.4,2.6-15.6.9-5.7,1.9-11.4,3.1-17,1.1-5.6,2.5-11.3,3.9-16.8,0-.2,0-.3.1-.5,0-.2.1-.5.2-.7,0,0,0,0,.1,0,0,0,.2,0,.2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,.1,0,.3,0,.4,0,.1,0,.2,0,.3,0,0,0,0,0,0-.2,1-.4,2-.5,3-.4,2.1-.8,4.2-1.2,6.3-.6,3.4-1.2,6.8-1.8,10.3-.8,4.4-1.5,8.8-2.3,13.3-.3,1.7-.6,3.4-.9,5.2-.3,2-.7,4.1-1,6.1-.5,2.8-1,5.5-1.5,8.3-.2.7-.4,1.5-.6,2.2-.2.5-.4.9-.7,1.3-.3.4-.7.6-1.2.6-.5,0-.9-.1-1.3-.5-.4-.4-.8-.9-1-1.4-.5-1-.9-2-1.2-3.1-.6-2-1.1-3.9-1.5-5.9-.7-3.5-1.3-7-1.7-10.5-.7-6-1.3-12-2-17.9,0-.7-.2-1.4-.2-2.1-.4-3.5-.8-7-1.3-10.6-.3-2.5-.8-5-1.4-7.5-.3-1-.6-1.9-1-2.9-.2-.5-.4-.9-.7-1.3-.9-1.2-1.8-1.2-2.7,0-.7.8-1.2,1.7-1.5,2.6-.6,1.7-1.2,3.4-1.6,5.1-.9,3.7-1.6,7.4-2.1,11.2-.6,4.8-1.2,9.6-1.7,14.4-.4,4.3-.9,8.6-1.5,12.9-.2,1.8-.5,3.6-.8,5.4-.3,1.8-.7,3.6-1.2,5.3-.3,1.2-.7,2.4-1.1,3.6-.3.8-.7,1.6-1.1,2.3-.3.4-.7.7-1.1,1-.4.2-.8.3-1.2.2-.4-.1-.7-.4-1-.8,0,0,0,0,0-.1s0,0,0-.1c0,0,.1-.1.2-.2,0,0,.1,0,.2,0,.2,0,.4,0,.6.2,0,0,.1,0,.2,0,.4,0,.7,0,.9-.3,0,0,0,0,0,0,.4-.5.7-.9.9-1.5.4-1,.7-2.1,1-3.1.7-2.6,1.2-5.3,1.6-8,.8-5.8,1.5-11.6,2.1-17.4Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M369.5,91.5c-.6-.8-.8-1.7-.6-2.6s.7-1.7,1.3-2.5,1.4-1.2,2.2-1.5c1.3-.3,2.4-.2,3.1.3.8.6,1.3,1.4,1.6,2.4s.5,2.1.4,3.2c0,.6,0,1,.2,1.2.2.2.6.2,1.3,0,0,0,0,0,0,0,0,0,0,0,.1,0,0,0,.1,0,.3,0,.9,0,1.8-.2,2.8-.4.9-.2,1.9-.5,2.8-.8l1.1-.3s0,0,.1,0c0,0,0,0,.1,0h0c.1.1.1.2,0,.4-.2.1-.4.3-.7.4-1.3.6-2.6,1-3.9,1.4-1.3.4-2.7.6-4.1.7-.5,0-1,.2-1.3.6-.3.3-.5.6-.8.9-.2.2-.5.5-.8.7-1.1.7-2,.9-2.8.5s-1.4-1.1-1.8-2.4c0-.2-.1-.5-.1-.7,0-.6-.2-1.1-.6-1.6ZM376.8,91.5c.2-2.1,0-3.6-.5-4.4s-1.3-1.2-2.1-1.2c-.9,0-1.7.4-2.5,1-.8.6-1.3,1.3-1.5,2.1-.2.8,0,1.5.7,2.1.5.4,1.1.6,1.8.8.6.2,1.3.3,1.9.4.6,0,1.1,0,1.5,0s.6-.3.7-.6ZM374.5,95c.8-.5,1.2-.9,1-1.2-.2-.3-.6-.5-1.2-.6-.6-.1-1.3-.2-1.9-.2-.4,0-.6,0-.8,0,0,0-.1,0-.2,0,0,0-.1.1-.2.2,0,0,0,.2,0,.2.3.8.7,1.4,1.3,1.7.6.3,1.2.2,2-.2Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M387.1,93.4c.2-.1.3-.2.5-.3.2,0,.4,0,.6,0,0,0,.1,0,.2.2,0,0,0,0,0,.1,0,0,0,0,0,.1.2.7,0,1.2-.8,1.5,0,0,0,0-.2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.1-.1-.2-.2-.2-.3-.4-.4-.7,0-.2,0-.3,0-.5,0-.1.2-.3.3-.4Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M408.4,85.4c.2-1.8.3-3.5.5-5.3,0-.8.2-1.7.3-2.5,0-.1,0-.3,0-.4.2-1.6.3-3.1.2-4.7,0,0,0,0,0,0,0,0,0,0-.1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0-.1.2-.2.3-.3.5-.6.9-.9,1.4-.6,1-1.3,1.9-2,2.8-.7.9-1.5,1.7-2.4,2.5-.4.4-.8.7-1.2.9s-.9.3-1.5.3c-.5,0-.8-.3-.9-.7,0-.1,0-.3,0-.4s.2-.2.3-.2h0c0,0,.1,0,.2,0,.4.1.8.2,1.1,0s.7-.3.9-.6c.1-.1.3-.3.4-.4.6-.6,1.2-1.2,1.7-1.8s1.1-1.3,1.6-2c.8-1.2,1.5-2.4,2.2-3.7.7-1.3,1.2-2.6,1.6-4,0-.2.1-.4.2-.6,0,0,0,0,0-.1,0-.1.2-.2.4-.3.2,0,.3,0,.5,0,.3,0,.4.3.5.5,0,.3,0,.7,0,1,0,.8,0,1.5-.1,2.3-.3,3.1-.6,6.2-.8,9.4,0,.9-.2,1.8-.3,2.6-.1,1.2-.2,2.3-.3,3.4,0,1-.2,1.9-.2,2.9-.1,1.7-.3,3.3-.4,5-.3,2.7-.6,5.4-1,8,0,.3,0,.7-.1,1-.2,1.8-.5,3.6-.8,5.5,0,.4-.1.7-.2,1.1,0,0,0,0,0,0,0,0,0,0-.1,0,0,0,0,0,0,0,0,0,0,0,0,0s0,0,0,0c0,0,0,0,0-.1,0-.2,0-.4-.1-.6,0-.6,0-1.2,0-1.9v-.9c0-.4,0-.8.1-1.3,0-1.1.2-2.2.3-3.3,0-.9.2-1.9.3-2.9.1-1.2.2-2.5.3-3.7,0-1.1.2-2.3.3-3.4.1-1.7.3-3.3.4-5Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/><path d="M425.9,69.4c.3,0,.5,0,.8,0,1.9-.2,3.9-.4,5.8-.6.3,0,.6.1.8.3.2.2.3.5.2.8-.2.4-.3.8-.5,1.1-1,1.9-2,3.7-3,5.6-1.5,2.7-2.9,5.3-4.4,8,0,0,0,.2-.1.3-1.5,2.7-2.9,5.3-4.3,8s-2.7,5.5-3.8,8.3c-.3.6-.6,1.2-.9,1.8,0,0,0,0,0,0,0,0,0,0-.1,0,0,0-.1,0-.2,0h0c0-.1,0-.3,0-.4,0-.3,0-.6.1-.8,1.4-4.9,3.3-9.6,5.7-14.1,1.1-2,2.1-4,3.2-6,1.3-2.3,2.5-4.6,3.8-7,.4-.7.7-1.3,1.1-2,.3-.4.5-.9.8-1.3.1-.2.1-.4,0-.6-.1-.2-.3-.3-.5-.3h-.6c-.3,0-.6,0-.9,0-1.6.2-3.1.2-4.7,0-1.5-.2-3.1-.5-4.6-.9-.5-.1-.9-.3-1.4-.4-.3,0-.5-.2-.8-.2-.2,0-.3,0-.4.1-.1.1-.2.3-.1.5,0,.3,0,.7.1,1,0,.6.2,1.1.2,1.7,0,.3,0,.5-.1.7,0,0,0,.1-.1.2,0,0-.1,0-.2.1,0,0-.1,0-.2,0,0,0-.1,0-.2-.1-.2-.3-.3-.6-.4-.9-.1-1-.3-1.9-.5-2.9-.2-.9-.5-1.9-.9-2.8,0,0,0-.2,0-.3,0-.1.1-.2.2-.3,0,0,.2,0,.3-.1s.3,0,.4,0c.1,0,.3.2.4.3,0,0,.1.1.2.2.9.7,1.8,1.2,2.9,1.5,1.2.4,2.4.6,3.6.8,1.2.2,2.4.3,3.6.4ZM416,106.8s0,0,0,0,0,0,0,0h-.2c0,0,0,0,0,0,0,0,0,0,0,0s0,0,0,0ZM415.9,106.8h0s0,0,0,0Z" fill="currentColor" stroke="currentColor" stroke-width=".2"/></symbol>
+</svg>
+
+<header class="bar">
+  <a class="home glass" href="#film" aria-label="Penthouse No. 17, zum Seitenanfang"><svg viewBox="0 0 379 112"><use href="#logo"/></svg></a>
+  <a class="cta glass" href="#buchen">Direkt buchen</a>
+</header>
+
+<main>
+<!-- =====================================================================
+     DER FILM
+     Ein einziger, durchgehender Scroll-Film in WebGL. Alle Fotos liegen als
+     Texturen im Speicher; Scrollen spult den Film vor und zurück.
+     Jeder Szenenwechsel hat eine eigene Übergangstechnik im Shader:
+       liquid  – fließende Verdrängung entlang eines Rauschfelds
+       whip    – Reißschwenk mit Bewegungsunschärfe
+       push    – Kamerafahrt durch den Raum mit Zoom-Unschärfe und Lichtblitz
+       light   – helle Bildbereiche der nächsten Szene erscheinen zuerst
+       portal  – Kamera fährt durch das echte Fenster in die Landschaft
+       ridge   – eine Bergkammlinie steigt auf und gibt das nächste Motiv frei
+       ripple  – Wasserwellen öffnen die nächste Szene
+       mirror  – die Seespiegelung klappt flach, Himmel hebt ab, Terrasse bleibt
+     ===================================================================== -->
+<section id="film" aria-label="Penthouse No. 17 in Vils, Tirol – Bildgeschichte">
+  <div class="stage">
+    <canvas id="gl" aria-hidden="true"></canvas>
+    <div class="hero" id="hero"><div class="hero-in">
+      <h1><span class="sr">Penthouse No. 17 – Ferienwohnung in Vils, Tirol</span>
+        <svg viewBox="0 0 379 112" aria-hidden="true"><use href="#logo"/></svg></h1>
+      <p>Vils in Tirol</p>
+    </div></div>
+    <div class="hint" id="hint">Scrollen<i></i></div>
+    <div class="beat" data-k="wohnen" style="visibility:hidden"><h2><span class="ln"><span>110 m²</span></span><span class="ln"><span>über Vils.</span></span></h2></div>
+    <div class="beat" data-k="wohnzimmer" style="visibility:hidden"><h2><span class="ln"><span>Platz</span></span><span class="ln"><span>für fünf.</span></span></h2><p>Zwei Schlafzimmer, dazu ein Arbeitszimmer mit Schlafcouch.</p></div>
+    <div class="beat r" data-k="kueche" style="visibility:hidden"><h2><span class="ln"><span>Kochen</span></span><span class="ln"><span>wie zuhause.</span></span></h2><p>Herd, Backofen, Geschirrspüler, Kaffeemaschine.</p></div>
+    <div class="beat" data-k="durchblick" style="visibility:hidden"><h2><span class="ln"><span>Hohe Decken,</span></span><span class="ln"><span>viel Licht.</span></span></h2></div>
+    <div class="beat" data-k="schlafzimmer2" style="visibility:hidden"><h2><span class="ln"><span>Leiser</span></span><span class="ln"><span>werden.</span></span></h2><p>Zwei Schlafzimmer mit Kingsize-Betten, 200 und 180 cm breit.</p></div>
+    <div class="beat r" data-k="bad" style="visibility:hidden"><h2><span class="ln"><span>Warm unter</span></span><span class="ln"><span>den Füßen.</span></span></h2><p>Dusche, Badewanne, Fußbodenheizung.</p></div>
+    <div class="beat" data-k="fenster" style="visibility:hidden"><h2><span class="ln"><span>Und dann</span></span><span class="ln"><span>der Blick.</span></span></h2></div>
+    <div class="beat" data-k="lech" style="visibility:hidden"><small>Lech mit Blick zum Vilser Kegel</small><h2><span class="ln"><span>Draußen</span></span><span class="ln"><span>wird es weit.</span></span></h2></div>
+    <div class="beat" data-k="tal" style="visibility:hidden"><small>Blick vom Falkenstein</small><h2><span class="ln"><span>Das Tal</span></span><span class="ln"><span>um Vils.</span></span></h2></div>
+    <div class="beat r" data-k="falkenstein" style="visibility:hidden"><small>Pfronten</small><h2><span class="ln"><span>Burgruine</span></span><span class="ln"><span>Falkenstein.</span></span></h2></div>
+    <div class="beat" data-k="alatsee" style="visibility:hidden"><small>Bei Füssen</small><h2><span class="ln"><span>Alatsee.</span></span></h2></div>
+    <div class="beat" data-k="terrasse" style="visibility:hidden"><h2><span class="ln"><span>30 m²</span></span><span class="ln"><span>Himmel.</span></span></h2><p>Dachterrasse mit Essplatz und Bergblick.</p></div>
+    <div class="shade" id="shade" aria-hidden="true"><i class="l"></i><i class="r"></i></div>
+    <div class="rail" aria-hidden="true"><b id="rail"></b></div>
+  </div>
+</section>
+
+<section id="static" aria-label="Bildgeschichte"><figure><img data-k="wohnen" alt="" width="2000" height="1500" loading="lazy"><figcaption><strong>110 m² über Vils.</strong></figcaption></figure><figure><img data-k="wohnzimmer" alt="" width="2000" height="1500" loading="lazy"><figcaption><strong>Platz für fünf.</strong><p>Zwei Schlafzimmer, dazu ein Arbeitszimmer mit Schlafcouch.</p></figcaption></figure><figure><img data-k="kueche" alt="" width="2000" height="1500" loading="lazy"><figcaption><strong>Kochen wie zuhause.</strong><p>Herd, Backofen, Geschirrspüler, Kaffeemaschine.</p></figcaption></figure><figure><img data-k="durchblick" alt="" width="1400" height="1866" loading="lazy"><figcaption><strong>Hohe Decken, viel Licht.</strong></figcaption></figure><figure><img data-k="schlafzimmer2" alt="" width="1400" height="1866" loading="lazy"><figcaption><strong>Leiser werden.</strong><p>Zwei Schlafzimmer mit Kingsize-Betten, 200 und 180 cm breit.</p></figcaption></figure><figure><img data-k="bad" alt="" width="1400" height="1866" loading="lazy"><figcaption><strong>Warm unter den Füßen.</strong><p>Dusche, Badewanne, Fußbodenheizung.</p></figcaption></figure><figure><img data-k="fenster" alt="" width="1400" height="1866" loading="lazy"><figcaption><strong>Und dann der Blick.</strong></figcaption></figure><figure><img data-k="lech" alt="" width="2000" height="1331" loading="lazy"><figcaption><strong>Draußen wird es weit.</strong></figcaption></figure><figure><img data-k="tal" alt="" width="2000" height="1331" loading="lazy"><figcaption><strong>Das Tal um Vils.</strong></figcaption></figure><figure><img data-k="falkenstein" alt="" width="2000" height="1500" loading="lazy"><figcaption><strong>Burgruine Falkenstein.</strong></figcaption></figure><figure><img data-k="alatsee" alt="" width="2000" height="1334" loading="lazy"><figcaption><strong>Alatsee.</strong></figcaption></figure><figure><img data-k="terrasse" alt="" width="2000" height="900" loading="lazy"><figcaption><strong>30 m² Himmel.</strong><p>Dachterrasse mit Essplatz und Bergblick.</p></figcaption></figure></section>
+
+<!-- 08 ESSENTIALS -->
+<section id="essentials" aria-labelledby="ess-h">
+  <div class="ess">
+    <h2 id="ess-h">Das Wichtigste, kurz gesagt.</h2>
+    <div class="nums">
+      <p><b>110</b><span>Quadratmeter Wohnfläche</span></p>
+      <p><b>5</b><span>Gäste, zwei Schlafzimmer plus Schlafcouch</span></p>
+      <p><b>30</b><span>Quadratmeter Dachterrasse</span></p>
+    </div>
+    <dl class="facts">
+      <div><dt>Check-in</dt><dd>ab 15:00 Uhr</dd></div>
+      <div><dt>Check-out</dt><dd>bis 10:00 Uhr</dd></div>
+      <div><dt>Parken</dt><dd>Zwei private Parkplätze</dd></div>
+      <div><dt>Zugang</dt><dd>Eigener Eingang</dd></div>
+      <div><dt>Komfort</dt><dd>WLAN und Fußbodenheizung</dd></div>
+      <div><dt>Hunde</dt><dd>Willkommen nach Absprache, 15 € pro Hund und Nacht</dd></div>
+    </dl>
+  </div>
+</section>
+
+<!-- 09 DIREKT BUCHEN – Motion ist hier bewusst abgeschaltet -->
+<section id="buchen" aria-labelledby="book-h">
+  <div class="book">
+    <h2 id="book-h">Direkt buchen</h2>
+    <p>Wählen Sie Ihre Reisedaten und die Anzahl der Gäste. Sie buchen direkt beim Gastgeber.</p>
+    <!-- =========================================================
+         SMOOBU BOOKING ENGINE
+         TODO: Hier den echten Smoobu-Embed-Code der Unterkunft einsetzen
+         (Smoobu > Website > Booking Engine > Code kopieren).
+         Den Platzhalter-Div komplett ersetzen. Kein Fake-Kalender.
+         ========================================================= -->
+    <div id="smoobu-booking" class="smoobu" role="region" aria-label="Buchungsmaske"><iframe src="https://booking.smoobu.com/vils17?apartmentId=2943886" title="Verfügbarkeit und Buchung" style="width:100%;min-height:900px;border:0" loading="lazy"></iframe></div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="in">
+    <svg viewBox="0 0 379 112" aria-hidden="true"><use href="#logo"/></svg>
+    <p>Penthouse No. 17, Vils, Tirol · Josef-Ahorn-Weg 17, 6682 Vils · <a href="/impressum/">Impressum</a> · <a href="/datenschutz/">Datenschutz</a></p>
+  </div>
+  <p class="credits">Innenaufnahmen: Gastgeber (aus dem Inserat), Tonwerte und Weißabgleich optimiert. Landschaftsfotos via Wikimedia Commons, verkleinert und zugeschnitten:
+  Lech mit Vilser Kegel – Tuxyso, <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de">CC BY-SA 4.0</a>;
+  Blick vom Falkenstein Richtung Vils – Johannes Robalotoff, <a href="https://creativecommons.org/licenses/by-sa/3.0/de/">CC BY-SA 3.0 DE</a>;
+  Burgruine Falkenstein – Clemenspool, CC0;
+  Alatsee – Martin Kraft, <a href="https://creativecommons.org/licenses/by-sa/4.0/deed.de">CC BY-SA 4.0</a>.</p>
+</footer>
+
+
+
+<script>
+/* ---------- Bilder (bearbeitet, eingebettet) ---------- */
+const IMG = {"wohnen": {"w": 2000, "h": 1500, "src": "/penthouse/img/wohnen.webp"}, "wohnzimmer": {"w": 2000, "h": 1499, "src": "/penthouse/img/wohnzimmer.webp"}, "kueche": {"w": 2000, "h": 1499, "src": "/penthouse/img/kueche.webp"}, "durchblick": {"w": 1400, "h": 1866, "src": "/penthouse/img/durchblick.webp"}, "schlafzimmer2": {"w": 1400, "h": 1866, "src": "/penthouse/img/schlafzimmer2.webp"}, "bad": {"w": 1400, "h": 1866, "src": "/penthouse/img/bad.webp"}, "fenster": {"w": 1400, "h": 1866, "src": "/penthouse/img/fenster.webp"}, "lech": {"w": 2000, "h": 1331, "src": "/penthouse/img/lech.webp"}, "tal": {"w": 2000, "h": 1331, "src": "/penthouse/img/tal.webp"}, "falkenstein": {"w": 2000, "h": 1500, "src": "/penthouse/img/falkenstein.webp"}, "alatsee": {"w": 2000, "h": 1334, "src": "/penthouse/img/alatsee.webp"}, "terrasse": {"w": 2000, "h": 900, "src": "/penthouse/img/terrasse.webp"}};
+
+/* ---------- Drehbuch ----------
+   d = Länge in Bildschirmhöhen. cam = [zoom, fokusX, fokusY] Anfang -> Ende. */
+const SCRIPT = [
+  { hold:'wohnen',       d:1.8, cam:[[1.32,.60,.42],[1.04,.58,.46]], hero:true },
+  { to:'wohnzimmer',     d:1.9, mode:'liquid' },
+  { hold:'wohnzimmer',   d:1.4, cam:[[1.00,.50,.52],[1.12,.42,.56]] },
+  { to:'kueche',         d:1.6, mode:'whip' },
+  { hold:'kueche',       d:1.4, cam:[[1.06,.30,.50],[1.14,.52,.50]] },
+  { to:'durchblick',     d:1.8, mode:'push' },
+  { hold:'durchblick',   d:1.6, cam:[[1.00,.58,.46],[1.50,.62,.42]] },
+  { to:'schlafzimmer2',  d:2.0, mode:'light' },
+  { hold:'schlafzimmer2',d:1.3, cam:[[1.00,.50,.56],[1.07,.50,.52]] },
+  { to:'bad',            d:1.9, mode:'light' },
+  { hold:'bad',          d:1.3, cam:[[1.00,.50,.58],[1.07,.50,.62]] },
+  { to:'fenster',        d:1.8, mode:'liquid' },
+  { hold:'fenster',      d:1.3, cam:[[1.00,.62,.42],[1.18,.74,.34]] },
+  { to:'lech',           d:2.6, mode:'portal', focus:[.81,.28] },
+  { hold:'lech',         d:1.4, cam:[[1.12,.58,.50],[1.00,.55,.50]] },
+  { to:'tal',            d:2.2, mode:'ridge' },
+  { hold:'tal',          d:1.4, cam:[[1.00,.50,.50],[1.10,.56,.46]] },
+  { to:'falkenstein',    d:2.2, mode:'ridge' },
+  { hold:'falkenstein',  d:1.4, cam:[[1.00,.46,.46],[1.12,.44,.38]] },
+  { to:'alatsee',        d:2.1, mode:'ripple' },
+  { hold:'alatsee',      d:1.3, cam:[[1.00,.50,.46],[1.05,.56,.46]], sun:[.735,.10] },
+  { to:'terrasse',       d:2.6, mode:'mirror', hz:.485, lamp:[.81,.36] },
+  { hold:'terrasse',     d:1.8, cam:[[1.10,.84,.46],[1.00,.82,.50]], end:true },
+];
+const MODES = {liquid:1, whip:2, push:3, light:4, portal:5, ridge:6, ripple:7, mirror:8};
+
+/* Zeitachse aufbauen */
+let T = 0; const holds = {};
+SCRIPT.forEach((s,i) => { s.t0 = T; T += s.d; s.t1 = T; if (s.hold) holds[s.hold] = s; });
+SCRIPT.forEach((s,i) => { if (s.to) { s.from = SCRIPT[i-1]; s.next = SCRIPT[i+1]; } });
+const TOTAL = T;
+
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('gl');
+const gl = !reduce && canvas.getContext('webgl2', { antialias:false, alpha:false, powerPreference:'high-performance' });
+
+/* Statische Variante, wenn Bewegung reduziert ist oder WebGL2 fehlt */
+if (!gl) {
+  document.documentElement.classList.add('no-film');
+  document.querySelectorAll('#static img[data-k]').forEach(im => im.src = IMG[im.dataset.k].src);
+} else {
+  start();
+}
+
+function start(){
+const mobile = matchMedia('(max-width: 820px)').matches;
+const film = document.getElementById('film');
+let VH = innerHeight, W = innerWidth;
+const setHeight = () => { VH = innerHeight; W = innerWidth; film.style.height = (TOTAL * VH + VH) + 'px'; };
+setHeight();
+addEventListener('resize', () => { if (Math.abs(innerWidth - W) > 2 || Math.abs(innerHeight - VH) > 120) setHeight(); resize(); });
+
+/* ---------- Shader ---------- */
+const VS = `#version 300 es
+in vec2 p; void main(){ gl_Position = vec4(p,0.,1.); }`;
+const FS = `#version 300 es
+precision highp float;
+uniform sampler2D tA, tB;
+uniform vec2 res, sA, sB;
+uniform vec3 cA, cB;
+uniform float pr, mode, tm, dim, blurA, fade, grainAmt;
+uniform vec4 win;      // Fensterflügel in Bildkoordinaten von A
+uniform float hz;      // Horizont in A (Bild-y)
+uniform vec3 glow;     // Lichtpunkt: x, y (Bildschirm), Intensität
+out vec4 o;
+
+vec2 vis(vec2 sz, float z){ float ra=res.x/res.y, ri=sz.x/sz.y; vec2 s = ra>ri ? vec2(1., ri/ra) : vec2(ra/ri, 1.); return s/z; }
+vec2 ctr(vec2 sz, vec3 c){ vec2 w=vis(sz,c.x); return clamp(c.yz, w*.5, 1.-w*.5); }
+vec2 img(vec2 uv, vec2 sz, vec3 c){ return ctr(sz,c) + (uv-.5)*vis(sz,c.x); }
+vec2 scr(vec2 iuv, vec2 sz, vec3 c){ return (iuv-ctr(sz,c))/vis(sz,c.x) + .5; }
+vec3 A(vec2 uv, vec3 c, float l){ return textureLod(tA, img(uv,sA,c), l).rgb; }
+vec3 B(vec2 uv, vec3 c, float l){ return textureLod(tB, img(uv,sB,c), l).rgb; }
+
+float h21(vec2 p){ p=fract(p*vec2(123.34,456.21)); p+=dot(p,p+45.32); return fract(p.x*p.y); }
+float vn(vec2 p){ vec2 i=floor(p), f=fract(p); f=f*f*(3.-2.*f);
+  return mix(mix(h21(i),h21(i+vec2(1,0)),f.x), mix(h21(i+vec2(0,1)),h21(i+vec2(1,1)),f.x), f.y); }
+float fbm(vec2 p){ float s=0., a=.5; for(int i=0;i<5;i++){ s+=a*vn(p); p*=2.03; a*=.5; } return s; }
+float ridgeN(float x){ float s=0., a=.5, f=1.; for(int i=0;i<5;i++){ s+=a*(1.-abs(vn(vec2(x*f, 3.7+float(i)))*2.-1.)); f*=2.1; a*=.5; } return s; }
+float ease(float t){ return t<.5 ? 4.*t*t*t : 1.-pow(-2.*t+2.,3.)/2.; }
+float lum(vec3 c){ return dot(c, vec3(.299,.587,.114)); }
+
+void main(){
+  vec2 uv = gl_FragCoord.xy/res; uv.y = 1.-uv.y;
+  float asp = res.x/res.y;
+  float p = pr, e = ease(p), s = sin(3.14159*p);
+  vec3 col;
+
+  if (mode < .5) {                                   // Halten
+    col = A(uv, cA, blurA);
+  }
+  else if (mode < 1.5) {                             // liquid
+    vec2 q = uv*vec2(asp,1.)*2.2;
+    float n = fbm(q + vec2(0., p*.6));
+    float edge = e*1.5 - .25;
+    float mA = smoothstep(edge-.09, edge+.09, n);
+    vec2 d = (vec2(fbm(q*1.3+3.1), fbm(q*1.3+7.7))-.5) * .09 * s;
+    vec3 a = A(uv + d*(1.-mA), cA, 0.);
+    vec3 b = B(uv - d*mA, cB, 0.);
+    col = mix(b, a, mA);
+    float band = 1.-abs(mA*2.-1.);
+    col += vec3(1.,.97,.9) * band * .18 * s;
+  }
+  else if (mode < 2.5) {                             // whip
+    vec3 a=vec3(0.), b=vec3(0.);
+    for (int i=0;i<12;i++){ float k=(float(i)/11.-.5)*.16*s;
+      a += A(uv + vec2(k + e*.28, 0.), cA, 1.5*s);
+      b += B(uv + vec2(k - (1.-e)*.28, 0.), cB, 1.5*s); }
+    col = mix(a/12., b/12., smoothstep(.38,.62,p));
+  }
+  else if (mode < 3.5) {                             // push
+    vec3 ca = vec3(cA.x*(1.+e*1.9), cA.yz), cb = vec3(cB.x*(1.+(1.-e)*.9), cB.yz);
+    vec3 a=vec3(0.), b=vec3(0.);
+    for (int i=0;i<10;i++){ float k=1.-float(i)*.012*s;
+      a += A(.5+(uv-.5)*k, ca, 0.); b += B(.5+(uv-.5)*k, cb, 0.); }
+    col = mix(a/10., b/10., smoothstep(.42,.66,p));
+    col += vec3(1.,.96,.88) * .32 * exp(-pow((p-.54)/.09,2.));
+  }
+  else if (mode < 4.5) {                             // light
+    vec3 b = B(uv, cB, 0.), a = A(uv, cA, 0.);
+    float k = lum(b)*.72 + fbm(uv*vec2(asp,1.)*3.)*.28;
+    float th = 1.05 - e*1.25;
+    float m = smoothstep(th, th+.18, k);
+    col = mix(a, b, m) + b * .35 * m*(1.-m)*4. * s;
+  }
+  else if (mode < 5.5) {                             // portal: ins Licht des Fensters
+    float ee = ease(p);
+    vec3 ca = vec3(cA.x*(1.+ee*1.6), mix(cA.yz, win.xy, ee));
+    vec3 a=vec3(0.);
+    for (int i=0;i<8;i++){ float k=1.-float(i)*.016*ee; a += A(.5+(uv-.5)*k, ca, 0.); }
+    a /= 8.;
+    float la = lum(a);
+    a = 1.-exp(-a*(1.+ee*3.2));                       // Belichtung zieht auf, wie beim Hineingehen ins Licht
+    vec3 b = B(uv, vec3(cB.x*(1.28-.28*ee), cB.yz), 0.);
+    float th = 1.02 - ee*1.15;
+    float m = smoothstep(th, th+.22, la*.8 + fbm(uv*vec2(asp,1.)*2.)*.2);
+    vec3 bb = mix(vec3(1.,.985,.96), b, smoothstep(.45,.95,p));
+    col = mix(a, bb, m);
+    col = mix(col, vec3(1.,.98,.95), exp(-pow((p-.5)/.13,2.))*.35);
+  }
+  else if (mode < 6.5) {                             // ridge
+    float base = mix(1.28, -.36, e);
+    float edgeY = base - ridgeN(uv.x*asp*.9 + 1.3)*.32;
+    float m = smoothstep(edgeY-.004, edgeY+.004, uv.y);
+    vec3 a = A(uv + vec2(0., e*.06), cA, 0.);
+    vec3 b = B(uv - vec2(0., (1.-e)*.12), cB, 0.);
+    col = mix(a, b, m);
+    float haze = exp(-pow((uv.y-edgeY)/.03,2.));
+    col = mix(col, vec3(.93,.95,.94), haze*.55*s);
+  }
+  else if (mode < 7.5) {                             // ripple
+    vec2 c = vec2(.5,.62); vec2 d = (uv-c)*vec2(asp,1.); float l = length(d);
+    float R = e*1.5*max(asp,1.);
+    float w = sin((l-R)*70.)*exp(-abs(l-R)*10.)*.014*s;
+    vec2 off = normalize(d+1e-5)/vec2(asp,1.)*w;
+    vec3 a = A(uv+off, cA, 0.), b = B(uv+off*.6, cB, 0.);
+    float m = 1.-smoothstep(R-.05, R+.05, l);
+    col = mix(a, b, m);
+    col += vec3(1.) * exp(-pow((l-R)/.02,2.)) * .12 * s;
+  }
+  else {                                             // mirror
+    float f = ease(clamp(p*1.55,0.,1.));
+    float L = ease(clamp((p-.32)/.68,0.,1.));
+    float hs = scr(vec2(.5,hz), sA, cA).y;
+    float y0 = uv.y + L*(hs+.06);
+    vec3 b = B(uv, vec3(cB.x*(1.12-.12*e), cB.yz), 0.);
+    float showA; vec2 su;
+    if (y0 < hs) { su = vec2(uv.x, y0); showA = 1.; }
+    else {
+      float H = 1.-hs, h = H*(1.-f);
+      float yy = hs + (y0-hs)/max(1.-f,.001);
+      su = vec2(uv.x + sin(y0*140.+tm*1.5)*.0025*f, yy);
+      showA = 1.-smoothstep(hs+h-.003, hs+h+.003, y0);
+    }
+    vec3 a = A(su, cA, 0.);
+    col = mix(b, a, showA);
+  }
+
+  // Lichtpunkt (Sonne -> Leuchter)
+  if (glow.z > 0.) { vec2 gd=(uv-glow.xy)*vec2(asp,1.); col += vec3(1.,.95,.84)*glow.z*(exp(-dot(gd,gd)*900.)*.9 + exp(-dot(gd,gd)*60.)*.25); }
+  // Look: dezente Vignette, Abdunklung, Korn
+  col *= mix(1., smoothstep(1.25,.3,length((uv-.5)*vec2(asp*.8,1.))), .32);
+  col = mix(col, vec3(.118,.188,.165), fade);
+  col *= 1.-dim;
+  col += (h21(gl_FragCoord.xy+fract(tm)*97.)-.5)*grainAmt;
+  o = vec4(col,1.);
+}`;
+
+function sh(type, src){ const s=gl.createShader(type); gl.shaderSource(s,src); gl.compileShader(s);
+  if(!gl.getShaderParameter(s,gl.COMPILE_STATUS)) throw new Error(gl.getShaderInfoLog(s)); return s; }
+const prog = gl.createProgram();
+gl.attachShader(prog, sh(gl.VERTEX_SHADER,VS)); gl.attachShader(prog, sh(gl.FRAGMENT_SHADER,FS));
+gl.linkProgram(prog); gl.useProgram(prog);
+const buf = gl.createBuffer(); gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+const loc = gl.getAttribLocation(prog,'p'); gl.enableVertexAttribArray(loc); gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+const U = {}; ['tA','tB','res','sA','sB','cA','cB','pr','mode','tm','dim','blurA','fade','grainAmt','win','hz','glow'].forEach(n => U[n]=gl.getUniformLocation(prog,n));
+gl.uniform1i(U.tA,0); gl.uniform1i(U.tB,1);
+
+/* ---------- Texturen ---------- */
+const TEX = {}; const MAXW = mobile ? 1400 : 2400;
+function blank(){ const t=gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+  gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,1,1,0,gl.RGBA,gl.UNSIGNED_BYTE,new Uint8Array([30,48,42,255])); return t; }
+const BLANK = blank();
+function load(k){ return new Promise(res => { const im = new Image(); im.onload = () => {
+    let src = im; const w = IMG[k].w, h = IMG[k].h;
+    if (im.naturalWidth > MAXW) { const c=document.createElement('canvas'); c.width=MAXW; c.height=Math.round(im.naturalHeight*MAXW/im.naturalWidth);
+      c.getContext('2d').drawImage(im,0,0,c.width,c.height); src=c; }
+    const t = gl.createTexture(); gl.bindTexture(gl.TEXTURE_2D,t);
+    gl.texImage2D(gl.TEXTURE_2D,0,gl.RGBA,gl.RGBA,gl.UNSIGNED_BYTE,src);
+    gl.generateMipmap(gl.TEXTURE_2D);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MIN_FILTER,gl.LINEAR_MIPMAP_LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_MAG_FILTER,gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_S,gl.CLAMP_TO_EDGE);
+    gl.texParameteri(gl.TEXTURE_2D,gl.TEXTURE_WRAP_T,gl.CLAMP_TO_EDGE);
+    if (!mobile) { const ext = gl.getExtension('EXT_texture_filter_anisotropic'); if (ext) gl.texParameterf(gl.TEXTURE_2D, ext.TEXTURE_MAX_ANISOTROPY_EXT, 4); }
+    TEX[k] = t; dirty = true; res(); }; im.src = IMG[k].src; }); }
+// Reihenfolge: erst das Startbild, dann der Rest der Reihe nach
+const order = SCRIPT.filter(s=>s.hold).map(s=>s.hold);
+(async () => { for (const k of order) await load(k); })();
+
+/* ---------- Größe ---------- */
+function resize(){ const dpr = Math.min(devicePixelRatio||1, mobile ? 1.6 : 2);
+  canvas.width = Math.round(innerWidth*dpr); canvas.height = Math.round(innerHeight*dpr);
+  gl.viewport(0,0,canvas.width,canvas.height); dirty = true; }
+let dirty = true; resize();
+
+/* Bildschirmposition eines Bildpunkts (dieselbe Mathematik wie im Shader) */
+function vis(sz,z){ const ra=canvas.width/canvas.height, ri=sz[0]/sz[1]; const s = ra>ri ? [1,ri/ra] : [ra/ri,1]; return [s[0]/z, s[1]/z]; }
+function scr(iuv,k,c){ const sz=[IMG[k].w,IMG[k].h], w=vis(sz,c[0]);
+  const cx=Math.min(Math.max(c[1],w[0]/2),1-w[0]/2), cy=Math.min(Math.max(c[2],w[1]/2),1-w[1]/2);
+  return [(iuv[0]-cx)/w[0]+.5, (iuv[1]-cy)/w[1]+.5]; }
+
+/* ---------- Text-Beats ---------- */
+const beats = [...document.querySelectorAll('.beat')].map(el => {
+  const h = holds[el.dataset.k]; return { el, a:h.t0, b:h.t1, lines:[...el.querySelectorAll('.ln>span')], subs:[...el.querySelectorAll('p,small')] };
+});
+const shade = document.getElementById('shade'), shL = shade.querySelector('.l'), shR = shade.querySelector('.r');
+const hero = document.getElementById('hero'), hint = document.getElementById('hint'), rail = document.getElementById('rail');
+
+/* ---------- Laufzeit ---------- */
+const lerp=(a,b,t)=>a+(b-a)*t, clamp=(v,a,b)=>Math.min(Math.max(v,a),b), sm=t=>t*t*(3-2*t);
+const L3=(a,b,t)=>[lerp(a[0],b[0],t),lerp(a[1],b[1],t),lerp(a[2],b[2],t)];
+let cur = 0, last = performance.now(), lastDrawn = -1;
+function target(){ return clamp((scrollY - film.offsetTop) / VH, 0, TOTAL); }
+cur = target();
+
+function frame(now){
+  const dt = Math.min((now-last)/1000, .1); last = now;
+  const tgt = target();
+  cur += (tgt-cur) * (1 - Math.exp(-dt*3.2));
+  if (Math.abs(tgt-cur) < 2e-4) cur = tgt;
+  if (cur !== lastDrawn || dirty) { draw(cur, now/1000); ui(cur); lastDrawn = cur; dirty = false; }
+  requestAnimationFrame(frame);
+}
+function seg(t){ for (const s of SCRIPT) if (t < s.t1) return s; return SCRIPT[SCRIPT.length-1]; }
+
+function draw(t, time){
+  const s = seg(t), lp = clamp((t - s.t0)/s.d, 0, 1);
+  let a, b, ca, cb, mode=0, pr=0, dim=0, blur=0, fade=0, glow=[0,0,0], win=[0,0,0,0], hz=.5;
+  if (s.hold) {
+    a = s.hold; b = s.hold; ca = L3(s.cam[0], s.cam[1], sm(lp)); cb = ca;
+    if (s.hero) { const h = clamp(lp/.55,0,1); blur = (1-sm(h))*3.2; dim = (1-sm(h))*.5; }
+    if (s.sun) glow = [...scr(s.sun, a, ca), .55];
+    if (s.end) fade = sm(clamp((lp-.55)/.45,0,1));
+  } else {
+    a = s.from.hold; b = s.next.hold; ca = s.from.cam[1]; cb = s.next.cam[0];
+    mode = MODES[s.mode]; pr = lp;
+    if (s.focus) win = [s.focus[0], s.focus[1], 0, 0];
+    if (s.hz) hz = s.hz;
+    if (s.mode === 'mirror') {
+      const sun = scr(s.from.sun, a, ca), lamp = scr(s.lamp, b, cb);
+      const k = sm(clamp(lp/.85,0,1));
+      glow = [lerp(sun[0],lamp[0],k), lerp(sun[1],lamp[1],k), .55*(1-sm(clamp((lp-.8)/.2,0,1)))];
+    }
+  }
+  gl.activeTexture(gl.TEXTURE0); gl.bindTexture(gl.TEXTURE_2D, TEX[a] || BLANK);
+  gl.activeTexture(gl.TEXTURE1); gl.bindTexture(gl.TEXTURE_2D, TEX[b] || BLANK);
+  gl.uniform2f(U.res, canvas.width, canvas.height);
+  gl.uniform2f(U.sA, IMG[a].w, IMG[a].h); gl.uniform2f(U.sB, IMG[b].w, IMG[b].h);
+  gl.uniform3fv(U.cA, ca); gl.uniform3fv(U.cB, cb);
+  gl.uniform1f(U.pr, pr); gl.uniform1f(U.mode, mode); gl.uniform1f(U.tm, time);
+  gl.uniform1f(U.dim, dim); gl.uniform1f(U.blurA, blur); gl.uniform1f(U.fade, fade);
+  gl.uniform1f(U.grainAmt, mobile ? .018 : .022);
+  gl.uniform4fv(U.win, win); gl.uniform1f(U.hz, hz); gl.uniform3fv(U.glow, glow);
+  gl.drawArrays(gl.TRIANGLES, 0, 3);
+}
+
+function ui(t){
+  // Hero: Logo zieht sich zurück, sobald gescrollt wird
+  const h = clamp(t/.6, 0, 1);
+  hero.style.opacity = 1 - sm(h); hero.style.transform = `translateY(${-h*6}vh) scale(${1 - h*.06})`;
+  hint.style.visibility = t > .15 ? 'hidden' : 'visible';
+  rail.style.transform = `scaleY(${t/TOTAL})`;
+  let shadeV = 0, right = false;
+  for (const B of beats) {
+    const span = B.b - B.a, x = (t - B.a)/span;            // 0..1 innerhalb der Szene
+    const inK = sm(clamp((x-.12)/.3,0,1)), outK = sm(clamp((x-.82)/.18,0,1));
+    const vis = inK*(1-outK);
+    const sv = sm(clamp((x-.02)/.2,0,1))*(1-sm(clamp((x-.9)/.1,0,1)));
+    if (sv > shadeV) { shadeV = sv; right = B.el.classList.contains('r') && innerWidth > 820; }
+    B.el.style.visibility = vis > 0.001 ? 'visible' : 'hidden';
+    B.lines.forEach((sp,i) => { const k = sm(clamp((x-.12-i*.05)/.3,0,1));
+      sp.style.transform = `translateY(${(1-k)*110 - outK*30}%)`; sp.style.opacity = 1-outK; });
+    B.subs.forEach(sp => sp.style.opacity = sm(clamp((x-.3)/.25,0,1))*(1-outK));
+  }
+  shade.style.opacity = shadeV.toFixed(3);
+  shL.style.opacity = right ? 0 : 1; shR.style.opacity = right ? 1 : 0;
+}
+requestAnimationFrame(frame);
+}
+</script>
+</body>
+</html>
