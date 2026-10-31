@@ -231,6 +231,11 @@ export function planLaundry(params: {
 // ─── Meldung „Wäsche reicht nicht“ ────────────────────────────────────────────
 // Einziges Wäsche-Signal in der App (Entscheidung Mathias 31.10.2026) — keine Warnung pro Buchung mehr.
 
+/** Planungsfenster der Wäsche-Lage (Push, Dashboard, Wochenplan, waesche_bedarf-Vorgabe) */
+export const LAUNDRY_ALERT_DAYS = 14;
+/** Engpass innerhalb so vieler Tage ab heute gilt als „kurzfristig“ */
+export const LAUNDRY_ALERT_SHORT_NOTICE_DAYS = 3;
+
 export interface LaundryAlert {
   /** true = es muss bestellt werden oder ein Teil geht vor einer Lieferung aus */
   orderNeeded: boolean;

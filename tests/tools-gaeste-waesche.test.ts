@@ -228,17 +228,30 @@ describe("waesche_status", () => {
 });
 
 describe("wochenplan", () => {
-  it("zeigt die Woche mit Warnungen: ohne Reinigungskraft, abgesagt, Wäsche offen", async () => {
+  it("zeigt die Woche mit Warnungen: ohne Reinigungskraft, abgesagt — Wäsche nur nach Bestand, nie pro Buchung", async () => {
     const r = await call("wochenplan", {});
     expect(r.ok).toBe(true);
     expect(r.result.zeitraum).toEqual({ von: "2026-10-30", bis: "2026-11-05" });
     const arten = r.result.warnungen.map((w: any) => `${w.datum} ${w.art}`);
-    // 30.10. Lodge Bernd Huber: zugewiesen, Wäsche offen (heute)
-    expect(arten).toContain("2026-10-30 waesche_offen");
+    // Wäschestatus „offen“ pro Buchung ist kein Problem mehr (Entscheidung Mathias 31.10.2026)
+    expect(arten.some((a: string) => a.includes("waesche_offen"))).toBe(false);
+    expect(r.result.tage[0].anreisen[0].waesche).toBeUndefined();
+    // ohne Zählung: keine Bestand-Warnung, aber Hinweis
+    expect(r.result.waesche_bestand.lage).toMatch(/noch nicht erfasst/);
     // 01.11. Penthouse Eva Klein: Absage von Vanessa
     expect(arten).toContain("2026-11-01 abgesagt");
-    // 05.11. Lodge Clara Wolf: niemand zugewiesen, Wäsche erst ab 3 Tage vorher → keine Wäsche-Warnung
+    // 05.11. Lodge Clara Wolf: niemand zugewiesen
     expect(arten).toContain("2026-11-05 ohne_reinigungskraft");
-    expect(arten).not.toContain("2026-11-05 waesche_offen");
+  });
+
+  it("Wäsche reicht nicht → eine Bestand-Warnung mit Tag des Engpasses", async () => {
+    const plenty = { beds: 50, sheets90: 50, sheets200: 50, towels: 50, kitchen: 50, handTowels: 50, pillowCases: 50, duvetCovers: 50, bathMats: 50, washcloths: 50 };
+    // Handtücher: 30.10. Lodge 4 P. × 2 = 8, 01.11. Penthouse 5 P. = 5, Reserve 3 → bei 15 reicht es ab 01.11. nicht
+    await prisma.laundryCount.create({ data: { organizationId: world.org.id, countedOn: new Date("2026-10-29T00:00:00Z"), quantities: { ...plenty, towels: 15 } } });
+    const r = await call("wochenplan", {});
+    const w = r.result.warnungen.filter((x: any) => x.art === "waesche_reicht_nicht");
+    expect(w).toHaveLength(1);
+    expect(w[0].datum).toBe("2026-11-01");
+    expect(r.result.waesche_bestand.lage).toBe("reicht nicht ab 2026-11-01");
   });
 });

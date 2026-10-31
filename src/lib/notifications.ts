@@ -1,7 +1,7 @@
 import { prisma } from "./prisma";
 import { sendPushToRole, sendPushToUsers } from "./push";
 import { loadLaundryPlan } from "./laundry-proposal";
-import { laundryAlert } from "./laundry-order";
+import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "./laundry-order";
 import { laundryText, LAUNDRY_ITEMS } from "./laundry-quantity";
 
 // ─── Zeit in Vils (Europe/Vienna) ─────────────────────────────────────────────
@@ -115,10 +115,6 @@ export async function runReminders(organizationId: string) {
 
 // ─── Wäsche-Bestand: „reicht nicht – bestellen“ ───────────────────────────────
 
-/** Planungsfenster für die Bestand-Warnung (wie waesche_bedarf) */
-export const LAUNDRY_ALERT_DAYS = 14;
-/** Engpass innerhalb so vieler Tage ab heute gilt als „kurzfristig“ */
-export const LAUNDRY_ALERT_SHORT_NOTICE_DAYS = 3;
 const LAUNDRY_ALERT_FROM_HOUR = 7;
 const LAUNDRY_ALERT_UNTIL_HOUR = 21; // nachts keine Wäsche-Pushes — die Meldung kommt dann ab 7 Uhr
 

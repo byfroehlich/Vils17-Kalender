@@ -7,7 +7,6 @@ interface ProblemBooking {
   checkIn: Date;
   apartment: { name: string };
   cleaningUnassigned: boolean;
-  laundryOpen: boolean;
 }
 
 export function WarningBanner({ bookings }: { bookings: ProblemBooking[] }) {
@@ -30,7 +29,7 @@ export function WarningBanner({ bookings }: { bookings: ProblemBooking[] }) {
             {bookings.length === 1 ? "1 Buchung braucht Aufmerksamkeit" : `${bookings.length} Buchungen brauchen Aufmerksamkeit`}
           </p>
           <p style={{ fontSize: 12, color: "rgba(253,211,77,0.65)", marginTop: 1 }}>
-            Reinigung oder Wäsche nicht organisiert
+            Reinigung nicht organisiert
           </p>
         </div>
       </div>
@@ -58,11 +57,6 @@ export function WarningBanner({ bookings }: { bookings: ProblemBooking[] }) {
                 {b.cleaningUnassigned && (
                   <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: "rgba(239,68,68,0.2)", color: "#FCA5A5", border: "1px solid rgba(239,68,68,0.3)" }}>
                     Reinigung
-                  </span>
-                )}
-                {b.laundryOpen && (
-                  <span style={{ fontSize: 10, fontWeight: 700, padding: "3px 8px", borderRadius: 20, background: "rgba(245,158,11,0.2)", color: "#FCD34D", border: "1px solid rgba(245,158,11,0.3)" }}>
-                    Wäsche
                   </span>
                 )}
               </div>

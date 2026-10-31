@@ -16,7 +16,6 @@ interface Booking {
   cleaningAssignment?: {
     cleanerId?: string | null;
     status: string;
-    laundryStatus: string;
     cleaner?: { name: string } | null;
   } | null;
 }
@@ -30,12 +29,7 @@ const cleaningDot: Record<string, string> = {
 const cleaningLabel: Record<string, string> = {
   UNASSIGNED: "Offen", SELF_CLEAN: "Selbst", ASSIGNED: "Zugewiesen", COMPLETED: "Erledigt",
 };
-const laundryDot: Record<string, string> = {
-  OPEN: "#ef4444", ORDERED: "#f59e0b", AVAILABLE: "#4ade80",
-};
-const laundryLabel: Record<string, string> = {
-  OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
-};
+// Kein Wäsche-Status pro Buchung — Wäsche läuft über den Bestand (/laundry, Entscheidung Mathias 31.10.2026)
 
 const MONTHS_DE = ["Januar","Februar","März","April","Mai","Juni","Juli","August","September","Oktober","November","Dezember"];
 
@@ -90,7 +84,6 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
           <div className="space-y-1.5">
             {group.items.map((booking) => {
               const cleaningStatus = booking.cleaningAssignment?.status ?? "UNASSIGNED";
-              const laundryStatus  = booking.cleaningAssignment?.laundryStatus ?? "OPEN";
 
               return (
                 <Link
@@ -136,10 +129,6 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                     <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
                       <span style={{ width: 8, height: 8, borderRadius: "50%", background: cleaningDot[cleaningStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
                       <span className="hidden sm:inline">{cleaningLabel[cleaningStatus]}</span>
-                    </span>
-                    <span style={{ display: "flex", alignItems: "center", gap: 5, fontSize: 12, color: "rgba(255,255,255,0.65)" }}>
-                      <span style={{ width: 8, height: 8, borderRadius: "50%", background: laundryDot[laundryStatus] ?? "#6b7280", flexShrink: 0, display: "inline-block" }} />
-                      <span className="hidden sm:inline">{laundryLabel[laundryStatus]}</span>
                     </span>
                   </div>
                 </Link>
