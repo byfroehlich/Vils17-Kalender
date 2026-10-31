@@ -154,7 +154,7 @@ export function petFeeMessage(p: { guestName: string; dogs: number; nights: numb
     "",
     `schön, dass ihr mit ${hund} bei uns seid – wir hoffen, ihr habt eine richtig schöne Zeit in Vils!`,
     `Für Hunde berechnen wir ${euro(PET_FEE_PER_NIGHT)} pro Hund und Nacht. Bei ${p.nights} ${p.nights === 1 ? "Nacht" : "Nächten"} sind das ${euro(p.amount)}. Das ist im Buchungspreis nicht enthalten.`,
-    "Magst du den Betrag bitte bis zur Abreise begleichen?",
+    "Ich bitte dich, den Betrag bis zu deiner Abreise zu begleichen.",
     zahlung,
     "",
     "Danke dir und liebe Grüße",
