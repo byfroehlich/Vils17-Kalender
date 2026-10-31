@@ -243,6 +243,8 @@ model Apartment {
 
   // Dreame Saugroboter
   dreameEnabled Boolean @default(false)
+  // Bei genau 2 Gästen automatisch fragen: ein Schlafzimmer oder getrennt? (Penthouse, Entscheidung Mathias 31.10.2026)
+  askSeparateBedrooms Boolean @default(false)
 
   // Feste Reinigungskraft-Zuweisung
   preferredCleanerId String?
@@ -291,6 +293,8 @@ model Booking {
   // Einmalige Push-Warnung „Gästezahl unbekannt“ (≤ 30 Tage vor Anreise) verschickt
   // (Entscheidung Mathias 31.10.2026: unbestätigte Gästezahl muss sichtbar sein und geklärt werden)
   guestCountReminderSentAt DateTime?
+  // Schlafzimmer-Frage an den Gast verschickt (einmal je Buchung, src/lib/bedroom-question.ts)
+  bedroomQuestionSentAt DateTime?
   petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
   // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
   petSource  String?
