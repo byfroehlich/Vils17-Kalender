@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { startOfDay } from "date-fns";
 import { effectiveRate, isPremiumFor } from "@/lib/rates";
+import { loadDepartureData } from "@/lib/departures";
 
 export async function getMyJobsData() {
   const session = await getServerSession(authOptions);
@@ -111,6 +112,7 @@ export async function getMyJobsData() {
     return {
       myAssignments: enriched.my,
       openAssignments: enriched.open,
+      departures: enriched.departures,
       isCleaner: true as const,
       userName: session.user.name ?? "",
       // Offizielle Wohnungszuweisung — wird in der Liste angezeigt, damit eine
@@ -145,6 +147,7 @@ export async function getMyJobsData() {
   return {
     myAssignments: enriched.my,
     openAssignments: enriched.open as typeof allAssignments & { nextGuestCount: number | null }[],
+    departures: enriched.departures,
     isCleaner: false as const,
     userName: session.user.name ?? "",
     myApartmentNames: [] as string[],
@@ -152,18 +155,26 @@ export async function getMyJobsData() {
 }
 
 async function enrichWithNextGuests<
-  T extends { booking: { apartmentId: string; checkOut: Date } },
-  U extends { booking: { apartmentId: string; checkOut: Date } },
+  T extends { booking: { apartmentId: string; checkIn: Date; checkOut: Date } },
+  U extends { booking: { apartmentId: string; checkIn: Date; checkOut: Date } },
 >(orgId: string, my: T[], open: U[]) {
   const allAptIds = new Set([
     ...my.map((a) => a.booking.apartmentId),
     ...open.map((a) => a.booking.apartmentId),
   ]);
 
+  // Abreisen der Vorgäste — beide Wohnungen, ohne Gastnamen (Entscheidung Mathias 31.10.2026)
+  const dep = await loadDepartureData(orgId);
+  const withDeparture = <V extends { booking: { apartmentId: string; checkIn: Date } }>(a: V) => ({
+    ...a,
+    previousDeparture: dep.previousDeparture(a.booking.apartmentId, a.booking.checkIn),
+  });
+
   if (allAptIds.size === 0) {
     return {
-      my: my.map((a) => ({ ...a, nextGuestCount: null as number | null })),
-      open: open.map((a) => ({ ...a, nextGuestCount: null as number | null })),
+      my: my.map((a) => withDeparture({ ...a, nextGuestCount: null as number | null })),
+      open: open.map((a) => withDeparture({ ...a, nextGuestCount: null as number | null })),
+      departures: dep.departures,
     };
   }
 
@@ -186,7 +197,8 @@ async function enrichWithNextGuests<
   }
 
   return {
-    my: my.map((a) => ({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
-    open: open.map((a) => ({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
+    my: my.map((a) => withDeparture({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
+    open: open.map((a) => withDeparture({ ...a, nextGuestCount: nextGuests(a.booking.apartmentId, a.booking.checkOut) })),
+    departures: dep.departures,
   };
 }
