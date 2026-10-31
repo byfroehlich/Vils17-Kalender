@@ -64,3 +64,50 @@ export const pushTest = defineTool({
     };
   },
 });
+
+// Entscheidung Mathias 31.10.2026: Reinigungskräften kurze Nachrichten aufs Handy schicken (Push),
+// z. B. „Bitte schon morgen reinigen“. Kommt nur an, wenn die Person die App installiert und
+// Benachrichtigungen eingeschaltet hat — die Antwort sagt, ob ein Gerät angemeldet war.
+export const reinigungNachricht = defineTool({
+  name: "reinigung_push",
+  title: "Push-Nachricht an eine Reinigungskraft",
+  description:
+    "Schickt einer Reinigungskraft eine kurze Push-Nachricht auf ihre angemeldeten Geräte (installierte App mit eingeschalteten Benachrichtigungen). " +
+    "Optional mit Link auf eine Buchung. Meldet, wie viele Geräte erreicht wurden. Erst ohne bestaetigt (Vorschau mit Text), dann mit bestaetigt: true.",
+  scope: "cleaning:write",
+  write: true,
+  input: {
+    reinigungskraft: z.string().trim().min(1).describe("ID oder Name (Teil) der Reinigungskraft, z.B. \"Kerstin\""),
+    text: z.string().trim().min(1).max(500),
+    buchung_id: z.string().min(1).optional().describe("Optional: Buchung, die beim Tippen geöffnet wird"),
+    bestaetigt: bestaetigtSchema,
+  },
+  async handler(args, ctx) {
+    const q = args.reinigungskraft;
+    const users = await prisma.user.findMany({
+      where: {
+        organizationId: ctx.organizationId, active: true, role: "CLEANER",
+        OR: [{ id: q }, { name: { contains: q, mode: "insensitive" } }],
+      },
+      select: { id: true, name: true, _count: { select: { pushSubscriptions: true } } },
+    });
+    if (users.length !== 1) {
+      return { fehler: users.length === 0 ? "Keine passende Reinigungskraft gefunden." : `Mehrdeutig: ${users.map((u) => u.name.trim()).join(", ")}` };
+    }
+    const u = users[0]!;
+    let url = "/my-jobs";
+    if (args.buchung_id) {
+      const b = await prisma.booking.findFirst({ where: { id: args.buchung_id, organizationId: ctx.organizationId }, select: { id: true } });
+      if (!b) return { fehler: "Buchung nicht gefunden." };
+      url = `/my-jobs/list`;
+    }
+    if (!args.bestaetigt) {
+      return preview(`Push an ${u.name.trim()} (${u._count.pushSubscriptions} Gerät(e) angemeldet): „${args.text}“`);
+    }
+    const r = await sendPushToUsers([u.id], { title: "🧹 Vils17 – Nachricht", body: args.text, url });
+    return {
+      ausgefuehrt: true, an: u.name.trim(), geraete: r.devices, gesendet: r.sent, fehlgeschlagen: r.failed,
+      hinweis: r.devices === 0 ? "Kein Gerät angemeldet – Nachricht kam nicht an. App installieren und Glocke einschalten." : null,
+    };
+  },
+});
