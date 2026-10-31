@@ -278,7 +278,7 @@ export function MailApp({ address, canSend }: { address: string | null; canSend:
 
       <form onSubmit={(e) => { e.preventDefault(); setQuery(q.trim()); }} style={{ position: "relative" }}>
         <Search style={{ position: "absolute", left: 12, top: 12, width: 16, height: 16, color: muted }} />
-        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suchen (Absender, Betreff, Text)" style={{ ...input, paddingLeft: 36, paddingRight: query ? 36 : 12 }} />
+        <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Suchen (Absender, Betreff)" style={{ ...input, paddingLeft: 36, paddingRight: query ? 36 : 12 }} />
         {query && <button type="button" onClick={() => { setQ(""); setQuery(""); }} style={{ position: "absolute", right: 8, top: 8, background: "none", border: 0, color: muted, cursor: "pointer" }}><X style={{ width: 18, height: 18 }} /></button>}
       </form>
 

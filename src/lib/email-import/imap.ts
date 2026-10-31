@@ -46,19 +46,20 @@ export async function fetchNewMails(isKnown: (messageId: string) => Promise<bool
   try {
     const lock = await client.getMailboxLock(folder);
     try {
-      const since = new Date(Date.now() - days * 86_400_000);
-      // search() liefert false, wenn die Suche fehlschlägt
-      const found = await client.search({ since }, { uid: true });
-      const uids = Array.isArray(found) ? found.slice(-500) : [];
-
-      // Umschlag zuerst: bekannte Mails gar nicht laden
+      const since = Date.now() - days * 86_400_000;
+      // Kein IMAP-SEARCH (liefert bei Strato nichts): die neuesten 300 Umschläge
+      // holen und nach Datum filtern. Bekannte Mails werden gar nicht geladen.
+      const exists = client.mailbox ? client.mailbox.exists : 0;
       const fresh: { uid: number; messageId: string }[] = [];
-      if (uids.length) {
-        for await (const m of client.fetch(uids, { uid: true, envelope: true }, { uid: true })) {
+      if (exists >= 1) {
+        for await (const m of client.fetch(`${Math.max(1, exists - 299)}:${exists}`, { uid: true, envelope: true, internalDate: true })) {
+          const d = m.envelope?.date ?? (m.internalDate ? new Date(m.internalDate) : null);
+          if (d && new Date(d).getTime() < since) continue;
           const id = m.envelope?.messageId ?? `uid-${folder}-${m.uid}`;
           if (!(await isKnown(id))) fresh.push({ uid: m.uid, messageId: id });
         }
       }
+      fresh.sort((a, b) => a.uid - b.uid);
 
       for (const { uid, messageId } of fresh.slice(-limit)) {
         // source wird mit BODY.PEEK geholt — \Seen bleibt unverändert
