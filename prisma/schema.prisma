@@ -51,9 +51,10 @@ model Organization {
   // Wäsche-Reserve je Teil, die nach allen Anreisen immer noch im Keller liegen soll
   // ({ beds: 3, towels: 3, … }); null = Vorgabe aus laundry-stock.ts
   laundryReserve   Json?
-  // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem zuletzt „Wäsche reicht nicht“ gemeldet wurde
-  // (Entscheidung Mathias 31.10.2026: Wäsche nach Bestand, höchstens eine Meldung pro Tag)
-  laundryAlertSentOn String?
+  // Fingerabdruck der zuletzt gemeldeten Wäsche-Lage („reicht nicht ab …“): gleiche Lage →
+  // keine neue Meldung; ändert eine Buchung/Storno die Lage → neue Meldung; reicht es
+  // wieder → null (Entscheidung Mathias 31.10.2026)
+  laundryAlertKey  String?
   createdAt        DateTime         @default(now())
   updatedAt        DateTime         @updatedAt
 
@@ -281,6 +282,9 @@ model Booking {
   guestCountManual Boolean @default(false)
   // Woher die abweichende Gästezahl stammt: "manual" (Eingabe) oder "email" (Portal-Mail)
   guestCountSource String?
+  // true = der Channel Manager hat keine Gästezahl geliefert (guestCount ist nur ein Notwert).
+  // Die Wäscheplanung rechnet dann mit der vollen Belegung der Wohnung (vorsichtig).
+  guestCountUnknown Boolean @default(false)
   petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
   // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
   petSource  String?

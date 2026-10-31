@@ -7,5 +7,8 @@ ALTER TABLE "laundry_deliveries" ADD COLUMN IF NOT EXISTS "arrivedAt" TIMESTAMP(
 -- als schon bestellt.
 UPDATE "laundry_deliveries" SET "arrivedAt" = "deliveryOn" WHERE "arrivedAt" IS NULL AND "deliveryOn" <= CURRENT_TIMESTAMP;
 
--- Höchstens eine Push-Meldung „Wäsche reicht nicht“ pro Tag
-ALTER TABLE "organizations" ADD COLUMN IF NOT EXISTS "laundryAlertSentOn" TEXT;
+-- Fingerabdruck der zuletzt gemeldeten Lage „Wäsche reicht nicht“ (neue Meldung nur bei neuer Lage)
+ALTER TABLE "organizations" ADD COLUMN IF NOT EXISTS "laundryAlertKey" TEXT;
+
+-- Gästezahl vom Channel Manager nicht geliefert → Wäscheplanung rechnet mit voller Belegung
+ALTER TABLE "bookings" ADD COLUMN IF NOT EXISTS "guestCountUnknown" BOOLEAN NOT NULL DEFAULT false;

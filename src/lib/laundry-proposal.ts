@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { addDays, todayVienna } from "./mcp/format";
-import { planLaundry, normalizeQuantity, DEFAULT_RESERVE } from "./laundry-order";
+import { planLaundry, planningGuestCount, normalizeQuantity, DEFAULT_RESERVE } from "./laundry-order";
 import { logAudit } from "./audit";
 import type { LaundryQuantity } from "./laundry-quantity";
 import type { Actor } from "./booking-actions";
@@ -23,13 +23,17 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
     where: { organizationId, status: "confirmed", checkIn: { gte: from < today ? from : today, lt: end } },
     orderBy: { checkIn: "asc" },
     select: {
-      id: true, guestName: true, guestCount: true, checkIn: true, apartmentId: true,
+      id: true, guestName: true, guestCount: true, guestCountUnknown: true, guestCountManual: true, checkIn: true, apartmentId: true,
       apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
     },
   });
 
   const plan = planLaundry({
-    arrivals: rows.map((b) => ({ apartmentId: b.apartmentId, apartmentName: b.apartment.name, guestName: b.guestName, checkIn: b.checkIn, guestCount: b.guestCount, apartment: b.apartment })),
+    arrivals: rows.map((b) => {
+      // Unbekannte Gästezahl (Booking.com) → volle Belegung annehmen, siehe planningGuestCount
+      const g = planningGuestCount(b, b.apartment);
+      return { apartmentId: b.apartmentId, apartmentName: b.apartment.name, guestName: b.guestName, checkIn: b.checkIn, guestCount: g.guestCount, guestCountAssumed: g.assumed, apartment: b.apartment };
+    }),
     count: count ? { countedOn: count.countedOn, quantities: normalizeQuantity(count.quantities) } : null,
     deliveries: deliveries.map((d) => ({
       deliveryOn: d.deliveryOn,

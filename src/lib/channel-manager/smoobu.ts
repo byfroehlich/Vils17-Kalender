@@ -214,6 +214,7 @@ export class SmoobuAdapter implements ChannelManagerAdapter {
         guestEmail: (r.email as string | null) ?? null,
         guestPhone: (r.phone as string | null) ?? null,
         guestCount,
+        guestCountUnknown: !hasAdults,
         checkIn,
         checkOut,
         arrivalTime: extractString(r, "check-in") || null,

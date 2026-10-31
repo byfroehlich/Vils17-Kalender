@@ -1,4 +1,4 @@
-import { calculateLaundryQuantity, emptyLaundryQuantity, LAUNDRY_ITEMS, type LaundryConfig, type LaundryQuantity } from "./laundry-quantity";
+import { calculateLaundryQuantity, emptyLaundryQuantity, parseLaundryBeds, LAUNDRY_ITEMS, type LaundryConfig, type LaundryQuantity } from "./laundry-quantity";
 
 // ─── Wäsche: Bestand, Reserve, Bestellmenge ───────────────────────────────────
 // Auftrag Mathias 30.10.2026:
@@ -37,8 +37,26 @@ export interface Arrival {
   apartmentName: string;
   guestName: string;
   checkIn: Date;
+  /** Gästezahl für die Wäscheplanung (siehe planningGuestCount) */
   guestCount: number;
+  /** true = Gästezahl unbekannt, volle Belegung angenommen */
+  guestCountAssumed?: boolean;
   apartment: LaundryConfig;
+}
+
+/**
+ * Gästezahl, mit der die Wäsche geplant wird.
+ * Booking.com liefert über Smoobu teils KEINE Gästezahl; der Sync setzt dann den Notwert 1
+ * (Booking.guestCountUnknown). Mit 1 würde viel zu wenig Wäsche eingeplant. Deshalb wird
+ * vorsichtig mit der vollen Belegung der Wohnung gerechnet — Summe der Schlafplätze aus
+ * laundryBeds (Penthouse 5, Lodge 4). Ohne Bettenliste bleibt es beim gelieferten Wert.
+ * Eine von Hand oder per Portal-Mail korrigierte Zahl (guestCountManual) gilt immer.
+ */
+export function planningGuestCount(b: { guestCount: number; guestCountUnknown?: boolean | null; guestCountManual?: boolean | null }, apt: LaundryConfig): { guestCount: number; assumed: boolean } {
+  if (!b.guestCountUnknown || b.guestCountManual) return { guestCount: b.guestCount, assumed: false };
+  const beds = parseLaundryBeds(apt.laundryBeds);
+  const capacity = beds ? beds.reduce((s, x) => s + x.persons, 0) : 0;
+  return capacity > b.guestCount ? { guestCount: capacity, assumed: true } : { guestCount: b.guestCount, assumed: false };
 }
 
 export interface StockCount {
@@ -72,6 +90,16 @@ export interface LaundryPlan {
   stockAfter: LaundryQuantity | null;
   /** Teile, die schon VOR einer Lieferung im Zeitraum knapp werden (Bestand < 0 an einem Tag) */
   shortBeforeDelivery: (keyof LaundryQuantity)[];
+  /**
+   * Erster Anreisetag, an dem ein zu bestellendes bzw. knappes Teil unter die Reserve fällt
+   * (Bestand + bis dahin eingetroffene Lieferungen − Anreisen), mit den Anreisen dieses Tages.
+   * null = reicht, oder kein Bestand erfasst.
+   */
+  firstShortage: {
+    day: Date;
+    items: (keyof LaundryQuantity)[];
+    arrivals: { apartmentName: string; guestName: string; guestCount: number; guestCountAssumed: boolean }[];
+  } | null;
   perApartment: { apartmentName: string; arrivals: number; guests: number; need: LaundryQuantity }[];
 }
 
@@ -153,6 +181,28 @@ export function planLaundry(params: {
     }
   }
 
+  // Ab wann fehlt es? Tag für Tag, nur für Teile, die bestellt werden müssen oder knapp werden
+  let firstShortage: LaundryPlan["firstShortage"] = null;
+  const critical = KEYS.filter((k) => order[k] > 0 || short.has(k));
+  if (stockToday && critical.length) {
+    let running = { ...stockToday };
+    const days = new Set<number>([...window.map((a) => t(a.checkIn)), ...incomingList.map((d) => t(d.deliveryOn))]);
+    for (const dayT of Array.from(days).sort((a, b) => a - b)) {
+      for (const d of incomingList.filter((x) => t(x.deliveryOn) === dayT)) running = combine(running, d.quantities);
+      const arrivalsToday = window.filter((a) => t(a.checkIn) === dayT);
+      running = combine(running, usage(arrivalsToday), -1);
+      const items = critical.filter((k) => running[k] < reserve[k]);
+      if (items.length && arrivalsToday.length) {
+        firstShortage = {
+          day: new Date(dayT),
+          items,
+          arrivals: arrivalsToday.map((a) => ({ apartmentName: a.apartmentName, guestName: a.guestName, guestCount: a.guestCount, guestCountAssumed: !!a.guestCountAssumed })),
+        };
+        break;
+      }
+    }
+  }
+
   const byApt = new Map<string, { apartmentName: string; arrivals: number; guests: number; need: LaundryQuantity }>();
   for (const a of window) {
     const cur = byApt.get(a.apartmentId) ?? { apartmentName: a.apartmentName, arrivals: 0, guests: 0, need: emptyLaundryQuantity() };
@@ -173,6 +223,7 @@ export function planLaundry(params: {
     order,
     stockAfter: stockToday ? combine(combine(combine(stockToday, incoming), order), need, -1) : null,
     shortBeforeDelivery: Array.from(short),
+    firstShortage,
     perApartment: Array.from(byApt.values()),
   };
 }
