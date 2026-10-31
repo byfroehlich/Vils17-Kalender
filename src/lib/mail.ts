@@ -1,14 +1,4 @@
-import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT ?? 587),
-  secure: false,
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+import { smtpTransport, defaultFrom } from "./mailbox/config";
 
 interface CleaningAssignmentMailParams {
   to: string;
@@ -83,8 +73,10 @@ Thank you!
 Vils17 Holiday Apartments
     `.trim();
 
+  const transporter = smtpTransport();
+  if (!transporter) return; // Versand nicht eingerichtet
   await transporter.sendMail({
-    from: process.env.SMTP_FROM,
+    from: defaultFrom(),
     to: params.to,
     subject,
     text: body,
