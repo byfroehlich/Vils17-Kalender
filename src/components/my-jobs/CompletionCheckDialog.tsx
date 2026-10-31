@@ -6,7 +6,7 @@ import { ScrollLock } from "@/components/ui/ScrollLock";
 
 // Pflicht-Check beim „Erledigt“ (Entscheidung Mathias 31.10.2026):
 // 1. Ist alles heil (Möbel, Geräte, Geschirr …)?  2. Muss Verbrauchsmaterial nachgekauft werden?
-// 3. Duschabflüsse geprüft und gereinigt? (bodentiefe Duschen setzen sich schnell zu)
+// 3. Abflüsse geprüft und gereinigt? (Duschen, Waschbecken, Spüle – bodentiefe Duschen setzen sich schnell zu)
 // Meldungen gehen sofort per Push an Mathias und hängen am Aufenthalt davor.
 
 const box = { background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 22, maxHeight: "100%", overflowY: "auto" as const };
@@ -116,11 +116,11 @@ export function CompletionCheckDialog({ bookingId, title, onCancel, onDone }: { 
             placeholder="Was fehlt oder wird knapp?" />
         )}
 
-        <div style={q}>Duschabflüsse geprüft? (Gitter raus, Haare entfernen, Wasser laufen lassen)</div>
+        <div style={q}>Alle Abflüsse geprüft? (Duschen, Waschbecken, Spüle: Haare/Reste entfernen, Wasser laufen lassen)</div>
         <Choice value={drainsOk} onChange={setDrainsOk} yes="Gereinigt, läuft gut" no="Läuft schlecht" />
         {drainsOk === false && (
           <textarea value={drain} onChange={(e) => setDrain(e.target.value)} rows={2} className="form-input" style={{ resize: "none", marginTop: 10 }}
-            placeholder="Welche Dusche / welcher Abfluss? Was ist los?" />
+            placeholder="Welcher Abfluss (Dusche, Waschbecken, Spüle)? Was ist los?" />
         )}
 
         {error && <p style={{ color: "#fecaca", fontSize: 13, marginTop: 12 }}>{error}</p>}
