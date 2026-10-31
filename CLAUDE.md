@@ -342,7 +342,7 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
 - `petSource`: `manual` (Eingabe, wird nie überschrieben) | `notice` | `chat`; `petHint` = Fundstelle.
 - Gebühr: `petFeeStatus` null (offen) → REQUESTED → PAID / WAIVED. Anfordern per Nachricht über
   Smoobu, Text vorher freigeben; Zahlungsweg aus ENV `PET_FEE_PAYMENT_TEXT` (PayPal-Link/Bank).
-  Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt.
+  Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt. Text in du-Form für Gäste vor Ort („bis zur Abreise“, Stand 31.10.2026).
 - Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
 - **Anfordern erst bei Anreise** (Entscheidung Mathias 31.10.2026): Die Gebühr wird verlangt, wenn die Gäste vor Ort
   sind — „Zu erledigen“ zeigt die Hundegebühr erst ab dem Anreisetag (`checkIn ≤ heute ≤ checkOut`), nie vorab.
