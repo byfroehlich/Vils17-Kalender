@@ -6,11 +6,13 @@ import { formatDate } from "@/lib/utils";
 import { AlertCircle, CalendarCheck, WashingMachine, Users } from "lucide-react";
 import { CleanerList } from "./CleanerList";
 import { RateBadge } from "@/components/ui/RateBadge";
+import { NoteBadge } from "@/components/ui/NoteBadge";
 
 import { calculateLaundryQuantity, fittedSheetsTotal } from "@/lib/laundry-quantity";
 interface Assignment {
   id: string;
   status: string;
+  notes?: string | null;
   isSelfClean: boolean;
   cleanerId?: string | null;
   cleaner?: { name: string } | null;
@@ -87,6 +89,7 @@ function AssignmentRow({ a }: { a: Assignment }) {
                 : `${a.booking.premiumRate.toFixed(0)} € pro Reinigung`}
             />
           )}
+          {a.notes?.trim() && <NoteBadge title={a.notes} />}
         </div>
         <p style={{ fontSize: 11, color: "rgba(255,255,255,0.4)" }}>{a.booking.apartment.name} · {a.booking.guestCount} {a.booking.guestCount === 1 ? "Person" : "Personen"}</p>
         {a.isSelfClean

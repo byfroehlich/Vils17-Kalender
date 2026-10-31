@@ -4,6 +4,7 @@ import { isImapConfigured } from "./email-import/imap";
 import { prisma } from "./prisma";
 import { syncBookings } from "./sync";
 import { runReminders, maybeSendDailyStatus } from "./notifications";
+import { scanNoteSuggestions } from "./note-suggestions";
 
 type SyncStats = Awaited<ReturnType<typeof syncBookings>>;
 
@@ -73,6 +74,8 @@ export async function runAutoSync(organizationId: string, force = false) {
     if (isImapConfigured()) await runEmailImport(organizationId).catch((e) => console.error("[sync] Mail-Import:", e instanceof Error ? e.message : e));
     // Saugroboter — Rückfallebene, falls der Cron nicht läuft (idempotent)
     await runDreame({ organizationId }).catch((e) => console.error("[sync] Saugroboter:", e instanceof Error ? e.message : e));
+    // Sonderwünsche in Gästechats → Vorschläge „Hinweis für die Reinigung“ (gedrosselt, idempotent)
+    await scanNoteSuggestions(organizationId).catch((e) => console.error("[sync] Hinweise:", e instanceof Error ? e.message : e));
     await runReminders(organizationId).catch((e) => console.error("[sync] Warnungen:", e));
     await maybeSendDailyStatus(organizationId).catch((e) => console.error("[sync] Tagesstatus:", e));
   }

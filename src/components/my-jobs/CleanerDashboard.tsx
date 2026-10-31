@@ -12,6 +12,7 @@ import { startOfDay, startOfMonth, endOfMonth, addDays, isWithinInterval } from 
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
+import { NoteBadge } from "@/components/ui/NoteBadge";
 interface Assignment {
   id: string;
   status: string;
@@ -36,6 +37,7 @@ interface Assignment {
 
 interface OpenAssignment {
   id: string;
+  notes?: string | null;
   nextGuestCount?: number | null;
   booking: {
     id: string;
@@ -375,6 +377,7 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 4 }}>
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" as const }}>{b.apartment.name}</span>
+            {assignment.notes?.trim() && <NoteBadge />}
           </div>
           <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>
             {formatDateLong(new Date(b.checkIn))}
@@ -384,8 +387,8 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
             {b.arrivalTime && <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Clock style={{ width: 12, height: 12 }} /> ab {b.arrivalTime}</span>}
             <span style={{ display: "flex", alignItems: "center", gap: 4, fontSize: 12, color: "rgba(255,255,255,0.50)" }}><Users style={{ width: 12, height: 12 }} /> {b.guestCount}</span>
           </div>
-          {assignment.notes && (
-            <p style={{ fontSize: 11, color: "#fcd34d", marginTop: 5, paddingTop: 5, borderTop: "1px solid rgba(245,158,11,0.20)" }}>{assignment.notes}</p>
+          {assignment.notes?.trim() && (
+            <p style={{ fontSize: 13, fontWeight: 600, color: "#fde68a", marginTop: 6, padding: "6px 10px", borderRadius: 10, background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.30)", whiteSpace: "pre-wrap" as const }}>⭐ {assignment.notes}</p>
           )}
         </div>
         <div style={{ display: "flex", flexDirection: "column" as const, gap: 6, flexShrink: 0 }}>
@@ -417,6 +420,7 @@ function OpenJobCard({ assignment, loading, onClaim }: {
             <span style={{ width: 8, height: 8, borderRadius: "50%", backgroundColor: aptColor, display: "inline-block", flexShrink: 0 }} />
             <span style={{ fontSize: 11, fontWeight: 700, color: "rgba(255,255,255,0.55)", textTransform: "uppercase" as const, letterSpacing: "0.06em" }}>{b.apartment.name}</span>
             <span style={{ fontSize: 10, fontWeight: 700, padding: "1px 7px", borderRadius: 20, background: "rgba(16,185,129,0.20)", border: "1px solid rgba(16,185,129,0.35)", color: "#6ee7b7" }}>Offen</span>
+            {assignment.notes?.trim() && <NoteBadge title={assignment.notes} />}
           </div>
           <p style={{ fontSize: 17, fontWeight: 700, color: "rgba(255,255,255,0.95)", lineHeight: 1.2 }}>{formatDateLong(b.checkIn)}</p>
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>

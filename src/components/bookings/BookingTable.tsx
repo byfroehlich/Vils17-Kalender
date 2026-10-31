@@ -3,6 +3,7 @@ import { formatDate } from "@/lib/utils";
 import { Users } from "lucide-react";
 import { RateBadge } from "@/components/ui/RateBadge";
 import { GuestCountUnknownBadge } from "@/components/ui/GuestCountUnknownBadge";
+import { NoteBadge } from "@/components/ui/NoteBadge";
 import { isGuestCountUnconfirmed } from "@/lib/guest-count";
 
 interface Booking {
@@ -19,6 +20,7 @@ interface Booking {
   apartment: { name: string; color?: string | null };
   cleaningAssignment?: {
     cleanerId?: string | null;
+    notes?: string | null;
     status: string;
     cleaner?: { name: string } | null;
   } | null;
@@ -121,6 +123,7 @@ export function BookingTable({ bookings }: { bookings: Booking[] }) {
                         {booking.guestCount}
                       </span>
                       {isGuestCountUnconfirmed(booking) && <GuestCountUnknownBadge />}
+                      {booking.cleaningAssignment?.notes?.trim() && <NoteBadge title={booking.cleaningAssignment.notes} />}
                       <span>{formatDate(booking.checkIn)} – {formatDate(booking.checkOut)}</span>
                       {booking.channelName && (
                         <span style={{ background: "rgba(255,255,255,0.08)", padding: "1px 6px", borderRadius: 6 }}>

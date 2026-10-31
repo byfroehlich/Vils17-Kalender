@@ -196,6 +196,32 @@ export async function setAssignmentNotes(params: {
   return { previous: assignment.notes, notes };
 }
 
+// ─── Zusatzbetten ─────────────────────────────────────────────────────────────
+
+/**
+ * Zusatzbetten (Zustellbett, Sofa als Bett) für diese Anreise, 0–3 (Entscheidung Mathias 31.10.2026).
+ * Die Wäscheplanung rechnet je Zusatzbett ein 90er Spannbettlaken, einen Bett- und einen Kissenbezug dazu.
+ */
+export async function setExtraBeds(params: { organizationId: string; bookingId: string; extraBeds: number; actor: Actor }) {
+  if (!Number.isInteger(params.extraBeds) || params.extraBeds < 0 || params.extraBeds > 3) throw new ActionError("Zusatzbetten: 0 bis 3");
+  const assignment = await prisma.cleaningAssignment.findFirst({
+    where: { bookingId: params.bookingId, organizationId: params.organizationId },
+    select: { id: true, extraBeds: true },
+  });
+  if (!assignment) throw new ActionError("Zu dieser Buchung gibt es keinen Reinigungsauftrag", 404);
+  if (assignment.extraBeds === params.extraBeds) return { changed: false, extraBeds: params.extraBeds };
+  await prisma.cleaningAssignment.update({ where: { id: assignment.id }, data: { extraBeds: params.extraBeds } });
+  await logAudit({
+    organizationId: params.organizationId,
+    userId: params.actor.userId,
+    action: "assignment.extra_beds.updated",
+    entityType: "CleaningAssignment",
+    entityId: assignment.id,
+    details: { bookingId: params.bookingId, vorher: assignment.extraBeds, nachher: params.extraBeds, ...(params.actor.via ? { via: params.actor.via } : {}) },
+  });
+  return { changed: true, extraBeds: params.extraBeds };
+}
+
 // ─── Gästezahl korrigieren ────────────────────────────────────────────────────
 
 /**

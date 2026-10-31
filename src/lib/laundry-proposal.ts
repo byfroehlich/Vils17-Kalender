@@ -25,6 +25,7 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
     orderBy: { checkIn: "asc" },
     select: {
       id: true, guestName: true, guestCount: true, guestCountUnknown: true, guestCountManual: true, checkIn: true, apartmentId: true,
+      cleaningAssignment: { select: { extraBeds: true } },
       apartment: { select: { name: true, laundryBedsDivisor: true, laundryTowelsPerGuest: true, laundryKitchenCount: true, laundryBeds: true } },
     },
   });
@@ -35,7 +36,7 @@ export async function loadLaundryPlan(params: { organizationId: string; today: D
       const g = planningGuestCount(b, b.apartment);
       return {
         apartmentId: b.apartmentId, apartmentName: b.apartment.name, guestName: b.guestName, checkIn: b.checkIn,
-        guestCount: g.guestCount, guestCountAssumed: g.assumed, guestCountUnconfirmed: isGuestCountUnconfirmed(b), apartment: b.apartment,
+        guestCount: g.guestCount, guestCountAssumed: g.assumed, guestCountUnconfirmed: isGuestCountUnconfirmed(b), extraBeds: b.cleaningAssignment?.extraBeds ?? 0, apartment: b.apartment,
       };
     }),
     count: count ? { countedOn: count.countedOn, quantities: normalizeQuantity(count.quantities) } : null,
