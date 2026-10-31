@@ -47,6 +47,14 @@ describe("Zu erledigen", () => {
     expect(r.items.find((i) => i.kind === "waesche")!.label).toMatch(/Bestand im Keller erfassen/);
   });
 
+  it("Hundegebühr erst ab Anreise (nicht vorab)", async () => {
+    // b2 reist heute an → Punkt; eine künftige Hundebuchung → kein Punkt
+    await prisma.booking.update({ where: { id: world.bookings.b3.id }, data: { petCount: 1 } });
+    const r = await loadTodos(world.org.id, { withChats: false });
+    const dog = r.items.filter((i) => i.kind === "hundegebuehr").map((i) => i.href);
+    expect(dog).toEqual([`/bookings/${world.bookings.b2.id}`]);
+  });
+
   it("leer → keine Punkte", async () => {
     await resetDb();
     const org = await prisma.organization.create({ data: { name: "Leer", slug: "leer" } });

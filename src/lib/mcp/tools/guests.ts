@@ -4,7 +4,7 @@ import { defineTool, preview, bestaetigtSchema, ToolError, type ToolContext } fr
 import { day, channelGroup } from "../format";
 import { wohnungFilter, resolveApartmentId } from "../shared";
 import { fetchGuestMessages, sendGuestMessage, lastMessage, GuestMessageError } from "../../guest-messages";
-import { findUnansweredChats, MAX_CHATS } from "../../guest-chat-overview";
+import { findUnansweredChats, MAX_CHATS, markChatDone } from "../../guest-chat-overview";
 import { logAudit } from "../../audit";
 
 // ─── Gästenachrichten (Smoobu) ────────────────────────────────────────────────
@@ -95,7 +95,7 @@ export const offeneGaestenachrichten = defineTool({
       geprueft: r.checked,
       ...(r.truncated ? { hinweis: `Mehr als ${MAX_CHATS} Buchungen im Zeitraum — nur die ersten ${MAX_CHATS} geprüft. Zeitraum verkürzen.` } : {}),
       unbeantwortet: r.open.length,
-      buchungen: r.open.map((o) => ({ ...kopf(o.booking as Awaited<ReturnType<typeof loadBooking>>), letzte_nachricht: o.last.text.slice(0, 500), betreff: o.last.betreff })),
+      buchungen: r.open.map((o) => ({ ...kopf(o.booking as Awaited<ReturnType<typeof loadBooking>>), nachricht_id: o.last.id, letzte_nachricht: o.last.text.slice(0, 500), betreff: o.last.betreff })),
       ...(r.errors.length ? { fehler: r.errors.map((e) => ({ buchung_id: e.booking.id, gast: e.booking.guestName, fehler: e.error })) } : {}),
       hinweis_portale: "Antworten, die direkt in der Airbnb- oder Booking-App geschrieben wurden, sieht Smoobu nicht — solche Chats erscheinen trotzdem als offen.",
     };
@@ -140,5 +140,30 @@ export const gastAntworten = defineTool({
       details: { via: `mcp:${ctx.tokenName}`, zeichen: args.text.length },
     });
     return { ausgefuehrt: true, gesendet: true, ...kopf(b) };
+  },
+});
+
+// ─── gaestechat_erledigt ──────────────────────────────────────────────────────
+// Entscheidung Mathias 31.10.2026: Chats ohne Antwortbedarf (nur eine Info des Gastes) als erledigt markieren.
+
+export const gaestechatErledigt = defineTool({
+  name: "gaestechat_erledigt",
+  title: "Gästechat als erledigt markieren",
+  description:
+    "Markiert einen unbeantworteten Gästechat als erledigt („keine Antwort nötig“), z. B. wenn der Gast nur eine Info geschickt hat. " +
+    "nachricht_id aus offene_gaestenachrichten. Schreibt der Gast danach erneut, gilt der Chat wieder als offen. Sendet nichts an den Gast. " +
+    "Erst ohne bestaetigt (Vorschau), dann mit bestaetigt: true.",
+  scope: "messages:write",
+  write: true,
+  input: {
+    buchung_id: buchungId,
+    nachricht_id: z.string().trim().min(1).max(100).describe("ID der letzten Gastnachricht (aus offene_gaestenachrichten)"),
+    bestaetigt: bestaetigtSchema,
+  },
+  async handler(args, ctx) {
+    const b = await loadBooking(ctx, args.buchung_id);
+    if (!args.bestaetigt) return preview(`Chat mit ${b.guestName} als erledigt markieren (keine Antwort nötig). An den Gast geht nichts.`);
+    await markChatDone({ organizationId: ctx.organizationId, bookingId: b.id, messageId: args.nachricht_id, actor: { via: `mcp:${ctx.tokenName}` } });
+    return { ausgefuehrt: true, buchung_id: b.id, gast: b.guestName };
   },
 });

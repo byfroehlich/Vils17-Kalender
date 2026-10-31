@@ -344,6 +344,12 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
   Smoobu, Text vorher freigeben; Zahlungsweg aus ENV `PET_FEE_PAYMENT_TEXT` (PayPal-Link/Bank).
   Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt.
 - Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
+- **Anfordern erst bei Anreise** (Entscheidung Mathias 31.10.2026): Die Gebühr wird verlangt, wenn die Gäste vor Ort
+  sind — „Zu erledigen“ zeigt die Hundegebühr erst ab dem Anreisetag (`checkIn ≤ heute ≤ checkOut`), nie vorab.
+- **Gästechat „Erledigt – keine Antwort nötig“** (Entscheidung Mathias 31.10.2026): Knopf je Chat auf `/messages`
+  (`POST /api/bookings/[id]/chat-done`, `markChatDone`), MCP `gaestechat_erledigt` (messages:write, `bestaetigt`).
+  Gespeichert wird die ID der letzten Gastnachricht (`Booking.chatDoneMessageId`); schreibt der Gast erneut, ist der
+  Chat wieder offen. An den Gast geht nichts. Tests: `tests/chat-erledigt.test.ts`.
 
 ### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
 

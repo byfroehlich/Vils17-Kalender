@@ -91,7 +91,8 @@ export async function loadTodos(organizationId: string, opts: { now?: Date; with
       select: { id: true, proposedText: true, booking: { select: { checkIn: true, apartment: { select: { name: true } } } } },
     }),
     prisma.booking.findMany({
-      where: { organizationId, status: "confirmed", petCount: { gt: 0 }, checkOut: { gte: today } },
+      // Entscheidung Mathias 31.10.2026: Hundegebühr wird erst bei Anreise angefordert (Gäste sind vor Ort) — vorher kein Punkt.
+      where: { organizationId, status: "confirmed", petCount: { gt: 0 }, checkIn: { lte: today }, checkOut: { gte: today } },
       orderBy: { checkIn: "asc" },
       select: { id: true, checkIn: true, checkOut: true, channelName: true, petCount: true, petFeeStatus: true, petFeeAmount: true, apartment: { select: { name: true } } },
     }),
@@ -184,7 +185,7 @@ export async function loadTodos(organizationId: string, opts: { now?: Date; with
         items.push({
           key: `chat-${c.booking.id}`, kind: "chat", severity: "amber", date: day(c.booking.checkIn),
           label: `Gästechat beantworten: ${short(c.booking.apartment.name)} ${shortDayLabel(day(c.booking.checkIn))} – ${c.booking.guestName}`,
-          href: `/bookings/${c.booking.id}`,
+          href: `/messages#chats`,
         });
       }
     }

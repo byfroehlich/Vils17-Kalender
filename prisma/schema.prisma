@@ -295,6 +295,8 @@ model Booking {
   guestCountReminderSentAt DateTime?
   // Schlafzimmer-Frage an den Gast verschickt (einmal je Buchung, src/lib/bedroom-question.ts)
   bedroomQuestionSentAt DateTime?
+  /// Gästechat als erledigt markiert („keine Antwort nötig“) bis zu dieser Nachricht (Smoobu-ID); neue Gastnachricht → wieder offen
+  chatDoneMessageId     String?
   petCount   Int?    // Hunde (kein Portal liefert dafür ein eigenes Feld)
   // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
   petSource  String?
