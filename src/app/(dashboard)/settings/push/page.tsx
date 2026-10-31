@@ -4,6 +4,7 @@ import Link from "next/link";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { listPushLog } from "@/lib/push";
+import { PushTestButton } from "@/components/settings/PushTestButton";
 
 // Push-Versandprotokoll (Entscheidung Mathias 01.11.2026): wer welche Benachrichtigung bekommen hat und ob
 // der Push-Dienst sie angenommen hat. Angezeigt werden kann sie nur, wenn die App installiert und die Glocke an ist.
@@ -45,6 +46,7 @@ export default async function PushProtokollPage() {
             <span>{u.name}</span>
             <span style={{ color: u._count.pushSubscriptions ? "#5eead4" : "#fca5a5" }}>
               {u._count.pushSubscriptions ? `${u._count.pushSubscriptions} Gerät${u._count.pushSubscriptions > 1 ? "e" : ""}` : "kein Gerät – bekommt nichts"}
+              {u._count.pushSubscriptions > 0 && <PushTestButton userId={u.id} />}
             </span>
           </div>
         ))}
