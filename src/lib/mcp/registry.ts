@@ -3,7 +3,7 @@ import { wohnungenList, buchungenList, gaestezahlOffen, anreisenAbreisen, belegu
 import { umsatz, ortstaxe, auszahlungenReinigung } from "./tools/finance";
 import { reinigungen, syncStatus, wochenplan } from "./tools/cleaning";
 import { reinigungZuweisen, buchungNotiz, gaestezahlKorrigieren, syncAusloesen, reinigungStatus, waescheStatus } from "./tools/write";
-import { gaesteNachrichten, offeneGaestenachrichten, gastAntworten } from "./tools/guests";
+import { gaesteNachrichten, offeneGaestenachrichten, gastAntworten, gaestechatErledigt } from "./tools/guests";
 import { hundeUebersicht, hundePruefen, hundeEintragen, hundegebuehrAnfordern, hundegebuehrStatus } from "./tools/pets";
 import { postfach, mailLesen, mailSenden } from "./tools/mail";
 import { maengel, mangelErfassen } from "./tools/issues";
@@ -43,6 +43,7 @@ export const TOOLS: ToolDef[] = [
   reinigungStatus,
   waescheStatus,
   gastAntworten,
+  gaestechatErledigt,
   hundePruefen,
   hundeEintragen,
   hundegebuehrAnfordern,

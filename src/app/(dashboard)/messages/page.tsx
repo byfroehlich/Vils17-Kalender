@@ -10,6 +10,7 @@ import { todayVienna, addDays } from "@/lib/mcp/format";
 import { formatDate } from "@/lib/utils";
 import { listNoteSuggestions } from "@/lib/note-suggestions";
 import { NoteSuggestionsBox } from "@/components/messages/NoteSuggestionsBox";
+import { ChatDoneButton } from "@/components/messages/ChatDoneButton";
 
 export const dynamic = "force-dynamic";
 
@@ -58,21 +59,24 @@ export default async function MessagesPage() {
         </div>
       )}
 
-      <div style={{ ...glass, padding: "20px 24px" }}>
+      <div id="chats" style={{ ...glass, padding: "20px 24px" }}>
         <h2 style={h2}>Wartet auf Antwort ({chats.open.length})</h2>
         {chats.open.length === 0 && <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)" }}>Keine offenen Gästenachrichten (Anreisen der nächsten 30 Tage und laufende Aufenthalte).</p>}
         <div className="space-y-2">
           {chats.open.map(({ booking: b, last }) => (
-            <Link key={b.id} href={`/bookings/${b.id}`} style={row}>
-              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{b.apartment.name} · {b.channelName ?? "Direkt"} · {formatDate(b.checkIn)}–{formatDate(b.checkOut)}</div>
-              <div style={{ fontWeight: 700, margin: "2px 0" }}>{b.guestName}</div>
-              <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{last.text}</div>
-            </Link>
+            <div key={b.id} style={row}>
+              <Link href={`/bookings/${b.id}`} style={{ display: "block", textDecoration: "none", color: "inherit" }}>
+                <div style={{ fontSize: 12, color: "rgba(255,255,255,0.55)" }}>{b.apartment.name} · {b.channelName ?? "Direkt"} · {formatDate(b.checkIn)}–{formatDate(b.checkOut)}</div>
+                <div style={{ fontWeight: 700, margin: "2px 0" }}>{b.guestName}</div>
+                <div style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", overflow: "hidden", display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical" }}>{last.text}</div>
+              </Link>
+              <div style={{ marginTop: 8 }}><ChatDoneButton bookingId={b.id} messageId={last.id} /></div>
+            </div>
           ))}
         </div>
         {chats.truncated && <p style={{ fontSize: 12, color: "#fcd34d", marginTop: 8 }}>Nur die ersten 25 Buchungen geprüft.</p>}
         {chats.errors.length > 0 && <p style={{ fontSize: 12, color: "#fca5a5", marginTop: 8 }}>{chats.errors.length} Chat(s) konnten nicht geladen werden.</p>}
-        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginTop: 10 }}>Antworten direkt in der Airbnb- oder Booking-App sieht Smoobu nicht — solche Chats stehen trotzdem hier.</p>
+        <p style={{ fontSize: 11, color: "rgba(255,255,255,0.40)", marginTop: 10 }}>Antworten direkt in der Airbnb- oder Booking-App sieht Smoobu nicht — solche Chats stehen trotzdem hier. Braucht ein Chat keine Antwort, auf „Erledigt“ tippen — schreibt der Gast erneut, erscheint er wieder.</p>
       </div>
 
       <div style={{ ...glass, padding: "20px 24px" }}>
