@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Stammgast werden – No. 17 Vils</title>
+<meta name="description" content="Tragen Sie sich in die Stammgast-Liste von Penthouse No. 17 und Lodge No. 17 in Vils ein.">
+<meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#1E302A">
+<link rel="icon" href="/assets/favicon.svg">
+<link href="/assets/fonts.css" rel="stylesheet">
+<style>
+:root{--deep:#1E302A;--paper:#F4F8F5;--mist:#DCE8DF;--sage:#8EC0A3;--slate:#3A4C56;--blue:#90AFC3;--fir:#38544D;
+--serif:"Fraunces",Georgia,serif;--sans:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif}
+*,*::before,*::after{box-sizing:border-box;margin:0}
+html,body{background:var(--deep);color:var(--paper);font:400 1.0625rem/1.6 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit}
+header{display:flex;justify-content:space-between;align-items:center;padding:calc(env(safe-area-inset-top,0px) + 20px) clamp(16px,4vw,48px) 0}
+header a{text-decoration:none}
+header b{font:400 1.25rem/1 var(--serif);letter-spacing:.01em}
+header span{font-size:.875rem;letter-spacing:.12em;text-transform:uppercase;opacity:.85}
+main{max-width:1180px;margin:0 auto;padding:clamp(40px,8vh,96px) clamp(16px,6vw,96px) clamp(48px,8vh,96px);display:grid;grid-template-columns:1fr 1fr;gap:clamp(32px,6vw,88px);align-items:start}
+.intro .kick{font:500 .8125rem/1 var(--sans);letter-spacing:.16em;text-transform:uppercase;color:var(--sage)}
+.intro h1{font:300 clamp(2.2rem,4.6vw,3.6rem)/1.08 var(--serif);margin:14px 0 18px}
+.intro p{color:var(--mist);max-width:38ch}
+.intro p+p{margin-top:.9rem}
+.intro ul{list-style:none;padding:0;color:var(--mist);margin-top:1.4rem}
+.intro li{padding:.5rem 0;border-bottom:1px solid rgba(220,232,223,.15)}
+.card{background:var(--paper);color:var(--deep);border-radius:20px;padding:clamp(22px,4vw,40px)}
+.card h2{font:400 1.5rem/1.2 var(--serif);margin-bottom:18px}
+label.f{display:block;font-size:.8rem;letter-spacing:.08em;text-transform:uppercase;color:var(--fir);margin:14px 0 6px}
+label.f small{text-transform:none;letter-spacing:0;font-size:.8rem;color:#55625c}
+input[type=text],input[type=email],input[type=tel],select{width:100%;height:48px;border-radius:12px;border:1px solid #c3d6c8;padding:0 12px;font:inherit;color:var(--deep);background:#fff}
+input:focus,select:focus{border-color:var(--fir)}
+.consent{display:flex;gap:12px;align-items:flex-start;margin-top:14px;cursor:pointer;font-size:.98rem;line-height:1.45}
+.consent input{flex:none;width:22px;height:22px;margin-top:1px;accent-color:var(--deep)}
+.consents{margin-top:20px;padding-top:6px;border-top:1px solid #dbe6de}
+.note{font-size:.875rem;color:#55625c;margin-top:16px}
+.note a{color:var(--fir)}
+.btn{display:flex;align-items:center;justify-content:center;width:100%;height:52px;margin-top:20px;border-radius:999px;background:var(--deep);color:var(--paper);font:500 1rem var(--sans);border:0;cursor:pointer}
+.btn[disabled]{opacity:.6;cursor:wait}
+.err{display:none;margin-top:14px;padding:12px 14px;border-radius:12px;background:#f7e6d6;color:#7a3a14;font-size:.95rem}
+.err.on{display:block}
+.hp{position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden}
+.done{display:none;text-align:left}
+.done.on{display:block}
+.done h2{margin-bottom:10px}
+.done p{color:var(--slate)}
+footer{padding:32px clamp(16px,6vw,96px) calc(32px + env(safe-area-inset-bottom,0px));border-top:1px solid rgba(220,232,223,.15);font-size:.9375rem;color:var(--mist)}
+footer div{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:8px 28px;justify-content:space-between}
+footer nav{display:flex;gap:20px}
+:focus-visible{outline:2px solid var(--sage);outline-offset:4px}
+@media (max-width:820px){main{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><a href="/"><b>No. 17</b></a><span>Vils · Tirol</span></header>
+<main>
+  <section class="intro">
+    <span class="kick">Für unsere Gäste</span>
+    <h1>Stammgast werden</h1>
+    <p>Schön, dass Sie bei uns in Vils sind. Wenn es Ihnen gefällt und Sie gern wiederkommen möchten, tragen Sie sich hier in unsere kleine Stammgast-Liste ein.</p>
+    <p>Dann erfahren Sie als Erste von freien Terminen und kleinen Aktionen – direkt von uns, ohne Umweg über ein Portal.</p>
+    <ul>
+      <li>Nur ab und zu eine Nachricht, wenn es wirklich etwas gibt</li>
+      <li>Sie entscheiden, ob per E-Mail, WhatsApp oder beides</li>
+      <li>Abmelden jederzeit mit einem Klick</li>
+    </ul>
+  </section>
+
+  <section class="card" aria-live="polite">
+    <form id="f" novalidate>
+      <h2>Ihre Angaben</h2>
+      <label class="f" for="name">Name</label>
+      <input type="text" id="name" name="name" autocomplete="name" required minlength="2" maxlength="80">
+
+      <label class="f" for="email">E-Mail</label>
+      <input type="email" id="email" name="email" autocomplete="email" required maxlength="200">
+
+      <label class="f" for="phone">Telefon / WhatsApp <small>(optional)</small></label>
+      <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="40" placeholder="+43 …">
+
+      <label class="f" for="apartment">In welcher Wohnung waren Sie? <small>(optional)</small></label>
+      <select id="apartment" name="apartment">
+        <option value="">Bitte wählen</option>
+        <option value="penthouse">Penthouse No. 17</option>
+        <option value="lodge">Lodge No. 17</option>
+      </select>
+
+      <div class="hp" aria-hidden="true">
+        <label for="website">Website (bitte leer lassen)</label>
+        <input type="text" id="website" name="website" tabindex="-1" autocomplete="off">
+      </div>
+
+      <div class="consents">
+        <label class="consent"><input type="checkbox" id="cEmail"><span id="cEmailText">Ich möchte Angebote per E-Mail erhalten.</span></label>
+        <label class="consent"><input type="checkbox" id="cWa"><span id="cWaText">Ich möchte Angebote per WhatsApp erhalten.</span></label>
+      </div>
+
+      <p class="note">Abmelden jederzeit mit einem Klick oder einer kurzen Nachricht an <a href="mailto:info@vils17.at">info@vils17.at</a>. Was mit Ihren Angaben passiert, steht in unserer <a href="/datenschutz/#stammgast">Datenschutzerklärung</a>.</p>
+
+      <div class="err" id="err" role="alert"></div>
+      <button class="btn" type="submit" id="send">Eintragen</button>
+    </form>
+
+    <div class="done" id="done">
+      <h2>Danke, Sie stehen auf der Liste!</h2>
+      <p>Wir melden uns, sobald es freie Termine oder ein schönes Angebot gibt. Bis dahin wünschen wir Ihnen eine gute Zeit in Vils.</p>
+    </div>
+  </section>
+</main>
+<footer><div><span>No. 17 · Josef-Ahorn-Weg 17 · 6682 Vils · Österreich</span><nav><a href="/impressum/">Impressum</a><a href="/datenschutz/">Datenschutz</a></nav></div></footer>
+<script>
+(function(){
+  var ENDPOINT = "https://vils17-kalender.onrender.com/api/public/stammgast";
+  var f = document.getElementById("f"), err = document.getElementById("err"), btn = document.getElementById("send");
+  function $(id){ return document.getElementById(id); }
+  function fail(msg){ err.textContent = msg; err.className = "err on"; }
+
+  f.addEventListener("submit", function(e){
+    e.preventDefault();
+    err.className = "err";
+    var name = $("name").value.trim(), email = $("email").value.trim(), phone = $("phone").value.trim();
+    var cEmail = $("cEmail").checked, cWa = $("cWa").checked;
+
+    if (name.length < 2) return fail("Bitte geben Sie Ihren Namen an.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Bitte prüfen Sie Ihre E-Mail-Adresse.");
+    if (!cEmail && !cWa) return fail("Bitte kreuzen Sie an, wie wir Sie erreichen dürfen: per E-Mail, per WhatsApp oder beides.");
+    if (cWa && !phone) return fail("Für WhatsApp brauchen wir noch Ihre Telefonnummer.");
+
+    // Einwilligungstext = genau der sichtbare Text der angehakten Kästchen
+    var consentText = [cEmail && $("cEmailText").textContent, cWa && $("cWaText").textContent].filter(Boolean).join(" ");
+
+    btn.disabled = true; btn.textContent = "Wird gesendet …";
+    fetch(ENDPOINT, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: name, email: email, phone: phone, apartment: $("apartment").value,
+        consentEmail: cEmail, consentWhatsapp: cWa, consentText: consentText,
+        website: $("website").value, source: "gaestemappe"
+      })
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(data){
+        if (res.ok && data.ok) {
+          f.style.display = "none";
+          $("done").className = "done on";
+          return;
+        }
+        if (res.status === 429) return fail("Das waren gerade sehr viele Versuche. Bitte probieren Sie es in ein paar Minuten noch einmal.");
+        fail(data.error || "Das hat leider nicht geklappt. Bitte versuchen Sie es noch einmal oder schreiben Sie uns an info@vils17.at.");
+      });
+    }).catch(function(){
+      fail("Keine Verbindung. Bitte prüfen Sie Ihr Internet und versuchen Sie es noch einmal, oder schreiben Sie uns an info@vils17.at.");
+    }).then(function(){
+      btn.disabled = false; btn.textContent = "Eintragen";
+    });
+  });
+})();
+</script>
+</body>
+</html>

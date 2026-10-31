@@ -68,6 +68,7 @@ model Organization {
   laundryDeliveries LaundryDelivery[]
   issues            Issue[]
   noteSuggestions   NoteSuggestion[]
+  regularGuests     RegularGuest[]
 
   @@map("organizations")
 }
@@ -557,4 +558,36 @@ model GuestMessageSeen {
 
   @@unique([organizationId, bookingId, messageId])
   @@index([bookingId])
+}
+
+// ─── Stammgast-Liste ──────────────────────────────────────────────────────────
+// Entscheidung Mathias 31.10.2026: Gäste tragen sich über den QR-Code in der
+// Gästemappe (vils17.at/stammgast/) freiwillig ein. Rechtsgrundlage ist die
+// Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 174 TKG 2021) — je Kanal getrennt,
+// mit Zeitpunkt und dem genau angezeigten Text. Abmelden setzt unsubscribedAt.
+
+model RegularGuest {
+  id               String       @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name             String
+  email            String // klein geschrieben gespeichert
+  phone            String?
+  // "penthouse" | "lodge" | null
+  apartment        String?
+  consentEmail     Boolean      @default(false)
+  consentWhatsapp  Boolean      @default(false)
+  // Genau der Einwilligungstext, den der Gast angehakt hat
+  consentText      String
+  consentAt        DateTime
+  unsubscribeToken String       @unique
+  unsubscribedAt   DateTime?
+  // Herkunft, z.B. "gaestemappe"
+  source           String       @default("gaestemappe")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId, unsubscribedAt])
+  @@map("regular_guests")
 }
