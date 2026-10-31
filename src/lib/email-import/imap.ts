@@ -15,14 +15,18 @@ export function isImapConfigured(): boolean {
 }
 
 /**
- * Holt ungelesene Mails aus dem konfigurierten Postfach und markiert sie als
- * gelesen. Die Doppelverarbeitung verhindert zusätzlich die messageId-Sperre in
- * der Datenbank — das Gelesen-Markieren ist nur die günstige erste Hürde.
+ * Holt die Mails der letzten Tage, die noch nicht verarbeitet sind.
+ * Markiert NICHTS als gelesen — das Postfach ist zugleich das Arbeitspostfach
+ * (Apple Mail, Mail-Bereich der App). Die Doppelverarbeitung verhindert die
+ * messageId-Sperre: bekannte Mails werden schon am Umschlag erkannt und gar
+ * nicht erst geladen.
  */
-export async function fetchUnreadMails(limit = 50): Promise<FetchedMail[]> {
+export async function fetchNewMails(isKnown: (messageId: string) => Promise<boolean>, opts: { days?: number; limit?: number } = {}): Promise<FetchedMail[]> {
   if (!isImapConfigured()) {
     throw new Error("IMAP nicht konfiguriert (IMAP_HOST / IMAP_USER / IMAP_PASS fehlen)");
   }
+  const days = opts.days ?? 7;
+  const limit = opts.limit ?? 50;
 
   const client = new ImapFlow({
     host: process.env.IMAP_HOST!,
@@ -42,12 +46,23 @@ export async function fetchUnreadMails(limit = 50): Promise<FetchedMail[]> {
   try {
     const lock = await client.getMailboxLock(folder);
     try {
+      const since = new Date(Date.now() - days * 86_400_000);
       // search() liefert false, wenn die Suche fehlschlägt
-      const uids = await client.search({ seen: false });
-      const selected = Array.isArray(uids) ? uids.slice(-limit) : [];
+      const found = await client.search({ since }, { uid: true });
+      const uids = Array.isArray(found) ? found.slice(-500) : [];
 
-      for (const uid of selected) {
-        const msg = await client.fetchOne(String(uid), { source: true });
+      // Umschlag zuerst: bekannte Mails gar nicht laden
+      const fresh: { uid: number; messageId: string }[] = [];
+      if (uids.length) {
+        for await (const m of client.fetch(uids, { uid: true, envelope: true }, { uid: true })) {
+          const id = m.envelope?.messageId ?? `uid-${folder}-${m.uid}`;
+          if (!(await isKnown(id))) fresh.push({ uid: m.uid, messageId: id });
+        }
+      }
+
+      for (const { uid, messageId } of fresh.slice(-limit)) {
+        // source wird mit BODY.PEEK geholt — \Seen bleibt unverändert
+        const msg = await client.fetchOne(String(uid), { source: true }, { uid: true });
         if (!msg || !msg.source) continue;
 
         const parsed = await simpleParser(msg.source);
@@ -57,15 +72,12 @@ export async function fetchUnreadMails(limit = 50): Promise<FetchedMail[]> {
           : htmlToText(html);
 
         results.push({
-          messageId: parsed.messageId ?? `uid-${folder}-${uid}`,
+          messageId,
           from: parsed.from?.text ?? "",
           subject: parsed.subject ?? "",
           text,
           receivedAt: parsed.date ?? null,
         });
-
-        // Als gelesen markieren, damit der nächste Lauf sie nicht erneut zieht
-        await client.messageFlagsAdd(String(uid), ["\\Seen"]);
       }
     } finally {
       lock.release();
