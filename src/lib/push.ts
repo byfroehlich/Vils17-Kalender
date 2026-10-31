@@ -62,37 +62,72 @@ export type PushResult = {
 export async function sendPushToUsers(userIds: string[], payload: PushPayload): Promise<PushResult> {
   init();
   const result: PushResult = { notConfigured: !initialized, devices: 0, sent: 0, failed: 0, removed: 0 };
-  if (!initialized) return result;
+  const ids = Array.from(new Set(userIds));
+  if (ids.length === 0) return result;
 
-  const subs = await prisma.pushSubscription.findMany({
-    where: { userId: { in: userIds } },
-  });
+  const subs = initialized ? await prisma.pushSubscription.findMany({ where: { userId: { in: ids } } }) : [];
   result.devices = subs.length;
+  const perUser = new Map<string, { devices: number; sent: number; failed: number; removed: number; error: string | null }>();
+  for (const id of ids) perUser.set(id, { devices: 0, sent: 0, failed: 0, removed: 0, error: initialized ? null : initError ?? "Push nicht eingerichtet" });
 
   await Promise.allSettled(
     subs.map(async (sub) => {
+      const u = perUser.get(sub.userId)!;
+      u.devices++;
       try {
         await webpush.sendNotification(
           { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
           JSON.stringify(payload)
         );
-        result.sent++;
+        result.sent++; u.sent++;
       } catch (err: unknown) {
         const status = (err as { statusCode?: number }).statusCode;
         if (status === 410 || status === 404) {
           await removeExpiredSub(sub.id);
-          result.removed++;
+          result.removed++; u.removed++;
+          u.error = "Anmeldung abgelaufen – Gerät entfernt";
         } else {
-          result.failed++;
-          lastFailure = { at: new Date(), status: status ?? null, message: (err as Error).message.slice(0, 300) };
+          result.failed++; u.failed++;
+          const message = (err as Error).message.slice(0, 300);
+          lastFailure = { at: new Date(), status: status ?? null, message };
+          u.error = `Versand fehlgeschlagen${status ? ` (${status})` : ""}`;
           console.error("[push] Versand fehlgeschlagen:", status, (err as Error).message);
         }
       }
     })
   );
 
-  lastSend = { at: new Date(), ...result, lastError: lastFailure?.message ?? null };
+  if (initialized) lastSend = { at: new Date(), ...result, lastError: lastFailure?.message ?? null };
+  await writePushLog(ids, payload.title, perUser).catch((e) => console.error("[push] Protokoll:", (e as Error).message));
   return result;
+}
+
+async function writePushLog(
+  ids: string[],
+  title: string,
+  perUser: Map<string, { devices: number; sent: number; failed: number; removed: number; error: string | null }>
+) {
+  const users = await prisma.user.findMany({ where: { id: { in: ids } }, select: { id: true, name: true, organizationId: true } });
+  if (users.length === 0) return;
+  await prisma.pushLog.createMany({
+    data: users.map((u) => {
+      const r = perUser.get(u.id)!;
+      return {
+        organizationId: u.organizationId, userId: u.id, userName: u.name.trim(), title: title.slice(0, 200),
+        devices: r.devices, sent: r.sent, failed: r.failed, removed: r.removed,
+        error: r.devices === 0 && !r.error ? "kein Gerät angemeldet" : r.error,
+      };
+    }),
+  });
+}
+
+/** Versandprotokoll der letzten Pushes (neueste zuerst). */
+export async function listPushLog(organizationId: string, opts: { userId?: string; limit?: number } = {}) {
+  return prisma.pushLog.findMany({
+    where: { organizationId, ...(opts.userId ? { userId: opts.userId } : {}) },
+    orderBy: { createdAt: "desc" },
+    take: Math.min(opts.limit ?? 50, 200),
+  });
 }
 
 /** Diagnose: ist Push eingerichtet, wer hat wie viele Geräte angemeldet, was ist zuletzt passiert. */

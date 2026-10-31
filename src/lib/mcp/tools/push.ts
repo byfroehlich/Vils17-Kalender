@@ -2,7 +2,7 @@ import { z } from "zod";
 import { prisma } from "../../prisma";
 import { defineTool, preview, bestaetigtSchema } from "../tool";
 import { viennaIso } from "../format";
-import { pushDiagnostics, sendPushToUsers } from "../../push";
+import { pushDiagnostics, sendPushToUsers, listPushLog } from "../../push";
 
 // ─── Push-Diagnose ────────────────────────────────────────────────────────────
 // Anlass 31.10.2026: Mathias hat nie eine Push-Nachricht bekommen. Ohne Server-Logs muss sichtbar sein,
@@ -108,6 +108,38 @@ export const reinigungNachricht = defineTool({
     return {
       ausgefuehrt: true, an: u.name.trim(), geraete: r.devices, gesendet: r.sent, fehlgeschlagen: r.failed,
       hinweis: r.devices === 0 ? "Kein Gerät angemeldet – Nachricht kam nicht an. App installieren und Glocke einschalten." : null,
+    };
+  },
+});
+
+export const pushProtokoll = defineTool({
+  name: "push_protokoll",
+  title: "Push-Versandprotokoll",
+  description:
+    "Wer wann welche Push-Benachrichtigung bekommen hat (nur Titel) und ob der Push-Dienst sie angenommen hat: Geräte, gesendet, fehlgeschlagen, abgelaufen. " +
+    "„Angenommen“ heißt: Apple/Google hat sie zur Zustellung übernommen — ob sie auf dem Handy angezeigt wurde, meldet kein Dienst zurück. Neueste zuerst.",
+  scope: "bookings:read",
+  input: {
+    person: z.string().trim().min(1).optional().describe("Name (Teil) einer Person, z.B. \"Vanessa\""),
+    limit: z.number().int().min(1).max(200).optional(),
+  },
+  async handler(args, ctx) {
+    let userId: string | undefined;
+    if (args.person) {
+      const u = await prisma.user.findFirst({
+        where: { organizationId: ctx.organizationId, name: { contains: args.person, mode: "insensitive" } },
+        select: { id: true },
+      });
+      if (!u) return { fehler: "Person nicht gefunden." };
+      userId = u.id;
+    }
+    const rows = await listPushLog(ctx.organizationId, { ...(userId ? { userId } : {}), limit: args.limit ?? 30 });
+    return {
+      eintraege: rows.map((r) => ({
+        zeit: viennaIso(r.createdAt), an: r.userName, titel: r.title,
+        geraete: r.devices, angenommen: r.sent, fehlgeschlagen: r.failed, abgelaufen_entfernt: r.removed, hinweis: r.error,
+      })),
+      hinweis: "Protokoll seit 01.11.2026. Ältere Versände sind nicht gespeichert.",
     };
   },
 });
