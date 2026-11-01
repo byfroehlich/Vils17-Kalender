@@ -7,6 +7,8 @@ import { SyncButton } from "@/components/dashboard/SyncButton";
 import { TodoCard, TodoCardSkeleton } from "@/components/dashboard/TodoCard";
 import { WeekCard } from "@/components/dashboard/WeekCard";
 import { loadTodos, loadWeek } from "@/lib/todo";
+import { loadOccupancy } from "@/lib/occupancy";
+import { AdminTodoCard, AdminTodoSkeleton, AdminWeekCard, OccupancyCard } from "@/components/dashboard/admin/AdminOverview";
 
 // Übersicht für Admin und Verwaltung (Entscheidung Mathias 31.10.2026):
 // oben EINE Karte „Zu erledigen“ (nach Dringlichkeit), darunter „Diese Woche“.
@@ -22,6 +24,11 @@ async function Todos({ organizationId }: { organizationId: string }) {
   return <TodoCard items={r.items} chatsUnchecked={r.chatsUnchecked} />;
 }
 
+async function AdminTodos({ organizationId }: { organizationId: string }) {
+  const r = await loadTodos(organizationId);
+  return <AdminTodoCard items={r.items} chatsUnchecked={r.chatsUnchecked} />;
+}
+
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
@@ -34,6 +41,34 @@ export default async function DashboardPage() {
     prisma.organization.findUnique({ where: { id: orgId }, select: { lastSyncAt: true } }),
     loadWeek(orgId, now),
   ]);
+
+  // Neue Übersicht im dunklen Stil — vorerst nur für ADMIN (Entscheidung Mathias 01.11.2026)
+  if (session.user.role === "ADMIN") {
+    const occ = await loadOccupancy(orgId, now);
+    const dayLabel = new Intl.DateTimeFormat("de-AT", { timeZone: "Europe/Vienna", weekday: "long", day: "numeric", month: "long" }).format(now);
+    const firstName = (session.user.name ?? "").split(" ")[0] || "";
+    return (
+      <div style={{ color: "#FFFFFF", maxWidth: 720, margin: "0 auto", display: "flex", flexDirection: "column", gap: 12 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 12 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 0 }}>
+            <span style={{ fontSize: 12, letterSpacing: "0.14em", textTransform: "uppercase", color: "rgba(255,255,255,0.64)" }}>{dayLabel}</span>
+            <h1 style={{ fontSize: 30, fontWeight: 300, letterSpacing: "-0.02em", lineHeight: 1.15 }}>
+              Guten Tag{firstName ? ", " : ""}
+              {firstName && (
+                <span style={{ fontWeight: 500, background: "linear-gradient(100deg,#99F6E4 0%,#2DD4BF 45%,#14B8A6 100%)", WebkitBackgroundClip: "text", backgroundClip: "text", color: "transparent" }}>{firstName}</span>
+              )}
+            </h1>
+          </div>
+        </div>
+        <SyncButton lastSyncAt={orgInfo?.lastSyncAt?.toISOString() ?? null} />
+        <Suspense fallback={<AdminTodoSkeleton />}>
+          <AdminTodos organizationId={orgId} />
+        </Suspense>
+        <OccupancyCard occ={occ} />
+        <AdminWeekCard days={week} />
+      </div>
+    );
+  }
 
   const dateStr = `${GERMAN_DAYS[now.getDay()]}, ${now.getDate()}. ${GERMAN_MONTHS[now.getMonth()]} ${now.getFullYear()}`;
   const initials = (session.user.name ?? "V17")

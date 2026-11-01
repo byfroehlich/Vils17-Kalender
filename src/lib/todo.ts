@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
 import { addDays, day, todayVienna } from "./mcp/format";
-import { UNCONFIRMED_GUEST_COUNT } from "./guest-count";
+import { UNCONFIRMED_GUEST_COUNT, isGuestCountUnconfirmed } from "./guest-count";
 import { loadLaundryPlan } from "./laundry-proposal";
 import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "./laundry-order";
 import { laundryText } from "./laundry-quantity";
@@ -42,6 +42,26 @@ export function sortTodos(items: TodoItem[]): TodoItem[] {
     }
     return KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind);
   });
+}
+
+/** Knopf-Beschriftung je Punkt (neue Admin-Übersicht, Entscheidung Mathias 01.11.2026) */
+export function todoAction(i: TodoItem): string {
+  switch (i.kind) {
+    case "absage":
+    case "ohne_reinigung": return "Zuweisen";
+    case "gaestezahl": return "Klären";
+    case "waesche": return i.key === "waesche-bestand" ? "Erfassen" : "Bestellen";
+    case "mangel": return "Ansehen";
+    case "hinweis": return "Prüfen";
+    case "chat": return "Antworten";
+    case "hundegebuehr": return i.severity === "neutral" ? "Ansehen" : "Anfordern";
+  }
+}
+
+/** „Titel – Zusatz“ → Titelzeile und Unterzeile */
+export function splitTodoLabel(label: string): { title: string; sub: string | null } {
+  const i = label.indexOf(" – ");
+  return i < 0 ? { title: label, sub: null } : { title: label.slice(0, i), sub: label.slice(i + 3) };
 }
 
 const short = (name: string) => name.split(/\s+No\.|\s+-\s+/)[0]?.trim() || name;
@@ -208,6 +228,12 @@ export interface WeekEntry {
   cleaningStatus?: string | null;
   selfClean?: boolean;
   hasNote?: boolean;
+  /** nur Anreise: Hinweis für die Reinigung (Text) */
+  note?: string | null;
+  /** nur Abreise: Saugroboter startet um 10:00 (Apartment.dreameEnabled) */
+  robot?: boolean;
+  /** nur Anreise: Gästezahl noch unbestätigt */
+  guestsUnconfirmed?: boolean;
 }
 
 export interface WeekDay {
@@ -224,8 +250,8 @@ export async function loadWeek(organizationId: string, now = new Date()): Promis
     where: { organizationId, status: "confirmed", OR: [{ checkIn: { gte: today, lt: end } }, { checkOut: { gte: today, lt: end } }] },
     orderBy: { checkIn: "asc" },
     select: {
-      id: true, guestName: true, guestCount: true, checkIn: true, checkOut: true,
-      apartment: { select: { name: true, color: true } },
+      id: true, guestName: true, guestCount: true, checkIn: true, checkOut: true, guestCountUnknown: true, guestCountManual: true,
+      apartment: { select: { name: true, color: true, dreameEnabled: true } },
       cleaningAssignment: { select: { status: true, isSelfClean: true, notes: true, cleaner: { select: { name: true } } } },
     },
   });
@@ -236,7 +262,7 @@ export async function loadWeek(organizationId: string, now = new Date()): Promis
     const entries: WeekEntry[] = [];
     for (const b of rows) {
       if (day(b.checkOut) === d) {
-        entries.push({ type: "abreise", bookingId: b.id, apartmentName: short(b.apartment.name), apartmentColor: b.apartment.color, guestName: b.guestName, guestCount: b.guestCount });
+        entries.push({ type: "abreise", bookingId: b.id, apartmentName: short(b.apartment.name), apartmentColor: b.apartment.color, guestName: b.guestName, guestCount: b.guestCount, robot: b.apartment.dreameEnabled });
       }
     }
     for (const b of rows) {
@@ -244,7 +270,8 @@ export async function loadWeek(organizationId: string, now = new Date()): Promis
         const a = b.cleaningAssignment;
         entries.push({
           type: "anreise", bookingId: b.id, apartmentName: short(b.apartment.name), apartmentColor: b.apartment.color, guestName: b.guestName, guestCount: b.guestCount,
-          cleaner: a?.cleaner?.name ?? null, cleaningStatus: a?.status ?? null, selfClean: !!a?.isSelfClean, hasNote: !!a?.notes?.trim(),
+          cleaner: a?.cleaner?.name ?? null, cleaningStatus: a?.status ?? null, selfClean: !!a?.isSelfClean, hasNote: !!a?.notes?.trim(), note: a?.notes?.trim() || null,
+          guestsUnconfirmed: isGuestCountUnconfirmed(b),
         });
       }
     }

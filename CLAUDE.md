@@ -585,6 +585,11 @@ Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltun
   UpcomingBookings, CleaningToday. Sync-Stand (`SyncButton`) bleibt. Keine Finanzzahlen auf dem Dashboard.
 - Navigation: „Mängel“ steht in der mobilen Hauptleiste (nicht mehr unter „Mehr“).
 - Tests: `tests/zu-erledigen.test.ts`.
+- **Neuer Stil für ADMIN** (Entscheidung Mathias 01.11.2026, zunächst nur Admin): dunkler Rahmen (`#04100F` mit Petrol-Leuchten,
+  Topbar/Leisten dunkel), Übersicht aus `src/components/dashboard/admin/AdminOverview.tsx`: Begrüßung, Sync-Stand,
+  „Zu erledigen“ mit Knopf je Zeile (`todoAction`, `splitTodoLabel`), **Belegung des Monats** (`src/lib/occupancy.ts`,
+  Anreisetag belegt, Abreisetag frei), „Diese Woche“ mit Saugroboter bei Abreise und unbestätigter Gästezahl. Petrol bleibt
+  Leitfarbe; Verwaltung und Reinigung sehen weiter den bisherigen Stil. Tests: `tests/admin-uebersicht.test.ts`.
 
 ### Stammgast-Funnel (`src/lib/regular-guests.ts`, `website/stammgast/`)
 Entscheidung Mathias 31.10.2026: Gäste scannen den QR-Code in der gedruckten Gästemappe, landen auf
