@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { LAUNDRY_ITEMS, type LaundryQuantity } from "@/lib/laundry-quantity";
 
-const glass = { background: "rgba(255,255,255,0.15)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20 } as const;
+const glass = { background: "rgba(255,255,255,0.055)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 20 } as const;
 const h2 = { fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginBottom: 12 } as const;
 const btn = (c: string) => ({ padding: "7px 14px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer", background: `rgba(${c},0.2)`, border: `1px solid rgba(${c},0.45)`, color: "rgba(255,255,255,0.9)" }) as const;
 const num = { width: 64, padding: "4px 8px", borderRadius: 8, background: "rgba(255,255,255,0.07)", border: "1px solid rgba(255,255,255,0.15)", color: "rgba(255,255,255,0.9)", fontSize: 14, textAlign: "center" as const };

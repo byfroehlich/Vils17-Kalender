@@ -4,7 +4,7 @@ import { NoteBadge } from "@/components/ui/NoteBadge";
 
 // „Diese Woche“: Abreisen, Anreisen und Reinigungen (mit Reinigungskraft und ⭐ Hinweis)
 
-const glass = { background: "rgba(255,255,255,0.15)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20 } as const;
+const glass = { background: "rgba(255,255,255,0.055)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 20 } as const;
 
 export function WeekCard({ days }: { days: WeekDay[] }) {
   const withEntries = days.filter((d) => d.entries.length > 0);

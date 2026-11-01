@@ -57,10 +57,10 @@ interface OpenAssignment {
 }
 
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
-  background: "rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.22)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
   ...extra,
 });
@@ -336,7 +336,7 @@ export function CleanerDashboard({
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
             <ScrollLock />
-            <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
+            <div style={{ background: "#071A18", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>
                 {formatDateLong(new Date(a.booking.checkIn))} · {a.booking.apartment.name}
@@ -376,7 +376,7 @@ function CompactJobCard({ assignment, isCleaner, loading, onMarkDone, onUnavaila
   const b = assignment.booking;
   const aptColor = b.apartment.color ?? "#0D9488";
   return (
-    <div style={{ background: "rgba(255,255,255,0.12)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "1px solid rgba(255,255,255,0.20)", borderRadius: 18, overflow: "hidden" }}>
+    <div style={{ background: "rgba(255,255,255,0.055)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 18, overflow: "hidden" }}>
       <div style={{ height: 3, backgroundColor: aptColor }} />
       <div style={{ padding: "14px 18px", display: "flex", alignItems: "center", gap: 14 }}>
         <div style={{ flex: 1, minWidth: 0 }}>

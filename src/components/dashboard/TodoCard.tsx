@@ -4,7 +4,7 @@ import type { TodoItem, TodoSeverity } from "@/lib/todo";
 
 // „Zu erledigen“ — eine Karte, eine Zeile je Punkt, nach Dringlichkeit (Entscheidung Mathias 31.10.2026)
 
-const glass = { background: "rgba(255,255,255,0.15)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20 } as const;
+const glass = { background: "rgba(255,255,255,0.055)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 20 } as const;
 
 const DOT: Record<TodoSeverity, string> = { red: "#f87171", amber: "#fbbf24", neutral: "rgba(255,255,255,0.35)" };
 const TEXT: Record<TodoSeverity, string> = { red: "#fecaca", amber: "#fde68a", neutral: "rgba(255,255,255,0.80)" };

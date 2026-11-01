@@ -52,8 +52,8 @@ const sidebarGlass = {
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin   = role === "ADMIN";
-  // ADMIN: dunkler Stil (Entscheidung Mathias 01.11.2026)
-  const frameBg = (alpha: number) => (isAdmin ? `rgba(4,16,15,${alpha})` : `rgba(10,50,45,${alpha})`);
+  // Dunkler Stil für alle Rollen (Entscheidung Mathias 01.11.2026)
+  const frameBg = (alpha: number) => `rgba(4,16,15,${alpha})`;
   const isCleaner = role === "CLEANER";
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -215,7 +215,7 @@ export function Sidebar({ role }: { role: string }) {
               key={item.href}
               href={item.href}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors"
-              style={{ color: active ? (isAdmin ? "#5EEAD4" : "#0D9488") : "rgba(255,255,255,0.60)" }}
+              style={{ color: active ? "#5EEAD4" : "rgba(255,255,255,0.60)" }}
             >
               <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">

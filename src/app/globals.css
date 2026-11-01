@@ -37,13 +37,13 @@
        das Federn die festen Leisten, danach bleibt die Ansicht hängen */
     overscroll-behavior: none;
     /* Falls iOS doch einmal etwas verschiebt: dunkelgrün statt heller Fläche */
-    background-color: #0c3d38;
+    background-color: #04100F;
   }
 
   body {
     /* Dunkelgrün wie der App-Hintergrund — eine helle Fläche würde jede
        Verschiebung auf dem iPhone sofort sichtbar machen */
-    background-color: #0c3d38;
+    background-color: #04100F;
     color: hsl(var(--foreground));
     font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
     font-size: 1.0625rem;
