@@ -12,7 +12,7 @@ type Issue = {
   claimDeadline: string | null;
 };
 
-const glass = { background: "rgba(255,255,255,0.15)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20 } as const;
+const glass = { background: "rgba(255,255,255,0.055)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 20 } as const;
 const h2 = { fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", marginBottom: 12 } as const;
 const btn = { display: "inline-flex", alignItems: "center", gap: 6, padding: "7px 11px", borderRadius: 10, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", color: "white", fontSize: 13, fontWeight: 600, cursor: "pointer" } as const;
 const muted = "rgba(255,255,255,0.55)";

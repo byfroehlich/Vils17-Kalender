@@ -5,10 +5,10 @@ import { useRouter } from "next/navigation";
 import { petFee, PET_FEE_LABEL, PET_FEE_PER_NIGHT, portalCollectsPetFee } from "@/lib/pets";
 
 const glass = {
-  background: "rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.25)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
 } as const;
 

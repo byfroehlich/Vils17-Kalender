@@ -237,7 +237,7 @@ export function PushToggle() {
               top: "calc(100% + 8px)",
               right: -40,
               width: 230,
-              background: "rgba(10,50,45,0.98)",
+              background: "rgba(4,16,15,0.98)",
               border: "1px solid rgba(255,255,255,0.18)",
               borderRadius: 12,
               padding: 6,

@@ -9,7 +9,7 @@ import { ScrollLock } from "@/components/ui/ScrollLock";
 // 3. Abflüsse geprüft und gereinigt? (Duschen, Waschbecken, Spüle – bodentiefe Duschen setzen sich schnell zu)
 // Meldungen gehen sofort per Push an Mathias und hängen am Aufenthalt davor.
 
-const box = { background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 22, maxHeight: "100%", overflowY: "auto" as const };
+const box = { background: "#071A18", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 22, maxHeight: "100%", overflowY: "auto" as const };
 const q = { fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.95)", margin: "14px 0 8px" } as const;
 
 function Choice({ value, onChange, yes, no }: { value: boolean | null; onChange: (v: boolean) => void; yes: string; no: string }) {

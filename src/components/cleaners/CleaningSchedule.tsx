@@ -56,10 +56,10 @@ const cleaningLabels: Record<string, string> = {
 
 const rowGlass: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 12,
-  background: "rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(16px)",
   WebkitBackdropFilter: "blur(16px)",
-  border: "1px solid rgba(255,255,255,0.24)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 14,
   padding: "12px 16px",
   textDecoration: "none",

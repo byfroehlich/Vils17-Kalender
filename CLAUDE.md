@@ -571,7 +571,7 @@ Smoobu-Vorlage 6 (Abreise + 2 Tage, 8:00, an alle) schickt die App die Anfrage s
   (`zweck: "bewertungsanfrage"`) bzw. `guest.review_request.skipped` — nie Text, Namen oder Adressen.
 - Tests: `tests/bewertungsanfrage.test.ts`.
 
-### Dashboard „Zu erledigen“ (`src/lib/todo.ts`, `TodoCard`, `WeekCard`)
+### Dashboard „Zu erledigen“ (`src/lib/todo.ts`, `AdminOverview`)
 Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltung, Mathias' Mutter), ruhig und klar:
 - **Oben EINE Karte „Zu erledigen“** (`loadTodos`), eine Zeile je Punkt, Tipp öffnet den Punkt, sortiert nach
   Farbe (rot → bernstein → neutral), dann Termin, dann Art (`sortTodos`). Punkte: Absagen (rot), Reinigung ohne
@@ -585,11 +585,13 @@ Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltun
   UpcomingBookings, CleaningToday. Sync-Stand (`SyncButton`) bleibt. Keine Finanzzahlen auf dem Dashboard.
 - Navigation: „Mängel“ steht in der mobilen Hauptleiste (nicht mehr unter „Mehr“).
 - Tests: `tests/zu-erledigen.test.ts`.
-- **Neuer Stil für ADMIN** (Entscheidung Mathias 01.11.2026, zunächst nur Admin): dunkler Rahmen (`#04100F` mit Petrol-Leuchten,
-  Topbar/Leisten dunkel), Übersicht aus `src/components/dashboard/admin/AdminOverview.tsx`: Begrüßung, Sync-Stand,
-  „Zu erledigen“ mit Knopf je Zeile (`todoAction`, `splitTodoLabel`), **Belegung des Monats** (`src/lib/occupancy.ts`,
-  Anreisetag belegt, Abreisetag frei), „Diese Woche“ mit Saugroboter bei Abreise und unbestätigter Gästezahl. Petrol bleibt
-  Leitfarbe; Verwaltung und Reinigung sehen weiter den bisherigen Stil. Tests: `tests/admin-uebersicht.test.ts`.
+- **Neuer dunkler Stil** (Entscheidung Mathias 01.11.2026, erst Admin, am selben Tag für alle Rollen — nur Optik, keine
+  Funktion geändert): Rahmen `#04100F` mit Petrol-Leuchten (Layout, Login, OAuth, Topbar, Leisten, Manifest), Karten als
+  dunkles Glas (Weiß 5,5 %, Rand 0,5 px Weiß 14 %), Dialoge `#071A18`. Übersicht für Admin und Verwaltung aus
+  `src/components/dashboard/admin/AdminOverview.tsx`: Begrüßung, Sync-Stand, „Zu erledigen“ mit Knopf je Zeile
+  (`todoAction`, `splitTodoLabel`), **Belegung des Monats** (`src/lib/occupancy.ts`, Anreisetag belegt, Abreisetag frei),
+  „Diese Woche“ mit Saugroboter bei Abreise und unbestätigter Gästezahl. Petrol bleibt Leitfarbe.
+  Tests: `tests/admin-uebersicht.test.ts`.
 
 ### Stammgast-Funnel (`src/lib/regular-guests.ts`, `website/stammgast/`)
 Entscheidung Mathias 31.10.2026: Gäste scannen den QR-Code in der gedruckten Gästemappe, landen auf
@@ -784,7 +786,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - **Benutzerverwaltung**: Admin legt User an (ADMIN / MANAGER / CLEANER), bearbeiten, löschen
 - Buchungsübersicht nach Monat segmentiert
 - Portal-Icon (Airbnb/Booking.com) und Gästezahl in Buchungskarten
-- Helles, freundliches Theme mit Glass-Morphism-Design
+- Dunkles Theme mit Petrol und Glas (seit 01.11.2026, vorher helles Petrol)
 - **Sicherheits-Fixes:**
   - Smoobu Webhook schlägt jetzt CLOSED fehl (kein Secret = kein Zugang)
   - `timingSafeEqual` Crash bei unterschiedlichen Signaturlängen behoben

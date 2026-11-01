@@ -68,10 +68,10 @@ interface Booking {
 }
 
 const glass = {
-  background: "rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.26)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
 } as React.CSSProperties;
 

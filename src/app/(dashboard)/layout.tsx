@@ -24,7 +24,6 @@ export default async function DashboardLayout({
 }) {
   const session = await getServerSession(authOptions);
   if (!session) redirect("/login");
-  const dark = session.user.role === "ADMIN";
 
   return (
     <div className="flex" style={{ position: "fixed", inset: 0, overflow: "hidden" }}>
@@ -35,21 +34,13 @@ export default async function DashboardLayout({
           position: "absolute",
           inset: 0,
           zIndex: 0,
-          // ADMIN: neuer dunkler Stil (Entscheidung Mathias 01.11.2026), Petrol bleibt Leitfarbe
-          background: (dark
-            ? [
-                "radial-gradient(65% 40% at 12% 6%, rgba(13,148,136,0.55) 0%, transparent 70%)",
-                "radial-gradient(55% 35% at 100% 22%, rgba(20,184,166,0.28) 0%, transparent 70%)",
-                "radial-gradient(70% 40% at 50% 108%, rgba(15,118,110,0.40) 0%, transparent 70%)",
-                "#04100F",
-              ]
-            : [
-                "radial-gradient(ellipse 100% 70% at 10% 0%,  rgba(20,184,166,0.60) 0%, transparent 55%)",
-                "radial-gradient(ellipse  75% 55% at 90% 10%, rgba(16,185,129,0.45) 0%, transparent 50%)",
-                "radial-gradient(ellipse  85% 65% at 45% 90%, rgba(13,148,136,0.40) 0%, transparent 55%)",
-                "linear-gradient(160deg, #0c3d38 0%, #1a6e63 40%, #104e48 100%)",
-              ]
-          ).join(", "),
+          // Dunkler Stil für alle Rollen (Entscheidung Mathias 01.11.2026), Petrol bleibt Leitfarbe
+          background: [
+            "radial-gradient(65% 40% at 12% 6%, rgba(13,148,136,0.55) 0%, transparent 70%)",
+            "radial-gradient(55% 35% at 100% 22%, rgba(20,184,166,0.28) 0%, transparent 70%)",
+            "radial-gradient(70% 40% at 50% 108%, rgba(15,118,110,0.40) 0%, transparent 70%)",
+            "#04100F",
+          ].join(", "),
         }}
       />
 

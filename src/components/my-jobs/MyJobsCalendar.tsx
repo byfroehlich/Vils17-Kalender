@@ -19,10 +19,10 @@ import type { DepartureMarker } from "@/lib/departure-format";
 import { PreviousDepartureLine } from "@/components/ui/PreviousDepartureLine";
 import { CompletionCheckDialog } from "@/components/my-jobs/CompletionCheckDialog";
 const glass = (extra?: React.CSSProperties): React.CSSProperties => ({
-  background: "rgba(255,255,255,0.14)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.22)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
   ...extra,
 });
@@ -274,7 +274,7 @@ export function MyJobsCalendar({
         return (
           <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
             <ScrollLock />
-            <div style={{ background: "#0c3d38", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
+            <div style={{ background: "#071A18", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 24, width: "100%", maxWidth: 480, padding: 24 }}>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 6 }}>Ich kann nicht</h3>
               <p style={{ fontSize: 13, color: "rgba(255,255,255,0.55)", marginBottom: 18 }}>{formatDateLong(new Date(a.booking.checkIn))} · {a.booking.apartment.name}</p>
               <textarea value={unavailableNote} onChange={(e) => setUnavailableNote(e.target.value)} placeholder="Grund (optional)…" rows={3} className="form-input" style={{ resize: "none", marginBottom: 16 }} />

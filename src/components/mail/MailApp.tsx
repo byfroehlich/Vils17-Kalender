@@ -13,7 +13,7 @@ type Summary = { uid: number; folder: string; from: Address[]; to: Address[]; su
 type Message = Summary & { cc: Address[]; replyTo: Address[]; text: string; html: string | null; attachments: { index: number; filename: string; contentType: string; size: number }[] };
 type Draft = { to: string; cc: string; bcc: string; subject: string; text: string; replyUid?: number; replyFolder?: string; note?: string };
 
-const glass = { background: "rgba(255,255,255,0.15)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.25)", borderRadius: 20 } as const;
+const glass = { background: "rgba(255,255,255,0.055)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "0.5px solid rgba(255,255,255,0.14)", borderRadius: 20 } as const;
 const btn = { display: "inline-flex", alignItems: "center", gap: 6, padding: "8px 12px", borderRadius: 12, background: "rgba(255,255,255,0.10)", border: "1px solid rgba(255,255,255,0.18)", color: "rgba(255,255,255,0.9)", fontSize: 13, fontWeight: 600, cursor: "pointer" } as const;
 const primary = { ...btn, background: "#14B8A6", border: "1px solid #14B8A6", color: "#fff" } as const;
 const input = { width: "100%", padding: "10px 12px", borderRadius: 12, background: "rgba(0,0,0,0.20)", border: "1px solid rgba(255,255,255,0.18)", color: "#fff", fontSize: 14, outline: "none" } as const;
