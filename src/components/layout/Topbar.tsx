@@ -9,7 +9,7 @@ export function Topbar({ userName, role }: { userName: string; role: string }) {
     <header
       className="flex items-end justify-between lg:hidden"
       style={{
-        background: "rgba(10,50,45,0.85)",
+        background: role === "ADMIN" ? "rgba(4,16,15,0.88)" : "rgba(10,50,45,0.85)",
         backdropFilter: "blur(20px)",
         WebkitBackdropFilter: "blur(20px)",
         borderBottom: "1px solid rgba(255,255,255,0.16)",
