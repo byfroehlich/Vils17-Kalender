@@ -5,7 +5,7 @@ import { loadLaundryPlan } from "./laundry-proposal";
 import { laundryAlert, LAUNDRY_ALERT_DAYS, LAUNDRY_ALERT_SHORT_NOTICE_DAYS } from "./laundry-order";
 import { laundryText } from "./laundry-quantity";
 import { petFee } from "./pets";
-import { findUnansweredChats } from "./guest-chat-overview";
+import { findUnansweredChats, readOpenChats, OPEN_CHATS_FRESH_MS } from "./guest-chat-overview";
 import { shortDayLabel } from "./departure-format";
 
 // ─── „Zu erledigen“ (Dashboard Admin/Verwaltung) ──────────────────────────────
@@ -191,23 +191,27 @@ export async function loadTodos(organizationId: string, opts: { now?: Date; with
     });
   }
 
-  // Unbeantwortete Gästechats (Smoobu, langsam) — mit Zeitbudget
+  // Unbeantwortete Gästechats — aus dem gemeinsamen Stand (wie Gäste-Seite, MCP und Zentrale).
+  // Ist er älter als OPEN_CHATS_FRESH_MS, wird Smoobu mit Zeitbudget neu gefragt; reicht die Zeit nicht,
+  // gilt der letzte Stand (Entscheidung Mathias 04.11.2026: überall dasselbe zeigen).
   let chatsUnchecked = false;
   if (opts.withChats !== false) {
-    const chats = await Promise.race([
-      findUnansweredChats({ organizationId, days: 30 }).catch(() => null),
-      new Promise<null>((r) => setTimeout(() => r(null), CHAT_CHECK_BUDGET_MS)),
-    ]);
-    if (!chats) chatsUnchecked = true;
-    else {
-      if (chats.errors.length) chatsUnchecked = true;
-      for (const c of chats.open) {
-        items.push({
-          key: `chat-${c.booking.id}`, kind: "chat", severity: "amber", date: day(c.booking.checkIn),
-          label: `Gästechat beantworten: ${short(c.booking.apartment.name)} ${shortDayLabel(day(c.booking.checkIn))} – ${c.booking.guestName}`,
-          href: `/messages#chats`,
-        });
-      }
+    let stand = await readOpenChats(organizationId).catch(() => null);
+    if (!stand || now.getTime() - stand.at.getTime() > OPEN_CHATS_FRESH_MS) {
+      const live = await Promise.race([
+        findUnansweredChats({ organizationId, days: 30 }).catch(() => null),
+        new Promise<null>((r) => setTimeout(() => r(null), CHAT_CHECK_BUDGET_MS)),
+      ]);
+      if (live && !live.errors.length) stand = await readOpenChats(organizationId).catch(() => stand);
+      else if (!stand) chatsUnchecked = true;
+    }
+    for (const c of stand?.items ?? []) {
+      const checkIn = new Date(c.checkIn);
+      items.push({
+        key: `chat-${c.bookingId}`, kind: "chat", severity: "amber", date: day(checkIn),
+        label: `Gästechat beantworten: ${short(c.apartmentName)} ${shortDayLabel(day(checkIn))} – ${c.guestName}`,
+        href: `/messages#chats`,
+      });
     }
   }
 

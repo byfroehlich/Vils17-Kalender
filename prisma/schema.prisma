@@ -57,6 +57,10 @@ model Organization {
   laundryAlertKey   String?
   // Letzter Lauf der Sonderwunsch-Erkennung in den Gästechats (gedrosselt, siehe note-suggestions.ts)
   noteScanAt        DateTime?
+  // Zuletzt geprüfte unbeantwortete Gästechats (Abreise ab heute, Anreise ≤ 30 Tage) — gemeinsame Quelle für
+  // Übersicht „Zu erledigen“, Seite „Gäste“ und MCP, damit alle dasselbe zeigen (Entscheidung Mathias 04.11.2026)
+  openChats         Json?
+  openChatsAt       DateTime?
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 

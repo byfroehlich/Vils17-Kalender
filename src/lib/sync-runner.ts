@@ -5,6 +5,7 @@ import { prisma } from "./prisma";
 import { syncBookings } from "./sync";
 import { runReminders, maybeSendDailyStatus } from "./notifications";
 import { scanNoteSuggestions } from "./note-suggestions";
+import { refreshOpenChats } from "./guest-chat-overview";
 import { runBedroomQuestions } from "./bedroom-question";
 import { runReviewRequests } from "./review-request";
 
@@ -82,6 +83,8 @@ export async function runAutoSync(organizationId: string, force = false) {
     await runReviewRequests(organizationId).catch((e) => console.error("[sync] Bewertungsanfrage:", e instanceof Error ? e.message : e));
     // Sonderwünsche in Gästechats → Vorschläge „Hinweis für die Reinigung“ (gedrosselt, idempotent)
     await scanNoteSuggestions(organizationId).catch((e) => console.error("[sync] Hinweise:", e instanceof Error ? e.message : e));
+    // Gemeinsamer Stand der unbeantworteten Gästechats (Übersicht, Gäste-Seite, MCP, Zentrale) — höchstens alle 10 Min
+    await refreshOpenChats(organizationId).catch((e) => console.error("[sync] Gästechats:", e instanceof Error ? e.message : e));
     await runReminders(organizationId).catch((e) => console.error("[sync] Warnungen:", e));
     await maybeSendDailyStatus(organizationId).catch((e) => console.error("[sync] Tagesstatus:", e));
   }
