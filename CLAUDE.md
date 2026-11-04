@@ -350,6 +350,11 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
   (`POST /api/bookings/[id]/chat-done`, `markChatDone`), MCP `gaestechat_erledigt` (messages:write, `bestaetigt`).
   Gespeichert wird die ID der letzten Gastnachricht (`Booking.chatDoneMessageId`); schreibt der Gast erneut, ist der
   Chat wieder offen. An den Gast geht nichts. Tests: `tests/chat-erledigt.test.ts`.
+- **Gemeinsamer Stand der offenen Chats** (Entscheidung Mathias 04.11.2026): `Organization.openChats`/`openChatsAt` hält das
+  Ergebnis der Standardprüfung (alle Wohnungen, 30 Tage, ohne Fehler). Übersicht „Zu erledigen“ liest diesen Stand (frisch ≤ 20 Min,
+  sonst Neuprüfung mit Zeitbudget, bei Zeitüberschreitung gilt der letzte Stand); `runAutoSync` erneuert ihn höchstens alle 10 Min
+  (`refreshOpenChats`); `markChatDone` nimmt den Chat sofort heraus. So zeigen Übersicht, Gäste-Seite, MCP und Zentrale dasselbe.
+  Tests: `tests/gaestechat-stand.test.ts`.
 - **Zeitpunkt der Gästenachricht** (`src/lib/message-seen.ts`, Entscheidung Mathias 31.10.2026): Smoobu liefert laut Doku
   keinen Zeitpunkt je Nachricht. Liefert die Antwort doch ein Feld (`createdAt`, `date` …), gilt es (`GuestMessage.zeit`);
   sonst merkt sich die App den ersten Abruf (`GuestMessageSeen.firstSeenAt`, Hinweis-Scan alle 30 Min + Seitenaufruf)
