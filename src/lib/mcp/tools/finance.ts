@@ -165,7 +165,7 @@ export const ortstaxe = defineTool({
   name: "ortstaxe",
   title: "Ortstaxe",
   description:
-    "Ortstaxe (Aufenthaltsabgabe) je Monat: Nächte × Erwachsene × 3,50 €. Für die Monatsmeldung an die Gemeinde. " +
+    "Ortstaxe (Aufenthaltsabgabe) je Monat: Nächte × abgabepflichtige Personen × 3,00 € (TVB Naturparkregion Reutte, seit 01.12.2024). Für die Monatsmeldung. " +
     "Die App kennt nur die Gesamtzahl der Gäste — Vorgabe ist daher: alle Gäste zählen. Kinder lassen sich je Buchung abziehen " +
     "(kinder: [{buchung_id, anzahl}]). Mit kinder_zaehlen=false werden zusätzlich, wo bekannt, nur die Erwachsenen aus der " +
     "Portal-Mail gezählt; Buchungen ohne Aufteilung werden gemeldet.",
@@ -173,7 +173,7 @@ export const ortstaxe = defineTool({
   input: {
     ...monthPeriodFields,
     wohnung: wohnungFilter,
-    satz: z.number().min(0).max(50).optional().describe("Euro pro Person und Nacht (Vorgabe 3,50)"),
+    satz: z.number().min(0).max(50).optional().describe("Euro pro Person und Nacht (Vorgabe 3,00)"),
     kinder: z
       .array(z.object({ buchung_id: z.string().min(1), anzahl: z.number().int().min(0).max(20) }))
       .max(500)
@@ -187,7 +187,8 @@ export const ortstaxe = defineTool({
   async handler(args, ctx) {
     const { start, end, months } = resolveMonths(args);
     const apartmentId = await resolveApartmentId(ctx.organizationId, args.wohnung);
-    const satz = args.satz ?? 3.5;
+    // Aufenthaltsabgabe TVB Naturparkregion Reutte: 3,00 € pro Person und Nacht, gültig seit 01.12.2024
+    const satz = args.satz ?? 3;
     const kinder = args.kinder_zaehlen ?? true;
 
     const bookings = await prisma.booking.findMany({

@@ -2,7 +2,7 @@ import { getMyJobsData } from "../_data";
 import { MyJobsCalendar } from "@/components/my-jobs/MyJobsCalendar";
 
 export default async function MyJobsCalendarPage() {
-  const { myAssignments, openAssignments, isCleaner } = await getMyJobsData();
+  const { myAssignments, openAssignments, isCleaner, departures } = await getMyJobsData();
   return (
     <div className="space-y-4">
       <div>
@@ -13,7 +13,7 @@ export default async function MyJobsCalendarPage() {
           Buchungszeiträume und offene Reinigungen
         </p>
       </div>
-      <MyJobsCalendar myAssignments={myAssignments} openAssignments={openAssignments} isCleaner={isCleaner} />
+      <MyJobsCalendar myAssignments={myAssignments} openAssignments={openAssignments} isCleaner={isCleaner} departures={departures} />
     </div>
   );
 }

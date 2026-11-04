@@ -163,7 +163,7 @@ describe("ortstaxe mit Kindern", () => {
       kinder: [{ buchung_id: world.bookings.b5.id, anzahl: 3 }, { buchung_id: "gibt-es-nicht", anzahl: 1 }],
     });
     // Nov ohne Abzug 28 Personen-Nächte; Eva: 3 Nächte × (5 − 3) statt × 5 → 28 − 9 = 19
-    expect(r.result.monate[0]).toMatchObject({ personen_naechte: 19, betrag: money(66.5) });
+    expect(r.result.monate[0]).toMatchObject({ personen_naechte: 19, betrag: money(57) });
     expect(r.result.kinder_abgezogen_bei_buchungen).toBe(1);
     expect(r.result.unbekannte_buchung_ids).toEqual(["gibt-es-nicht"]);
     expect(r.result.hinweis).toMatch(/Erwachsenem/);
@@ -172,10 +172,13 @@ describe("ortstaxe mit Kindern", () => {
 });
 
 describe("Was es NICHT gibt", () => {
-  it("keine Lösch-, Preis- oder Nachrichten-Tools", async () => {
+  it("keine Lösch- oder Preis-Tools; Gästenachrichten nur über messages:* und mit Bestätigung", async () => {
     const { TOOLS } = await import("@/lib/mcp/registry");
     const names = TOOLS.map((t) => t.name).join(" ");
-    expect(names).not.toMatch(/loesch|lösch|delete|preis|price|nachricht|message|smoobu_/i);
+    expect(names).not.toMatch(/loesch|lösch|delete|preis|price|smoobu_/i);
+    // Entscheidung Mathias 30.10.2026: Gästechat lesen/antworten, Senden nur nach Bestätigung
+    for (const t of TOOLS.filter((t) => /nachricht|antworten/.test(t.name))) expect(t.scope).toMatch(/^messages:/);
+    expect(TOOLS.find((t) => t.name === "gast_antworten")).toMatchObject({ write: true, scope: "messages:write" });
     for (const t of TOOLS.filter((t) => t.write)) expect(t.input).toHaveProperty("bestaetigt");
   });
 });

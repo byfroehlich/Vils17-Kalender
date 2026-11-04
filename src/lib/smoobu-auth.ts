@@ -65,15 +65,26 @@ export function hmacHeaders(params: {
 
 /** GET-Anfrage an die Smoobu-API mit HMAC-Signatur (bzw. altem Header im Übergang). */
 export async function smoobuGet(url: string): Promise<Response> {
+  return smoobuRequest("GET", url);
+}
+
+/**
+ * Anfrage an die Smoobu-API mit HMAC-Signatur (bzw. altem Header im Übergang).
+ * Der Rumpf wird genau einmal serialisiert — der Hash in der Signatur muss über
+ * dieselbe Byte-Folge laufen, die verschickt wird.
+ */
+export async function smoobuRequest(method: "GET" | "POST", url: string, body?: unknown): Promise<Response> {
   const apiKey = process.env.SMOOBU_API_KEY ?? "";
   const apiSecret = process.env.SMOOBU_API_SECRET;
+  const raw = body === undefined ? undefined : JSON.stringify(body);
 
   const auth: Record<string, string> = apiSecret
-    ? hmacHeaders({ method: "GET", url: new URL(url), apiKey, apiSecret })
+    ? hmacHeaders({ method, url: new URL(url), apiKey, apiSecret, ...(raw !== undefined ? { body: raw } : {}) })
     : { "Api-Key": apiKey };
 
   return fetch(url, {
-    method: "GET",
+    method,
     headers: { ...auth, "Content-Type": "application/json" },
+    ...(raw !== undefined ? { body: raw } : {}),
   });
 }

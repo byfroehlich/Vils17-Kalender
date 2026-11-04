@@ -16,7 +16,7 @@ export const viewport = {
   userScalable: false,
   viewportFit: "cover",
   // Färbt die Systemleiste auf Android und die Browser-UI passend zur App
-  themeColor: "#0e7490",
+  themeColor: "#04100F",
 };
 
 export const metadata: Metadata = {

@@ -35,10 +35,10 @@ function nights(b: Booking): number {
 }
 
 const glassCard: React.CSSProperties = {
-  background: "rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.24)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
   overflow: "hidden",
 };
@@ -304,10 +304,10 @@ export function StatisticsView({
 function SummaryCard({ label, value, sub, accent }: { label: string; value: string; sub: string; accent: string }) {
   return (
     <div style={{
-      background: "rgba(255,255,255,0.15)",
+      background: "rgba(255,255,255,0.055)",
       backdropFilter: "blur(16px)",
       WebkitBackdropFilter: "blur(16px)",
-      border: "1px solid rgba(255,255,255,0.24)",
+      border: "0.5px solid rgba(255,255,255,0.14)",
       borderRadius: 16,
       padding: 16,
     }}>

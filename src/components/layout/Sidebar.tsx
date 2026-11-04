@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote, MoreHorizontal, X } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote, MoreHorizontal, X, MessageCircle, WashingMachine, Mail, Wrench } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
@@ -24,9 +24,13 @@ const adminManagerItems: NavItem[] = [
   { href: "/bookings",   label: "Buchungen",     icon: BookOpen,        noClean: true, mobileOrder: 2 },
   { href: "/cleaners",   label: "Reinigung",     icon: Users,           noClean: true, mobileOrder: 3 },
   { href: "/calendar",   label: "Kalender",      icon: Calendar,        noClean: true, mobileOrder: 4 },
-  { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 5, mobileMore: true },
-  { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 6, mobileMore: true },
-  { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 7, mobileMore: true },
+  { href: "/mail",       label: "Post",          icon: Mail,            noClean: true, mobileOrder: 5, mobileMore: true },
+  { href: "/messages",   label: "Gäste",         icon: MessageCircle,   noClean: true, mobileOrder: 5, mobileMore: true },
+  { href: "/issues",     label: "Mängel",        icon: Wrench,          noClean: true, mobileOrder: 5 },
+  { href: "/laundry",    label: "Wäsche",        icon: WashingMachine,  noClean: true, mobileOrder: 6, mobileMore: true },
+  { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 7, mobileMore: true },
+  { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 8, mobileMore: true },
+  { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 9, mobileMore: true },
 ];
 
 const cleanerItems: NavItem[] = [
@@ -48,6 +52,8 @@ const sidebarGlass = {
 export function Sidebar({ role }: { role: string }) {
   const pathname = usePathname();
   const isAdmin   = role === "ADMIN";
+  // Dunkler Stil für alle Rollen (Entscheidung Mathias 01.11.2026)
+  const frameBg = (alpha: number) => `rgba(4,16,15,${alpha})`;
   const isCleaner = role === "CLEANER";
   const [moreOpen, setMoreOpen] = useState(false);
 
@@ -79,7 +85,7 @@ export function Sidebar({ role }: { role: string }) {
   return (
     <>
       {/* ── Desktop Sidebar ─────────────────────────────────────────────── */}
-      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 z-30" style={sidebarGlass}>
+      <aside className="hidden lg:flex flex-col fixed left-0 top-0 h-full w-60 z-30" style={{ ...sidebarGlass, background: frameBg(0.75) }}>
         {/* Logo */}
         <div className="flex items-center gap-3 px-5 h-16" style={{ borderBottom: "1px solid rgba(255,255,255,0.14)" }}>
           <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #0D9488, #0F766E)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
@@ -143,7 +149,7 @@ export function Sidebar({ role }: { role: string }) {
           <div
             className="lg:hidden fixed bottom-0 left-0 right-0 z-50 rounded-t-2xl"
             style={{
-              background: "rgba(10,50,45,0.97)",
+              background: frameBg(0.97),
               backdropFilter: "blur(30px)",
               WebkitBackdropFilter: "blur(30px)",
               border: "1px solid rgba(255,255,255,0.14)",
@@ -195,7 +201,7 @@ export function Sidebar({ role }: { role: string }) {
       <nav
         className="lg:hidden fixed bottom-0 left-0 right-0 z-30 flex"
         style={{
-          background: "rgba(10,50,45,0.88)",
+          background: frameBg(0.88),
           backdropFilter: "blur(30px)",
           WebkitBackdropFilter: "blur(30px)",
           borderTop: "1px solid rgba(255,255,255,0.16)",
@@ -209,7 +215,7 @@ export function Sidebar({ role }: { role: string }) {
               key={item.href}
               href={item.href}
               className="flex-1 flex flex-col items-center justify-center gap-0.5 py-2.5 min-w-0 transition-colors"
-              style={{ color: active ? "#0D9488" : "rgba(255,255,255,0.60)" }}
+              style={{ color: active ? "#5EEAD4" : "rgba(255,255,255,0.60)" }}
             >
               <item.icon className="w-[22px] h-[22px] flex-shrink-0" />
               <span className="text-[10px] font-medium leading-tight truncate w-full text-center px-0.5">

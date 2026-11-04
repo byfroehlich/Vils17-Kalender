@@ -59,7 +59,7 @@ export function sanitizeForAudit(args: Record<string, unknown>): Record<string, 
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args ?? {})) {
     if (v === null || v === undefined || typeof v === "boolean" || typeof v === "number") out[k] = v;
-    else if (typeof v === "string") out[k] = /^[\w.:@+-]{1,64}$/.test(v) ? v : "[Text]";
+    else if (typeof v === "string") out[k] = /^[\w.:+-]{1,64}$/.test(v) ? v : "[Text]"; // keine Mailadressen
     else out[k] = "[Wert]";
   }
   return out;

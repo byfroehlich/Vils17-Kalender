@@ -246,10 +246,12 @@ Gerät nicht angemeldet, Anmeldung abgelaufen oder Versand fehlgeschlagen.
 | Tagesstatus (ab 7 Uhr, 1× täglich) | Admin/Verwaltung: alle heutigen; Reiniger: eigene | `src/lib/notifications.ts` |
 | Reinigung frei (≤ 10 Tage) | Reiniger | `runReminders` |
 | Ohne Reinigungskraft (≤ 7 Tage) | Admin/Verwaltung | `runReminders` |
-| Wäsche nicht bestellt (≤ 3 Tage) | Admin/Verwaltung | `runReminders` |
+| Wäsche reicht nicht (Bestand, 14 Tage) — einmal je Lage, „Kurzfristig“ bei Engpass ≤ 3 Tage | Admin/Verwaltung | `maybeSendLaundryAlert` (in `runReminders`) |
 
 Warnungen werden gebündelt (eine Nachricht pro Art) und pro Auftrag nur einmal
-verschickt (`*ReminderSentAt`). `runReminders` und `maybeSendDailyStatus` laufen
+verschickt (`*ReminderSentAt`). Ausnahme Wäsche (31.10.2026): keine Warnung pro Buchung mehr, sondern
+eine pro **Lage** des Kellerbestands (Fingerabdruck in `Organization.laundryAlertKey`, siehe Wäsche-Abschnitt).
+Der Tagesstatus enthält keine Wäsche-Zeile mehr. `runReminders` und `maybeSendDailyStatus` laufen
 im Cron `push-reminders` **und** als Rückfallebene in `/api/sync/auto` — beides
 ist idempotent.
 
@@ -295,7 +297,8 @@ src/app/api/mcp/route.ts      POST, eigene Bearer-Prüfung, 60/min pro Token, ke
 src/lib/mcp/tokens.ts         Token v17_…, SHA-256-Hash, Scopes
 src/lib/mcp/tool.ts           defineTool, runTool (Scope, zod strict, Audit mcp.<tool>)
 src/lib/mcp/server.ts         McpServer pro Anfrage, nur Tools der Token-Scopes
-src/lib/mcp/tools/*.ts        bookings, cleaning, finance (lesen), write (schreiben)
+src/lib/mcp/tools/*.ts        bookings, cleaning (inkl. wochenplan), finance (lesen), write (schreiben),
+                              guests (Gästechat über Smoobu)
 src/lib/booking-actions.ts    assignCleaner / setAssignmentNotes / setGuestCount —
                               gemeinsam für App-Routen UND MCP
 /settings/schnittstelle       Token anlegen (Klartext einmalig), widerrufen
@@ -305,7 +308,11 @@ Regeln:
 - Neue Fachlogik nie im Tool selbst, sondern als Server-Funktion, die auch die
   App-Route nutzt (siehe `booking-actions.ts`, `runAutoSync`).
 - Schreib-Tools: `write: true`, Parameter `bestaetigt`; ohne `true` nur `preview(…)`.
-- Kein Löschen, keine Preis-/Smoobu-Änderungen, keine Gästenachrichten.
+- Kein Löschen, keine Preis-/Smoobu-Änderungen.
+- Gästenachrichten (Entscheidung Mathias 30.10.2026): lesen mit `messages:read`, senden nur über
+  `gast_antworten` (`messages:write`) mit `bestaetigt: true` — Text vorher von Mathias freigeben.
+  Nachrichtentexte nie ins Audit-Log (`src/lib/guest-messages.ts`, `tools/guests.ts`).
+- Wäsche wird auf der Website der Wäscherei bestellt; `waesche_status` hält nur den Stand fest.
 - Antworten: Geld via `money()`, Kalendertage `YYYY-MM-DD`, Zeitpunkte `viennaIso()`,
   Listen mit `limit`/`cursor`.
 - Tests: `npm test` (vitest gegen PGlite, `tests/`), `npm run mcp:pruefen` gegen eine laufende App.
@@ -326,6 +333,102 @@ app/.well-known/…, app/oauth/{authorize,authorize/approve,register,token,revok
 - OAuth-Token erscheinen nicht in der Token-Liste, sondern als „Verbindung“ mit „Trennen“.
 - Tests: `tests/oauth.test.ts` (kompletter Ablauf, PKCE, Wiederverwendung, Zielgruppe, Rollen).
 
+### Hunde & Hundegebühr (`src/lib/pets.ts`, `src/lib/pet-actions.ts`)
+
+Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
+- Airbnb kassiert selbst (über Smoobu eingestellt) → in der App nur „kassiert das Portal“.
+- Booking.com berechnet nichts und überträgt Haustiere nicht → Hund wird erkannt aus
+  Portalnotiz (beim Sync) und Gästechat (`hunde_pruefen`, Button „Chat auf Hund prüfen“).
+- `petSource`: `manual` (Eingabe, wird nie überschrieben) | `notice` | `chat`; `petHint` = Fundstelle.
+- Gebühr: `petFeeStatus` null (offen) → REQUESTED → PAID / WAIVED. Anfordern per Nachricht über
+  Smoobu, Text vorher freigeben; Zahlungsweg aus ENV `PET_FEE_PAYMENT_TEXT` (PayPal-Link/Bank).
+  Ohne diese Variable bleibt ein Platzhalter stehen und Senden ist gesperrt. Text in du-Form für Gäste vor Ort („bis zur Abreise“, Stand 31.10.2026).
+- Seite `/messages` („Gäste“): wartende Chats + offene Hundegebühren. Wochenplan warnt.
+- **Anfordern erst bei Anreise** (Entscheidung Mathias 31.10.2026): Die Gebühr wird verlangt, wenn die Gäste vor Ort
+  sind — „Zu erledigen“ zeigt die Hundegebühr erst ab dem Anreisetag (`checkIn ≤ heute ≤ checkOut`), nie vorab.
+- **Gästechat „Erledigt – keine Antwort nötig“** (Entscheidung Mathias 31.10.2026): Knopf je Chat auf `/messages`
+  (`POST /api/bookings/[id]/chat-done`, `markChatDone`), MCP `gaestechat_erledigt` (messages:write, `bestaetigt`).
+  Gespeichert wird die ID der letzten Gastnachricht (`Booking.chatDoneMessageId`); schreibt der Gast erneut, ist der
+  Chat wieder offen. An den Gast geht nichts. Tests: `tests/chat-erledigt.test.ts`.
+- **Gemeinsamer Stand der offenen Chats** (Entscheidung Mathias 04.11.2026): `Organization.openChats`/`openChatsAt` hält das
+  Ergebnis der Standardprüfung (alle Wohnungen, 30 Tage, ohne Fehler). Übersicht „Zu erledigen“ liest diesen Stand (frisch ≤ 20 Min,
+  sonst Neuprüfung mit Zeitbudget, bei Zeitüberschreitung gilt der letzte Stand); `runAutoSync` erneuert ihn höchstens alle 10 Min
+  (`refreshOpenChats`); `markChatDone` nimmt den Chat sofort heraus. So zeigen Übersicht, Gäste-Seite, MCP und Zentrale dasselbe.
+  Tests: `tests/gaestechat-stand.test.ts`.
+- **Zeitpunkt der Gästenachricht** (`src/lib/message-seen.ts`, Entscheidung Mathias 31.10.2026): Smoobu liefert laut Doku
+  keinen Zeitpunkt je Nachricht. Liefert die Antwort doch ein Feld (`createdAt`, `date` …), gilt es (`GuestMessage.zeit`);
+  sonst merkt sich die App den ersten Abruf (`GuestMessageSeen.firstSeenAt`, Hinweis-Scan alle 30 Min + Seitenaufruf)
+  → „eingegangen spätestens …“. Beim allerersten Abruf eines Chats vorhandene Nachrichten: „Zeit unbekannt (älter)“.
+  Anzeige auf `/messages`, MCP `offene_gaestenachrichten` (`eingegangen`). Tests: `tests/nachricht-zeit.test.ts`.
+
+### Post: Wischen zum Löschen (`src/components/mail/SwipeRow.tsx`)
+Entscheidung Mathias 31.10.2026: In der Mail-Liste wie in Apple Mail nach links wischen → roter „Papierkorb“-Knopf;
+weit wischen (> 45 % Breite) verschiebt sofort in den Papierkorb (wiederherstellbar, kein Löschen). Senkrechtes
+Scrollen bleibt unberührt; im Papierkorb-Ordner ist Wischen aus.
+
+### Wäsche: Mengen, Bestand, Bestellung (`laundry-quantity.ts`, `laundry-order.ts`, `laundry-proposal.ts`)
+
+Regel Mathias 30.10.2026, pro Anreise: 1 Badvorleger, Küchentücher (Einstellung);
+je Gast Waschlappen, kleines + großes Handtuch, Kissen- + Bettbezug.
+- **Spannbettlaken nach Größe** (90 / 180 / 200, wie bei Laundrix): `Apartment.laundryBeds` = Betten in
+  Belegungsreihenfolge, je belegtem Bett ein Laken. Penthouse: 200×200 (2 P.), 180×200 (2 P.), Büro-Couch
+  100×200 (1 P., 90er Laken). Lodge: Bett + Ecksofa, beide mit 200er-Laken (je 2 P.) — Entscheidung Mathias: nur 200er, weil 180er im Keller nicht zu unterscheiden sind. Ohne Liste: ein 180er je 2 Gäste. Gesetzt per Migration `20261030235000_laundry_beds_vils17`, ändern per MCP `waesche_betten`.
+- **Nie auf den Punkt:** Reserve je Teil (`Organization.laundryReserve`, Vorgabe `DEFAULT_RESERVE`),
+  die nach allen Anreisen immer im Keller bleibt (Runterfallen, Flecken, getrennte Betten).
+- **Bestand im Keller** (beide Wohnungen gemeinsam): `LaundryCount` (Zählung gilt am Ende des Tages),
+  fortgeschrieben mit Anreisen (−) und `LaundryDelivery` (+ ab bestätigter Ankunft `arrivedAt`).
+- Bestellmenge = Bedarf (Anreisen im Zeitraum) + Reserve − Bestand heute − schon bestellt; nie < 0.
+  Warnung, wenn ein Teil vor einer Lieferung ausgeht.
+- Seite `/laundry` (Bestand zählen, Bestellung festhalten, Reserve ändern), MCP `waesche_bedarf`,
+  `waesche_bestand_erfassen`, `waesche_lieferung_erfassen`, `waesche_lieferung_angekommen`, `waesche_reserve`.
+- Bestellt wird auf der Website der Wäscherei; die App rechnet und hält fest.
+
+**Wäsche nach Bestand statt pro Buchung (Entscheidung Mathias 31.10.2026):**
+- Es gibt **keine** Wäsche-Warnung und keinen Wäsche-Status mehr pro Buchung (Dashboard, Buchungsliste,
+  Reinigungsplan, Buchungsdetail, Tagesstatus, MCP `reinigungen`/`wochenplan`). Die Spalten
+  `CleaningAssignment.laundryStatus`/`laundryReminderSentAt` bleiben in der DB (nicht destruktiv);
+  MCP `waesche_status` ist als veraltet beschrieben. Das Buchungsdetail zeigt nur noch die Menge für diese Anreise.
+- Einziges Wäsche-Signal: **„Wäsche reicht nicht ab <Tag> – bestellen“**, wenn `planLaundry` für die nächsten
+  14 Tage (`LAUNDRY_ALERT_DAYS`) eine Bestellmenge > 0 oder einen Engpass vor einer Lieferung meldet
+  (`laundryAlert`). `plan.firstShortage` = erster Anreisetag, an dem ein betroffenes Teil unter die Reserve fällt,
+  mit den Anreisen dieses Tages (Wohnung, Gäste). Zeile „Wäsche bestellen“ in „Zu erledigen“ (rot bei Engpass ≤ 3 Tage, öffnet `/laundry` mit Bestellmenge je Teil und „Bestand reicht bis …“), Wochenplan-Warnung
+  `waesche_reicht_nicht`, Push an Admin/Verwaltung. Ohne erfassten Bestand keine Warnung, nur Hinweis „Bestand erfassen“.
+- **Push dynamisch je Lage** (Saison: laufend kurzfristige Buchungen/Stornos): Fingerabdruck aus erstem Engpasstag,
+  betroffenen Teilen, Bestellmenge und Engpässen vor Lieferung in `Organization.laundryAlertKey`. Gleiche Lage →
+  keine Wiederholung (App-Takt alle 5 Min); neue Buchung/Storno/Gästezahl ändert die Lage → neue Meldung;
+  reicht es wieder → Fingerabdruck gelöscht. Nachts (21–7 Uhr) wird nichts gesendet, die Meldung kommt ab 7 Uhr.
+  Titel z.B. „🧺 Wäsche reicht nicht ab Sa 07.11. (Penthouse, 2 Gäste)“, bei Engpass ≤ 3 Tage „⚠️ Kurzfristig: …“.
+- **Unbekannte Gästezahl:** Liefert Smoobu kein `adults` (Booking.com), setzt der Sync den Notwert 1 und
+  `Booking.guestCountUnknown = true`. Die Wäscheplanung rechnet dann vorsichtig mit der **vollen Belegung**
+  der Wohnung (Summe der Schlafplätze aus `laundryBeds`, `planningGuestCount`); Meldungen sagen „… Gäste angenommen“.
+  Eine von Hand / per Portal-Mail korrigierte Zahl (`guestCountManual`) gilt immer.
+- **Lieferung im Keller angekommen:** `LaundryDelivery.arrivedAt`. Eine Lieferung zählt erst zum Bestand, wenn sie
+  bestätigt ist (Knopf „Im Keller angekommen“ auf `/laundry`, `confirmLaundryDelivery`, MCP
+  `waesche_lieferung_angekommen` mit Vorschau/`bestaetigt`, optional tatsächlich gelieferte Mengen). Bis dahin gilt
+  sie als „unterwegs“ und mindert die Bestellmenge — auch wenn der Liefertag vorbei ist (dann „überfällig“, wird
+  ab heute erwartet). Migration: bisherige Lieferungen mit erreichtem Liefertag gelten als angekommen.
+- Tests: `tests/notifications-waesche.test.ts`, `tests/hunde-waesche.test.ts` (planLaundry, Ankunft).
+
+### Gästezahl unbestätigt (`src/lib/guest-count.ts`)
+
+Entscheidung Mathias 31.10.2026: Liefert ein Kanal (v.a. Booking.com über Smoobu) keine verlässliche
+Gästezahl, darf das **nicht still auf einen Notwert fallen** — es wird groß angezeigt und muss geklärt werden.
+- Erkennung im Sync: Smoobu ohne `adults` oder mit `adults = 0` → `Booking.guestCountUnknown = true`,
+  `guestCount` = Notwert 1 (+ Kinder). Bei jedem Sync neu gesetzt, solange nicht korrigiert.
+- **Unbestätigt** = `guestCountUnknown && !guestCountManual` (`isGuestCountUnconfirmed`, Filter
+  `UNCONFIRMED_GUEST_COUNT`). Quelle (`guestCountSource`): smoobu | von_hand | portal_mail | unbekannt.
+- Anzeige: Zeile „Gästezahl unbekannt“ in der Dashboard-Karte „Zu erledigen“ (rot bei Anreise ≤ 7 Tage, Link zur Buchung),
+  rotes Badge in Dashboard-Karten und Buchungsliste, roter Kasten im Buchungsdetail mit „… bestätigen“.
+- Push an Admin/Verwaltung **einmal je Buchung**, sobald die Anreise ≤ 30 Tage entfernt ist
+  (`guestCountReminderSentAt`, in `runReminders`); Tagesstatus nennt die Anzahl offener Gästezahlen (30 Tage).
+- Wäsche: Planung mit voller Belegung (siehe Wäsche-Abschnitt); Wäsche-Push und Dashboard-Hinweis sagen
+  „enthält N unbestätigte Gästezahl(en)“.
+- Klären: (a) Portal-Mail-Import trägt die Zahl ein — auch wenn sie dem Platzhalter entspricht, gilt sie dann als
+  bestätigt (`guestCountSource = "email"`); „Jetzt prüfen“ in den Einstellungen. (b) Eingabe/Bestätigen in der Buchung
+  (`setGuestCount`). (c) MCP: `buchungen_list` mit `gaestezahl_quelle`/`gaestezahl_bestaetigt`, Lese-Tool
+  `gaestezahl_offen`, dann `gaestezahl_korrigieren`.
+- Tests: `tests/gaestezahl.test.ts`.
+
 ### Portal-Mail-Import (`src/lib/email-import/`)
 
 Smoobu liefert für manche Kanäle (v.a. Booking.com) **keine Gästezahl** und für
@@ -338,7 +441,7 @@ dagegen im Klartext.
 src/lib/email-import/
   parse.ts   ← reine Parser (Booking.com + Airbnb, DE + EN) — testbar
   match.ts   ← Zuordnung Mail → Buchung über Name, Anreisedatum, Kanal
-  imap.ts    ← holt ungelesene Mails, markiert sie als gelesen
+  imap.ts    ← holt neue Mails der letzten 7 Tage (BODY.PEEK, markiert nichts als gelesen)
   run.ts     ← Ablauf: lesen → parsen → zuordnen → ergänzen → protokollieren
 ```
 
@@ -357,6 +460,164 @@ es zusätzlich „Jetzt prüfen" und ein Protokoll der letzten 25 Mails.
 **Parser prüfen:** `npm run test:mail` — 35 Prüfungen gegen realistische
 Mailtexte. Die Parser sind der fragile Teil: Ändern die Portale ihre Vorlagen,
 zuerst hier nachziehen und den Test erweitern.
+
+### Postfach / Mail-Bereich (`src/lib/mailbox/`, Seite `/mail` „Post“)
+
+Entscheidung Mathias 31.10.2026: **info@vils17.at** (Strato) ist das zentrale Postfach für
+alles rund ums Haus — Portale, Gäste, Behörden. Lesen und Senden direkt in der App
+(kleines Mailprogramm), parallel nutzbar in Apple Mail.
+
+```
+src/lib/mailbox/config.ts   Zugang aus ENV; smtpTransport() auch für Reinigungsmails
+src/lib/mailbox/index.ts    listFolders, listMessages, getMessage, getAttachment, updateMessage, sendMail
+src/app/api/mail/*          folders, messages, messages/[uid] (GET/PATCH), …/attachments/[i], send (multipart)
+src/components/mail/MailApp.tsx   Liste → Mail → Antworten/Weiterleiten/Neu, Anhänge, Suche, Ordner
+src/lib/mcp/tools/mail.ts   postfach, mail_lesen (messages:read), mail_senden (messages:write, bestaetigt)
+```
+
+ENV (Render): `IMAP_HOST=imap.strato.de`, `IMAP_USER=info@vils17.at`, `IMAP_PASS`,
+`SMTP_HOST=smtp.strato.de`, `SMTP_PORT=465` (SMTP_USER/SMTP_PASS fallen auf IMAP zurück), optional `MAIL_FROM_NAME`.
+
+Regeln:
+- Quelle ist immer der Server (IMAP) — die App speichert keine Mails. Öffnen in der App markiert
+  als gelesen; Lesen über MCP und der Portal-Import markieren **nichts**.
+- Gesendete Mails: dieselben Bytes gehen raus und landen in „Gesendet“; Antworten setzen
+  In-Reply-To/References und markieren das Original als beantwortet. Bcc steht nicht im Kopf.
+- HTML-Mails nur im Sandbox-iframe ohne Skripte; fremde Bilder erst auf „Bilder laden“.
+  Anhänge immer als Download (`application/octet-stream`).
+- Audit `mail.sent` nur mit Anzahl Empfänger/Anhänge — nie Adressen, Betreff oder Text.
+  `sanitizeForAudit` lässt keine Strings mit `@` durch.
+- **Kein IMAP-SEARCH:** liefert bei Strato keine Treffer. Liste über Sequenznummern, Suche/Filter
+  clientseitig über die neuesten 1000 Mails (Absender, Empfänger, Betreff — nicht im Text).
+- Kein Löschen über MCP; in der App nur „Papierkorb“ (verschieben, wiederherstellbar).
+- Tests: `tests/mailbox.test.ts` (gefälschter IMAP-Server, abgefangener SMTP).
+
+### Mängel & Einkauf (`src/lib/issues.ts`, Seite `/issues` „Mängel“)
+Entscheidung Mathias 31.10.2026: Beim „Erledigt“ muss die Reinigungskraft drei Pflichtfragen beantworten
+(`CompletionCheckDialog`): Ist alles heil? (sonst Text + optional Foto) und Muss Verbrauchsmaterial
+nachgekauft werden? (sonst Text) und alle Abflüsse geprüft (Duschen, Waschbecken, Spüle)? (bodentiefe Duschen setzen sich schnell zu;
+sonst Text → Mangel „Abfluss: …“, Ergänzung 31.10.2026). Ohne Antworten lehnt `cleaning-status` das Erledigen für CLEANER ab.
+- Jede Meldung = `Issue` (DAMAGE | SUPPLY), hängt am **Aufenthalt davor** (`previousBookingId`, möglicher
+  Verursacher). Bei Airbnb wird die Frist „Gast anschreiben bis Abreise + 14 Tage“ angezeigt.
+- Push sofort an Admin/Verwaltung; Foto in der DB (verkleinert, max. 3 MB), Abruf nur Admin/Verwaltung.
+- Admin kann Einträge von Hand anlegen und erledigen; MCP `maengel` (cleaning:read), `mangel_erfassen` (cleaning:write).
+- Audit ohne Freitext. Tests: `tests/issues.test.ts`.
+
+### Hinweis für die Reinigung & Sonderwünsche (`src/lib/special-requests.ts`, `src/lib/note-suggestions.ts`)
+Entscheidung Mathias 31.10.2026: **ein Feld** — `CleaningAssignment.notes` = „Hinweis für die Reinigung“
+(kein eigenes Sonderwunsch-Feld). Bestehende Hinweise bleiben unverändert.
+- **Markierung:** Aufträge mit Hinweis tragen das Badge `NoteBadge` („⭐ Hinweis“, bernsteinfarben) in allen Auftrags-
+  ansichten (MyJobsList, MyJobsCalendar, CleanerDashboard, CleaningSchedule, UpcomingBookings, BookingTable);
+  der Text steht ganz oben im Auftrag bzw. im Buchungsdetail. Aufträge ohne Hinweis sehen aus wie vorher.
+- **Quelle Gästechat:** Mathias pflegt Hinweise nicht von Hand. `scanNoteSuggestions` (in `runAutoSync`, gedrosselt
+  über `Organization.noteScanAt`, 30 Min) liest die Smoobu-Chats der Anreisen der nächsten 60 Tage; Stichwörter
+  DE + EN stehen nur in `special-requests.ts` (Kinderbett, Hochstuhl, Zustellbett, Sofa als Bett, getrennt/beide
+  Schlafzimmer, früher Check-in, später Check-out …; Verneinung davor zählt nicht). Je Gastnachricht höchstens ein
+  `NoteSuggestion` (unique `organizationId + messageId`), Status PENDING → ACCEPTED/REJECTED, Auszug ≤ 200 Zeichen.
+  Push an Admin/Verwaltung „Sonderwunsch erkannt: <Wohnung> <Anreisetag> – übernehmen?“.
+- **Bestätigen:** Seite `/messages` („Gäste“) Kasten „Hinweise für die Reinigung bestätigen“ (Text änderbar,
+  Zusatzbetten) → `POST /api/note-suggestions/[id]`; MCP `hinweis_vorschlaege` (messages:read), `hinweis_uebernehmen`
+  (cleaning:write, `bestaetigt`, `verwerfen`). Übernehmen hängt an `notes` an (nicht doppelt) und schickt der
+  zugewiesenen Reinigungskraft eine Push-Nachricht. Audit ohne Nachrichtentext.
+- **Zusatzbetten:** `CleaningAssignment.extraBeds` (0–3), beim Übernehmen oder im Buchungsdetail
+  (`PATCH /api/bookings/[id]/extra-beds`, `setExtraBeds`). `arrivalQuantity` rechnet je Zusatzbett ein
+  90er Spannbettlaken, einen Bett- und einen Kissenbezug dazu (planLaundry, Buchungsdetail).
+- Tests: `tests/hinweise.test.ts`.
+
+### Abreisen der Vorgäste für Reinigungskräfte (`src/lib/departures.ts`, `src/lib/departure-format.ts`)
+Entscheidung Mathias 31.10.2026: Reinigungskräfte sehen nur ihre eigenen Aufträge (die Anreise, die sie
+vorbereiten), aber nicht, wann die Gäste davor abreisen — sie können nicht planen, ob am gleichen Tag oder schon
+am Vortag gereinigt werden kann.
+- **Server liefert** (`getMyJobsData` → `loadDepartureData`): `departures` = Abreisen **beider** Wohnungen
+  (bestätigte Buchungen, ca. 45 Tage zurück bis 400 Tage voraus) **ohne Gastnamen**, für ALLE Reinigungskräfte —
+  auch wenn es nicht ihre Reinigung ist; an jedem Auftrag `previousDeparture` (`findPreviousDeparture`: letzte
+  Abreise in derselben Wohnung am/vor dem Anreisetag; > 30 Tage leer → null).
+- **Kalender** (`MyJobsCalendar`): dezente, grau gestrichelte Markierung „↗P“/„↗L“ unter der Tageszahl, im
+  Tagesdetail „Abreise <Wohnung>“; eigene Reinigungen bleiben dominant. Legende „Abreise (alle Wohnungen)“.
+- **An jedem Auftrag** (`PreviousDepartureLine`, MyJobsList, CleanerDashboard, Kalender-Tagesdetail):
+  „Vorgäste reisen ab: Mi 04.11. (gleicher Tag)“ / „(Vortag frei)“ / „(3 Tage vorher frei)“, ohne Vorgäste
+  „Keine Vorgäste davor – Wohnung frei“.
+- Tests: `tests/abreisen.test.ts`.
+
+### Schlafzimmer-Frage bei 2 Gästen (`src/lib/bedroom-question.ts`)
+Entscheidung Mathias 31.10.2026: In Wohnungen mit `Apartment.askSeparateBedrooms = true` (per Migration nur das
+Penthouse) bekommt jede künftige Buchung (Anreise ab morgen) mit **genau 2 bestätigten Gästen** (nicht
+`isGuestCountUnconfirmed`) **einmal** eine feste Nachricht über Smoobu (`sendGuestMessage`):
+ein Schlafzimmer oder getrennt in beiden? Texte DE/EN **wörtlich** wie freigegeben in `BEDROOM_QUESTION_TEXT`
+(Platzhalter = erstes Wort des Gastnamens) — nicht ändern ohne neue Freigabe.
+- Sprache: Englisch, wenn der Portal-Hinweis „Sprache des Gastes: <xx>“ mit xx ≠ de enthält, sonst Deutsch.
+- Einmal je Buchung: `Booking.bedroomQuestionSentAt` wird vor dem Senden atomar gesetzt; lehnt Smoobu mit Status ab,
+  wird es zurückgesetzt (nächster Lauf versucht erneut), bei unklarem Netzfehler bleibt es gesetzt (lieber nicht doppelt).
+- Läuft in `runAutoSync` (App-Takt), nicht zwischen 21 und 7 Uhr Wien. Audit `guest.message.sent` mit
+  `zweck: "schlafzimmer_frage"`, Sprache, Zeichenzahl — nie der Text.
+- Michèle Podkowa (`cmsws2o2u001j2e0f89k4fwaa`) wurde am 31.10.2026 von Hand gefragt → per Migration als gesendet markiert.
+- Antworten („lieber getrennt“, „separate bedrooms“) erkennt die Sonderwunsch-Erkennung als Hinweis-Vorschlag.
+- Tests: `tests/schlafzimmer-frage.test.ts`.
+
+### Bewertungsanfrage (`src/lib/review-request.ts`)
+Entscheidung Mathias 31.10.2026: Gäste, die schon bewertet haben, bekommen keine Bewertungsanfrage mehr. Statt
+Smoobu-Vorlage 6 (Abreise + 2 Tage, 8:00, an alle) schickt die App die Anfrage selbst über `sendGuestMessage`.
+- **Schalter:** nur mit `REVIEW_REQUEST_ENABLED=true` (Vorgabe aus). Erst einschalten, wenn Vorlage 6 in Smoobu
+  abgeschaltet ist — sonst bekommen Gäste zwei Nachrichten. Optional `REVIEW_REQUEST_FROM=JJJJ-MM-TT` (Tag des
+  Umstiegs): ältere Abreisen werden nicht nachgeholt, weil Smoobu sie schon angeschrieben hat.
+- **Fällig:** bestätigt, mit `smoobuId`, kein Block-Kanal, Abreise vor 2 Tagen (Kalendertag Wien), ab 8:00 bis 21:00 Wien;
+  verpasste Fälle bis Abreise vor 7 Tagen werden nachgeholt, älter nie.
+- **Airbnb:** vorher Postfach info@vils17.at prüfen (Kopfdaten über Sequenznummern, kein SEARCH, nichts als gelesen
+  markiert; alle Ordner außer Gesendet/Entwürfe/Spam). Mail von `automated@airbnb.com` seit Anreise, Betreff mit dem
+  Vornamen und „hat eine …-Sterne-Bewertung hinterlassen“ / „hat dir eine Bewertung geschrieben“ (auch „left a … review“ /
+  „wrote you a review“) → keine Anfrage, `reviewRequestSkippedAt` + `reviewRequestSkipReason`. „wartet auf deine Bewertung“
+  ist kein Signal. Postfach nicht eingerichtet/erreichbar → in diesem Lauf nichts senden (nicht blind).
+- **Booking.com / Direkt:** keine Anfrage (Entscheidung Mathias 31.10.2026): ohne Signal „schon bewertet“ lieber gar nicht
+  fragen als doppelt; Booking.com lädt selbst zur Bewertung ein.
+- Texte DE/EN **wörtlich** in `REVIEW_REQUEST_TEXT` (Platzhalter Vorname, Kanal); Direktbuchung: Satz ohne Kanal
+  („… über eine kurze Bewertung freuen.“). Sprache wie bei der Schlafzimmer-Frage. Nicht ändern ohne neue Freigabe.
+- Einmal je Buchung: `Booking.reviewRequestSentAt` atomar vor dem Senden; Smoobu-Ablehnung mit Status → zurückgesetzt,
+  unklarer Netzfehler → bleibt gesetzt. Läuft in `runAutoSync` (App-Takt). Audit `guest.message.sent`
+  (`zweck: "bewertungsanfrage"`) bzw. `guest.review_request.skipped` — nie Text, Namen oder Adressen.
+- Tests: `tests/bewertungsanfrage.test.ts`.
+
+### Dashboard „Zu erledigen“ (`src/lib/todo.ts`, `AdminOverview`)
+Entscheidung Mathias 31.10.2026 — Übersicht für ADMIN und MANAGER (Verwaltung, Mathias' Mutter), ruhig und klar:
+- **Oben EINE Karte „Zu erledigen“** (`loadTodos`), eine Zeile je Punkt, Tipp öffnet den Punkt, sortiert nach
+  Farbe (rot → bernstein → neutral), dann Termin, dann Art (`sortTodos`). Punkte: Absagen (rot), Reinigung ohne
+  Reinigungskraft (14 Tage; rot ≤ 3 Tage), Wäsche bestellen (rot bei Engpass ≤ 3 Tage; ohne Zählung neutral
+  „Bestand erfassen“), Gästezahl unbekannt (rot ≤ 7 Tage), offene Mängel (Schaden/Abfluss bernstein, Einkauf neutral,
+  📷 bei Foto), Hinweise bestätigen (→ `/messages#hinweise`), unbeantwortete Gästechats (Smoobu, Zeitbudget
+  `CHAT_CHECK_BUDGET_MS`; sonst Hinweis „konnten nicht geprüft werden“), Hundegebühren (anfordern bernstein,
+  angefordert neutral). Leer → „✓ Alles erledigt“. Die Karte lädt per `Suspense`, der Rest erscheint sofort.
+- **Darunter „Diese Woche“** (`loadWeek`, heute + 6 Tage): Abreisen, Anreisen, Reinigung mit Reinigungskraft und ⭐.
+- Entfernt: StatsCards, WarningBanner, AbsagenBanner, GuestCountBanner, LaundryStockHint, WeekStrip,
+  UpcomingBookings, CleaningToday. Sync-Stand (`SyncButton`) bleibt. Keine Finanzzahlen auf dem Dashboard.
+- Navigation: „Mängel“ steht in der mobilen Hauptleiste (nicht mehr unter „Mehr“).
+- Tests: `tests/zu-erledigen.test.ts`.
+- **Neuer dunkler Stil** (Entscheidung Mathias 01.11.2026, erst Admin, am selben Tag für alle Rollen — nur Optik, keine
+  Funktion geändert): Rahmen `#04100F` mit Petrol-Leuchten (Layout, Login, OAuth, Topbar, Leisten, Manifest), Karten als
+  dunkles Glas (Weiß 5,5 %, Rand 0,5 px Weiß 14 %), Dialoge `#071A18`. Übersicht für Admin und Verwaltung aus
+  `src/components/dashboard/admin/AdminOverview.tsx`: Begrüßung, Sync-Stand, „Zu erledigen“ mit Knopf je Zeile
+  (`todoAction`, `splitTodoLabel`), **Belegung des Monats** (`src/lib/occupancy.ts`, Anreisetag belegt, Abreisetag frei),
+  „Diese Woche“ mit Saugroboter bei Abreise und unbestätigter Gästezahl. Petrol bleibt Leitfarbe.
+  Tests: `tests/admin-uebersicht.test.ts`.
+
+### Stammgast-Funnel (`src/lib/regular-guests.ts`, `website/stammgast/`)
+Entscheidung Mathias 31.10.2026: Gäste scannen den QR-Code in der gedruckten Gästemappe, landen auf
+**vils17.at/stammgast/** und tragen sich freiwillig in eine eigene Stammgast-Liste ein (unabhängig von Airbnb/Booking).
+Rechtsgrundlage ist die Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; Werbung per E-Mail/WhatsApp § 174 TKG 2021).
+- Modell `RegularGuest`: Einwilligung **je Kanal getrennt** (`consentEmail`, `consentWhatsapp`), `consentText` = genau der
+  angehakte, sichtbare Text, `consentAt`. Eindeutig je `organizationId + email` (klein geschrieben): erneute Eintragung
+  aktualisiert und meldet wieder an, nie doppelt. Abmelden setzt `unsubscribedAt` (Zeile bleibt als Nachweis).
+- Öffentlich: `POST /api/public/stammgast` (nicht in der Middleware), CORS nur `https://vils17.at` und
+  `https://www.vils17.at` (OPTIONS beantwortet), Zod (Name 2–80, E-Mail, Telefon optional — Pflicht bei WhatsApp,
+  mind. eine Einwilligung, `consentText` Pflicht), Honeypot `website` (gefüllt → 200 ohne Speichern),
+  höchstens 5 Eintragungen je IP in 10 Min (im Speicher, je Instanz) → 429. Organisation: ENV `PUBLIC_ORG_SLUG`, sonst die erste.
+- Abmelden: `GET /api/public/stammgast/abmelden?token=…` (`unsubscribeToken`, zufällig) → kurze HTML-Bestätigung.
+  `unsubscribeUrl()` baut den Link — er gehört in jede Nachricht mit Angeboten.
+- Push „⭐ Neuer Stammgast eingetragen“ an Admin/Verwaltung nur bei Neueintragung, **ohne** Namen/Kontaktdaten.
+  Audit `regular_guest.signup` / `.updated` / `.unsubscribed` nur mit Kanal-Flags, nie mit Personendaten.
+- MCP `stammgaeste` (messages:read, nur lesen, `limit`/`cursor`): aktive Stammgäste mit Einwilligungen und `abmelde_link`;
+  abgemeldete nur mit `abgemeldete: true`. Kein Anlegen/Löschen über MCP.
+- Website: `website/stammgast/index.html` (noindex, nicht in der Sitemap, kein Tracking) sendet per fetch an
+  `https://vils17-kalender.onrender.com/api/public/stammgast`; Datenschutzerklärung Abschnitt „Stammgast-Liste“ (`#stammgast`).
+- Tests: `tests/stammgast.test.ts`.
 
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
@@ -507,7 +768,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - Smoobu Webhook eingerichtet (Echtzeit-Updates bei neuer Buchung)
 - Cron-Job alle 15 Min (render.yaml)
 - Channel Manager Adapter Pattern (`src/lib/channel-manager/`)
-- Dashboard: Stats-Karten, Buchungsliste, 14-Tage-Warnbanner, Dreher-Warnung
+- Dashboard: seit 31.10.2026 „Zu erledigen“ + „Diese Woche“ (siehe oben)
 - Kalender: durchgehende Buchungsbalken mit Farbwechsel, getrennte/gemeinsame Ansicht
 - Einstellungen-Seite: Apartment-Name, Farbe, löschen; Kalenderansicht konfigurieren
 - CleaningAssignment wird automatisch bei jedem neuen Import erstellt
@@ -530,7 +791,7 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 - **Benutzerverwaltung**: Admin legt User an (ADMIN / MANAGER / CLEANER), bearbeiten, löschen
 - Buchungsübersicht nach Monat segmentiert
 - Portal-Icon (Airbnb/Booking.com) und Gästezahl in Buchungskarten
-- Helles, freundliches Theme mit Glass-Morphism-Design
+- Dunkles Theme mit Petrol und Glas (seit 01.11.2026, vorher helles Petrol)
 - **Sicherheits-Fixes:**
   - Smoobu Webhook schlägt jetzt CLOSED fehl (kein Secret = kein Zugang)
   - `timingSafeEqual` Crash bei unterschiedlichen Signaturlängen behoben
@@ -565,14 +826,21 @@ Startregion: **Allgäu + Außerfern/Reutte** (Füssen als Wäscherei-Standort ve
 
 ## Geplante Features (später)
 
-### Saugroboter-Automatisierung (Dreame Wischi X50 Ultra)
-- Gerät: **Dreame Wischi X50 Ultra**, gesteuert über Dreame Home App
-- Dreame Konto-ID: **CT115077**
-- Ziel: Roboter startet automatisch um 10:00 Uhr an jedem Abreisetag
-- Umsetzung: Render-Cron um 10:00 prüft ob heute Checkout-Tag → schickt Start-Befehl an Dreame Cloud API
-- Benötigt als Render-Umgebungsvariablen: `DREAME_EMAIL`, `DREAME_PASSWORD`
-- Zuständig für: **Penthouse No. 17 – Vils** (apartmentId beim Sync ermitteln)
-- Die Dreame Cloud API ist nicht offiziell dokumentiert, aber gut bekannt aus Open-Source-Projekten (python-dreame, HA-Integration)
+### Saugroboter (Dreame) — umgesetzt (`src/lib/dreame.ts`, `src/lib/dreame-runner.ts`)
+Entscheidung Mathias 31.10.2026: Start **um 10:00 Uhr am Abreisetag** (Check-out-Zeit), egal wann
+die Gäste tatsächlich gehen. Roboter steht nur im **Penthouse** (`Apartment.dreameEnabled`, Schalter
+in Einstellungen → Unterkunft).
+- `runDreame` ist idempotent: ab 10:00 einmal starten (`dreameStartedAt`), danach Status prüfen →
+  fertig (`dreameDoneAt`) bzw. Warnung bei Startfehler, Störung (Status 4), > 3 h Laufzeit oder fehlenden
+  Zugangsdaten — je Auftrag nur einmal (`dreameWarnedAt`). Push an Admin/Verwaltung + Audit.
+- Auslöser: **App-Takt** (`src/lib/app-takt.ts`, gestartet in `src/instrumentation.ts`): der dauerhaft laufende
+  Render-Dienst stößt sich alle 5 Min selbst an (runAutoSync + Saugroboter) — keine extra Cron-Dienste nötig
+  (Render-Crons kosten je ≥ 1 $/Monat und waren nie angelegt). Zusätzlich `POST /api/cron/dreame` und `runAutoSync`.
+  Abschalten mit `APP_TAKT=off`.
+  `/api/cron/dreame-start` und `-status` leiten dorthin weiter.
+- ENV: `DREAME_EMAIL`, `DREAME_PASSWORD`, optional `DREAME_DEVICE_ID`. Dreame-Cloud ist inoffiziell
+  (nachgebaut) — kann sich ohne Vorwarnung ändern; dann kommt eine Warnung, nichts geht kaputt.
+- Tests: `tests/dreame.test.ts`.
 
 ### Reinigungsstatistik
 - Welche Reinigungskraft wie oft im Einsatz

@@ -2,13 +2,17 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDateLong, formatDate, getCleaningStatusColor, getLaundryStatusColor } from "@/lib/utils";
+import { formatDateLong, getCleaningStatusColor } from "@/lib/utils";
 import { Users, Calendar, Globe, Phone, Mail, ArrowLeft, Sparkles, WashingMachine, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
 import { RateBadge } from "@/components/ui/RateBadge";
-import { calculateLaundryQuantity } from "@/lib/laundry-quantity";
+import { GuestChat } from "@/components/bookings/GuestChat";
+import { DogFeeCard } from "@/components/bookings/DogFeeCard";
+import { LAUNDRY_ITEMS } from "@/lib/laundry-quantity";
+import { arrivalQuantity } from "@/lib/laundry-order";
+import { isGuestCountUnconfirmed } from "@/lib/guest-count";
 interface Cleaner {
   id: string;
   name: string;
@@ -22,6 +26,7 @@ interface Apartment {
   laundryBedsDivisor?: number | null;
   laundryTowelsPerGuest?: number | null;
   laundryKitchenCount?: number | null;
+  laundryBeds?: unknown;
 }
 
 interface Booking {
@@ -32,10 +37,16 @@ interface Booking {
   smoobuId?: number | null;
   guestCount: number;
   guestCountManual?: boolean;
+  guestCountUnknown?: boolean;
   channelNotice?: string | null;
   premiumRate?: number | null;
   premiumRateCleanerId?: string | null;
   petCount?: number | null;
+  petSource?: string | null;
+  petHint?: string | null;
+  petFeeStatus?: string | null;
+  petFeeAmount?: number | null;
+  status?: string;
   checkIn: Date;
   checkOut: Date;
   arrivalTime?: string | null;
@@ -47,6 +58,7 @@ interface Booking {
     status: string;
     isSelfClean: boolean;
     notes?: string | null;
+    extraBeds?: number;
     laundryStatus: string;
     laundryNotes?: string | null;
     laundryOrderId?: string | null;
@@ -56,18 +68,11 @@ interface Booking {
 }
 
 const glass = {
-  background: "rgba(255,255,255,0.15)",
+  background: "rgba(255,255,255,0.055)",
   backdropFilter: "blur(20px)",
   WebkitBackdropFilter: "blur(20px)",
-  border: "1px solid rgba(255,255,255,0.26)",
+  border: "0.5px solid rgba(255,255,255,0.14)",
   borderRadius: 20,
-} as React.CSSProperties;
-
-const glassAmber = {
-  background: "rgba(245,158,11,0.1)",
-  border: "1px solid rgba(245,158,11,0.3)",
-  borderRadius: 16,
-  padding: "16px",
 } as React.CSSProperties;
 
 
@@ -76,11 +81,9 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
   const assignment = booking.cleaningAssignment;
 
   const [showAssignDialog, setShowAssignDialog] = useState(false);
-  const [showLaundryDialog, setShowLaundryDialog] = useState(false);
   const [selectedCleaner, setSelectedCleaner] = useState(assignment?.cleaner?.id ?? "");
   const [isSelfClean, setIsSelfClean] = useState(assignment?.isSelfClean ?? false);
   const [cleaningNotes, setCleaningNotes] = useState(assignment?.notes ?? "");
-  const [laundryNotes, setLaundryNotes] = useState(assignment?.laundryNotes ?? "");
   const [petCount, setPetCount] = useState<number | null>(booking.petCount ?? null);
   const [guestCount, setGuestCount] = useState<number | "">(booking.guestCount);
 
@@ -143,9 +146,19 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
 
-  const qty = calculateLaundryQuantity(booking.guestCount, booking.apartment);
+  const qty = arrivalQuantity({ guestCount: booking.guestCount, extraBeds: assignment?.extraBeds ?? 0, apartment: booking.apartment });
+
+  async function saveExtraBeds(n: number) {
+    const res = await fetch(`/api/bookings/${booking.id}/extra-beds`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ extraBeds: n }),
+    });
+    setMessage(res.ok ? "✓ Zusatzbetten gespeichert" : "Fehler beim Speichern");
+    if (res.ok) router.refresh();
+    setTimeout(() => setMessage(""), 2500);
+  }
   const cleaningStatus = assignment?.status ?? "UNASSIGNED";
-  const laundryStatus  = assignment?.laundryStatus ?? "OPEN";
   const cleanerName    = assignment?.cleaner?.name;
 
   const cleaningStatusLabel: Record<string, string> = {
@@ -153,9 +166,6 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
     SELF_CLEAN: "Selbstreinigung",
     ASSIGNED:   cleanerName ? `Zugewiesen · ${cleanerName}` : "Zugewiesen",
     COMPLETED:  cleanerName ? `Erledigt · ${cleanerName}` : "Erledigt",
-  };
-  const laundryStatusLabel: Record<string, string> = {
-    OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden",
   };
 
   async function assignCleaner() {
@@ -171,37 +181,6 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
     } finally {
       setSaving(false);
       setTimeout(() => setMessage(""), 3000);
-    }
-  }
-
-  async function updateLaundryStatus(status: string) {
-    await fetch(`/api/bookings/${booking.id}/laundry`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "status", status, notes: laundryNotes }),
-    });
-    setMessage("✓ Wäschestatus aktualisiert");
-    router.refresh();
-    setTimeout(() => setMessage(""), 3000);
-  }
-
-  async function orderLaundry() {
-    setSaving(true);
-    try {
-      const res = await fetch(`/api/bookings/${booking.id}/laundry`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ action: "order", notes: laundryNotes }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setMessage(`✓ Wäsche bestellt${data.orderId ? ` (Nr. ${data.orderId})` : ""}`);
-        setShowLaundryDialog(false);
-        router.refresh();
-      } else setMessage(data.message ?? "Bestellung fehlgeschlagen");
-    } finally {
-      setSaving(false);
-      setTimeout(() => setMessage(""), 5000);
     }
   }
 
@@ -279,6 +258,20 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
                   </span>
                 )}
               </div>
+              {isGuestCountUnconfirmed(booking) && (
+                <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 10, background: "rgba(239,68,68,0.18)", border: "1px solid rgba(239,68,68,0.45)" }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: "#FCA5A5" }}>⚠ Gästezahl unbekannt</p>
+                  <p style={{ fontSize: 11, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>
+                    Das Portal hat keine Gästezahl geliefert ({booking.guestCount} ist nur ein Platzhalter). Im Portal nachsehen, Zahl eintragen und bestätigen.
+                  </p>
+                  <button
+                    onClick={saveGuestCount}
+                    style={{ marginTop: 6, padding: "4px 12px", borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: "pointer", background: "rgba(239,68,68,0.25)", border: "1px solid rgba(239,68,68,0.5)", color: "#FECACA" }}
+                  >
+                    {guestCount === "" ? "Zahl eintragen" : `${guestCount} ${guestCount === 1 ? "Person" : "Personen"} bestätigen`}
+                  </button>
+                </div>
+              )}
               {booking.guestCountManual && (
                 <button
                   onClick={resetGuestCount}
@@ -352,6 +345,9 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
         </div>
       </div>
 
+      {/* Hund & Hundegebühr */}
+      {(booking.petCount ?? 0) > 0 || !/airbnb/i.test(booking.channelName ?? "") ? <DogFeeCard booking={booking} /> : null}
+
       {/* Reinigung */}
       <div style={{ ...glass, padding: "20px 24px" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
@@ -388,10 +384,25 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
           </div>
         )}
 
-        {assignment?.notes && (
-          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(255,255,255,0.05)", borderRadius: 10, fontSize: 13, color: "rgba(255,255,255,0.6)", border: "1px solid rgba(255,255,255,0.08)" }}>
-            {assignment.notes}
+        {assignment?.notes?.trim() && (
+          <div style={{ marginBottom: 14, padding: "10px 14px", background: "rgba(245,158,11,0.10)", borderRadius: 10, border: "1px solid rgba(245,158,11,0.30)" }}>
+            <p style={{ fontSize: 12, fontWeight: 700, color: "#fcd34d", marginBottom: 3 }}>⭐ Hinweis für die Reinigung</p>
+            <p style={{ fontSize: 14, fontWeight: 600, color: "rgba(255,255,255,0.9)", whiteSpace: "pre-wrap" as const }}>{assignment.notes}</p>
           </div>
+        )}
+
+        {assignment && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 14, fontSize: 13, color: "rgba(255,255,255,0.7)" }}>
+            Zusatzbetten (Zustellbett, Sofa als Bett)
+            <select
+              value={assignment.extraBeds ?? 0}
+              onChange={(e) => saveExtraBeds(Number(e.target.value))}
+              className="form-input"
+              style={{ width: 64, padding: "4px 8px", fontSize: 13 }}
+            >
+              {[0, 1, 2, 3].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </label>
         )}
 
         <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8 }}>
@@ -434,80 +445,27 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
         </div>
       </div>
 
-      {/* Wäsche */}
+      {/* Wäsche — nur Info. Bestellt wird nach Bestand im Keller, nicht pro Buchung
+          (Entscheidung Mathias 31.10.2026, Seite /laundry). */}
       <div style={{ ...glass, padding: "20px 24px" }}>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 16 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 8 }}>
-            <WashingMachine style={{ width: 16, height: 16, color: "#14B8A6" }} />
-            Wäsche
-          </h2>
-          <StatusBadge type="laundry" status={laundryStatus} label={laundryStatusLabel[laundryStatus] ?? laundryStatus} />
+        <h2 style={{ fontSize: 15, fontWeight: 700, color: "rgba(255,255,255,0.9)", display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
+          <WashingMachine style={{ width: 16, height: 16, color: "#14B8A6" }} />
+          Wäsche für diese Anreise
+        </h2>
+        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8, marginBottom: 12 }}>
+          {LAUNDRY_ITEMS.filter((i) => qty[i.key] > 0).map((i) => (
+            <QuantityChip key={i.key} emoji={i.emoji} value={qty[i.key]} label={i.label} />
+          ))}
         </div>
-
-        <div style={{ display: "flex", flexWrap: "wrap" as const, gap: 8, marginBottom: 16 }}>
-          <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
-          <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
-          <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
-        </div>
-
-        {/* Status-Toggle */}
-        <div style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-          {(["OPEN", "ORDERED", "AVAILABLE"] as const).map((s) => {
-            const labels = { OPEN: "Offen", ORDERED: "Bestellt", AVAILABLE: "Vorhanden" };
-            const active = laundryStatus === s;
-            return (
-              <button
-                key={s}
-                onClick={() => updateLaundryStatus(s)}
-                style={{
-                  padding: "6px 14px", borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: "pointer",
-                  background: active ? "rgba(13,148,136,0.3)" : "rgba(255,255,255,0.06)",
-                  border: active ? "1px solid rgba(13,148,136,0.5)" : "1px solid rgba(255,255,255,0.12)",
-                  color: active ? "#14B8A6" : "rgba(255,255,255,0.5)",
-                }}
-              >
-                {labels[s]}
-              </button>
-            );
-          })}
-        </div>
-
-        <textarea
-          value={laundryNotes}
-          onChange={(e) => setLaundryNotes(e.target.value)}
-          onBlur={async () => {
-            if (laundryNotes !== assignment?.laundryNotes) {
-              await fetch(`/api/bookings/${booking.id}/laundry`, {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ action: "status", status: laundryStatus, notes: laundryNotes }),
-              });
-            }
-          }}
-          placeholder="Bemerkungen zur Wäsche…"
-          rows={2}
-          className="form-input"
-          style={{ resize: "none", marginBottom: 12 }}
-        />
-
-        {laundryStatus !== "ORDERED" && (
-          <button
-            onClick={() => setShowLaundryDialog(true)}
-            style={{ display: "flex", alignItems: "center", gap: 6, padding: "8px 16px", background: "rgba(245,158,11,0.2)", border: "1px solid rgba(245,158,11,0.4)", borderRadius: 12, color: "#fcd34d", fontWeight: 600, fontSize: 13, cursor: "pointer" }}
-          >
-            <WashingMachine style={{ width: 14, height: 14 }} />
-            Wäsche bestellen
-          </button>
-        )}
-
-        {assignment?.laundryOrderId && (
-          <p style={{ marginTop: 10, fontSize: 12, color: "rgba(255,255,255,0.3)", display: "flex", alignItems: "center", gap: 4 }}>
-            <Clock style={{ width: 12, height: 12 }} />
-            Bestell-Nr.: {assignment.laundryOrderId}
-            {assignment.laundryOrderedAt && <span> · {formatDate(new Date(assignment.laundryOrderedAt))}</span>}
-          </p>
-        )}
+        <p style={{ fontSize: 12, color: "rgba(255,255,255,0.5)" }}>
+          {(assignment?.extraBeds ?? 0) > 0 && <>Inkl. {assignment?.extraBeds} Zusatzbett{(assignment?.extraBeds ?? 0) > 1 ? "en" : ""}. </>}
+          Kommt aus dem Bestand im Keller.{" "}
+          <Link href="/laundry" style={{ color: "#5EEAD4", fontWeight: 600, textDecoration: "none" }}>Bestand &amp; Bestellung →</Link>
+        </p>
       </div>
+
+      {/* Gästechat (Smoobu) */}
+      {booking.smoobuId ? <GuestChat bookingId={booking.id} cancelled={booking.status === "cancelled"} /> : null}
 
       {/* Dialog: Reiniger zuweisen */}
       {showAssignDialog && (
@@ -552,34 +510,6 @@ export function BookingDetail({ booking, cleaners, isAdmin = false }: { booking:
                 {saving ? "Wird gespeichert…" : "Zuweisen"}
               </button>
               <button onClick={() => setShowAssignDialog(false)} className="btn-secondary" style={{ padding: "10px 18px" }}>
-                Abbrechen
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Dialog: Wäsche bestellen */}
-      {showLaundryDialog && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.6)", display: "flex", alignItems: "flex-end", justifyContent: "center", zIndex: 50, padding: "16px 16px max(calc(env(safe-area-inset-bottom) + 72px), 80px) 16px" }}>
-          <ScrollLock />
-          <div style={{ background: "#041f1c", border: "1px solid rgba(255,255,255,0.15)", borderRadius: 24, width: "100%", maxWidth: 400, padding: 24 }}>
-            <h3 style={{ fontSize: 18, fontWeight: 700, color: "rgba(255,255,255,0.95)", marginBottom: 4 }}>Wäsche bestellen</h3>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.60)", marginBottom: 16 }}>Folgende Mengen werden bestellt:</p>
-            <div style={{ ...glassAmber, display: "flex", flexDirection: "column" as const, gap: 8, marginBottom: 20 }}>
-              <QuantityChip emoji="🛏" value={qty.beds} label="Bettsets" />
-              <QuantityChip emoji="🛁" value={qty.towels} label="Handtücher" />
-              <QuantityChip emoji="🍽" value={qty.kitchen} label="Küchenhandtücher" />
-            </div>
-            <div style={{ display: "flex", gap: 8 }}>
-              <button
-                onClick={orderLaundry}
-                disabled={saving}
-                style={{ flex: 1, padding: "10px 0", background: "rgba(245,158,11,0.25)", border: "1px solid rgba(245,158,11,0.5)", borderRadius: 12, color: "#fcd34d", fontWeight: 700, fontSize: 14, cursor: saving ? "not-allowed" : "pointer", opacity: saving ? 0.5 : 1 }}
-              >
-                {saving ? "Wird bestellt…" : "Jetzt bestellen"}
-              </button>
-              <button onClick={() => setShowLaundryDialog(false)} className="btn-secondary" style={{ padding: "10px 18px" }}>
                 Abbrechen
               </button>
             </div>
@@ -677,8 +607,8 @@ function QuantityChip({ emoji, value, label }: { emoji: string; value: number; l
   );
 }
 
-function StatusBadge({ type, status, label }: { type: "cleaning" | "laundry"; status: string; label: string }) {
-  const color = type === "cleaning" ? getCleaningStatusColor(status) : getLaundryStatusColor(status);
+function StatusBadge({ status, label }: { type: "cleaning"; status: string; label: string }) {
+  const color = getCleaningStatusColor(status);
   return (
     <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${color}`}>
       {label}

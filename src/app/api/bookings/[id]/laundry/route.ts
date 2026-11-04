@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { orderLaundry, calculateLaundryQuantity } from "@/lib/laundry";
 import { logAudit } from "@/lib/audit";
 import { z } from "zod";
+import { setLaundryStatus } from "@/lib/booking-actions";
 
 const laundrySchema = z.object({
   action: z.enum(["order", "status"]),
@@ -51,13 +52,13 @@ export async function POST(
   }
 
   if (parsed.data.action === "status" && parsed.data.status) {
-    // Nur Status ändern
-    const updated = await prisma.cleaningAssignment.update({
-      where: { id: assignment.id },
-      data: {
-        laundryStatus: parsed.data.status,
-        laundryNotes: parsed.data.notes ?? assignment.laundryNotes,
-      },
+    // Nur Status ändern — gemeinsame Funktion mit der MCP-Schnittstelle
+    const { assignment: updated } = await setLaundryStatus({
+      organizationId: session.user.organizationId,
+      bookingId: params.id,
+      status: parsed.data.status,
+      ...(parsed.data.notes !== undefined ? { notes: parsed.data.notes } : {}),
+      actor: { userId: session.user.id },
     });
 
     return NextResponse.json({ success: true, assignment: updated });

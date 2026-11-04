@@ -38,23 +38,41 @@ enum SubscriptionPlan {
 // ─── Multi-Tenant ─────────────────────────────────────────────────────────────
 
 model Organization {
-  id               String           @id @default(cuid())
-  name             String
-  slug             String           @unique
-  plan             SubscriptionPlan @default(FREE)
-  stripeCustomerId String?
+  id                String           @id @default(cuid())
+  name              String
+  slug              String           @unique
+  plan              SubscriptionPlan @default(FREE)
+  stripeCustomerId  String?
   // Zeitpunkt des letzten erfolgreichen Smoobu-Syncs — steuert die
   // Selbstaktualisierung der App und zeigt, ob der Cron wirklich läuft
-  lastSyncAt       DateTime?
+  lastSyncAt        DateTime?
   // Datum (Europe/Vienna, "YYYY-MM-DD"), an dem der Tagesstatus verschickt wurde
   dailyStatusSentOn String?
-  createdAt        DateTime         @default(now())
-  updatedAt        DateTime         @updatedAt
+  // Wäsche-Reserve je Teil, die nach allen Anreisen immer noch im Keller liegen soll
+  // ({ beds: 3, towels: 3, … }); null = Vorgabe aus laundry-stock.ts
+  laundryReserve    Json?
+  // Fingerabdruck der zuletzt gemeldeten Wäsche-Lage („reicht nicht ab …“): gleiche Lage →
+  // keine neue Meldung; ändert eine Buchung/Storno die Lage → neue Meldung; reicht es
+  // wieder → null (Entscheidung Mathias 31.10.2026)
+  laundryAlertKey   String?
+  // Letzter Lauf der Sonderwunsch-Erkennung in den Gästechats (gedrosselt, siehe note-suggestions.ts)
+  noteScanAt        DateTime?
+  // Zuletzt geprüfte unbeantwortete Gästechats (Abreise ab heute, Anreise ≤ 30 Tage) — gemeinsame Quelle für
+  // Übersicht „Zu erledigen“, Seite „Gäste“ und MCP, damit alle dasselbe zeigen (Entscheidung Mathias 04.11.2026)
+  openChats         Json?
+  openChatsAt       DateTime?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
 
-  users        User[]
-  apartments   Apartment[]
-  emailImports EmailImport[]
-  mcpTokens    McpToken[]
+  users             User[]
+  apartments        Apartment[]
+  emailImports      EmailImport[]
+  mcpTokens         McpToken[]
+  laundryCounts     LaundryCount[]
+  laundryDeliveries LaundryDelivery[]
+  issues            Issue[]
+  noteSuggestions   NoteSuggestion[]
+  regularGuests     RegularGuest[]
 
   @@map("organizations")
 }
@@ -221,12 +239,17 @@ model Apartment {
   active      Boolean @default(true)
 
   // Wäsche-Konfiguration
-  laundryBedsDivisor     Int @default(2) // 1 Bettset pro N Gäste (aufgerundet), z.B. 2 = 1 Set pro Doppelzimmer
-  laundryTowelsPerGuest  Int @default(1) // Handtücher pro Gast
-  laundryKitchenCount    Int @default(1) // Küchenhandtücher pro Buchung (fix)
+  laundryBedsDivisor    Int   @default(2) // 1 Bettset pro N Gäste (aufgerundet), z.B. 2 = 1 Set pro Doppelzimmer
+  laundryTowelsPerGuest Int   @default(1) // Handtücher pro Gast
+  laundryKitchenCount   Int   @default(1) // Küchenhandtücher pro Buchung (fix)
+  // Betten in Belegungsreihenfolge für Spannbettlaken-Größen, z.B. [{"width":200,"persons":2},{"width":180,"persons":2},{"width":90,"persons":1}]
+  // null = Vorgabe über laundryBedsDivisor (180er)
+  laundryBeds           Json?
 
   // Dreame Saugroboter
-  dreameEnabled Boolean @default(false)
+  dreameEnabled       Boolean @default(false)
+  // Bei genau 2 Gästen automatisch fragen: ein Schlafzimmer oder getrennt? (Penthouse, Entscheidung Mathias 31.10.2026)
+  askSeparateBedrooms Boolean @default(false)
 
   // Feste Reinigungskraft-Zuweisung
   preferredCleanerId String?
@@ -256,26 +279,51 @@ model Booking {
   id             String @id @default(cuid())
   organizationId String // denormalisiert für einfache Abfragen ohne JOIN
 
-  smoobuId    Int?    @unique
+  smoobuId    Int?      @unique
   apartmentId String
   apartment   Apartment @relation(fields: [apartmentId], references: [id])
 
-  guestName  String
-  guestEmail String?
-  guestPhone String?
-  guestCount Int     @default(1)
+  guestName                String
+  guestEmail               String?
+  guestPhone               String?
+  guestCount               Int       @default(1)
   // true = Gästezahl wurde von Hand korrigiert; der Sync überschreibt sie dann
   // nicht mehr (Smoobu liefert für manche Kanäle keine Gästezahl)
-  guestCountManual Boolean @default(false)
+  guestCountManual         Boolean   @default(false)
   // Woher die abweichende Gästezahl stammt: "manual" (Eingabe) oder "email" (Portal-Mail)
-  guestCountSource String?
-  petCount   Int?    // Haustiere (manuell gepflegt — kein Portal liefert dafür ein eigenes Feld)
+  guestCountSource         String?
+  // true = der Channel Manager hat keine Gästezahl geliefert (guestCount ist nur ein Notwert).
+  // Die Wäscheplanung rechnet dann mit der vollen Belegung der Wohnung (vorsichtig).
+  guestCountUnknown        Boolean   @default(false)
+  // Einmalige Push-Warnung „Gästezahl unbekannt“ (≤ 30 Tage vor Anreise) verschickt
+  // (Entscheidung Mathias 31.10.2026: unbestätigte Gästezahl muss sichtbar sein und geklärt werden)
+  guestCountReminderSentAt DateTime?
+  // Schlafzimmer-Frage an den Gast verschickt (einmal je Buchung, src/lib/bedroom-question.ts)
+  bedroomQuestionSentAt    DateTime?
+  // Bewertungsanfrage nach der Abreise verschickt (einmal je Buchung, src/lib/review-request.ts)
+  reviewRequestSentAt      DateTime?
+  // Bewertungsanfrage bewusst nicht verschickt (z.B. Airbnb-Bewertung liegt schon vor) + Grund
+  reviewRequestSkippedAt   DateTime?
+  reviewRequestSkipReason  String?
+  /// Gästechat als erledigt markiert („keine Antwort nötig“) bis zu dieser Nachricht (Smoobu-ID); neue Gastnachricht → wieder offen
+  chatDoneMessageId        String?
+  petCount                 Int? // Hunde (kein Portal liefert dafür ein eigenes Feld)
+  // Woher petCount stammt: "manual" (Eingabe, wird nie überschrieben), "notice" (Portalnotiz), "chat" (Gästechat)
+  petSource                String?
+  // Kurzer Auszug der Stelle, an der der Hund erkannt wurde (zum Gegenprüfen)
+  petHint                  String?
+  // Hundegebühr (nur wo das Portal sie nicht selbst kassiert, v.a. Booking.com):
+  // null = noch nichts unternommen, REQUESTED = beim Gast angefordert, PAID, WAIVED = erlassen
+  petFeeStatus             String?
+  petFeeAmount             Float? // Betrag der Anforderung (festgehalten beim Anfordern/Bezahlen)
+  petFeeRequestedAt        DateTime?
+  petFeePaidAt             DateTime?
   // Freitext-Notiz aus dem Portal (Gastnachricht, Sonderwünsche, Haustier-Hinweise)
-  channelNotice String?
+  channelNotice            String?
   // Sondersatz-Vermerk, beim Eingang der Buchung von der Wohnung übernommen und
   // danach nie mehr verändert ("70-€-Buchung für Vanessa")
-  premiumRate          Float?
-  premiumRateCleanerId String?
+  premiumRate              Float?
+  premiumRateCleanerId     String?
 
   checkIn       DateTime
   checkOut      DateTime
@@ -283,7 +331,7 @@ model Booking {
   departureTime String? // "10:00"
 
   channelName String? // "Airbnb", "Booking.com", "Direkt"
-  price       Float?  // Brutto-Buchungspreis aus Smoobu
+  price       Float? // Brutto-Buchungspreis aus Smoobu
   currency    String? @default("EUR")
   status      String  @default("confirmed") // confirmed, cancelled, pending
 
@@ -293,6 +341,7 @@ model Booking {
 
   cleaningAssignment CleaningAssignment?
   emailImports       EmailImport[]
+  noteSuggestions    NoteSuggestion[]
 
   @@index([organizationId, checkIn])
   @@index([organizationId, checkOut])
@@ -313,19 +362,24 @@ model CleaningAssignment {
   cleaner     User?          @relation(fields: [cleanerId], references: [id], onDelete: SetNull)
   status      CleaningStatus @default(UNASSIGNED)
   isSelfClean Boolean        @default(false)
+  // „Hinweis für die Reinigung“ (z.B. Kinderbett) — EIN Feld, keine eigene Sonderwunsch-Spalte
+  // (Entscheidung Mathias 31.10.2026). Vorschläge aus dem Gästechat landen erst nach Bestätigung hier.
   notes       String?
+  // Zusätzliche Betten (Zustellbett, Sofa als Bett) für diese Anreise: je Bett ein 90er Spannbettlaken,
+  // ein Bett- und ein Kissenbezug zusätzlich in der Wäscheplanung (0–3)
+  extraBeds   Int            @default(0)
 
   assignedAt DateTime?
   notifiedAt DateTime?
 
   // Reiniger-Absage
-  cleanerUnavailable     Boolean  @default(false)
+  cleanerUnavailable     Boolean   @default(false)
   cleanerUnavailableNote String?
   cleanerUnavailableAt   DateTime?
   // Wer hat abgesagt — bleibt erhalten wenn jemand anderes den Job übernimmt,
   // damit der Absagende die Buchung weiterhin als "abgesagt" sieht
-  declinedById String?
-  declinedBy   User?   @relation("AssignmentDeclinedBy", fields: [declinedById], references: [id], onDelete: SetNull)
+  declinedById           String?
+  declinedBy             User?     @relation("AssignmentDeclinedBy", fields: [declinedById], references: [id], onDelete: SetNull)
 
   // Wäsche
   laundryStatus      LaundryStatus @default(OPEN)
@@ -352,6 +406,11 @@ model CleaningAssignment {
   // Dreame Saugroboter
   dreameStartedAt DateTime?
   dreameDoneAt    DateTime?
+  /// Warnung (Startfehler, Störung, zu lange) bereits gemeldet — nur einmal pro Auftrag
+  dreameWarnedAt  DateTime?
+
+  /// Inventar-/Verbrauchs-Check beim Erledigen beantwortet
+  checkedAt DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -362,6 +421,26 @@ model CleaningAssignment {
 }
 
 // ─── Push Subscriptions ───────────────────────────────────────────────────────
+
+/// Versandprotokoll Push (Entscheidung Mathias 01.11.2026): wer wann welche Benachrichtigung bekommen hat
+/// und ob der Push-Dienst (z. B. Apple) sie angenommen hat. Nur Titel, kein Nachrichtentext.
+model PushLog {
+  id             String   @id @default(cuid())
+  organizationId String
+  userId         String
+  userName       String
+  title          String
+  devices        Int
+  sent           Int
+  failed         Int
+  removed        Int
+  error          String?
+  createdAt      DateTime @default(now())
+
+  @@index([organizationId, createdAt])
+  @@index([userId, createdAt])
+  @@map("push_logs")
+}
 
 model PushSubscription {
   id             String @id @default(cuid())
@@ -397,4 +476,147 @@ model AuditLog {
 
   @@index([organizationId, createdAt])
   @@map("audit_logs")
+}
+
+// ─── Wäsche-Bestand (Keller) ──────────────────────────────────────────────────
+// Gezählter Bestand sauberer Wäsche. Maßgeblich ist die jüngste Zählung; ab dem
+// Tag danach werden Anreisen abgezogen und Lieferungen hinzugerechnet.
+model LaundryCount {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Kalendertag der Zählung (UTC-Mitternacht); der Bestand gilt am Ende dieses Tages
+  countedOn      DateTime
+  // { beds, towels, handTowels, pillowCases, duvetCovers, bathMats, washcloths, kitchen }
+  quantities     Json
+  notes          String?
+  createdById    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, countedOn])
+  @@map("laundry_counts")
+}
+
+// Bestellung bei der Wäscherei; zählt ab dem Liefertag zum Bestand.
+model LaundryDelivery {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  // Liefertag (UTC-Mitternacht)
+  deliveryOn     DateTime
+  quantities     Json
+  // Bestellnummer o.ä.
+  reference      String?
+  cancelled      Boolean      @default(false)
+  // Lieferung im Keller angekommen (bestätigt). Erst dann zählt sie zum Bestand,
+  // vorher gilt sie als „bestellt/unterwegs“ (Entscheidung Mathias 31.10.2026)
+  arrivedAt      DateTime?
+  createdById    String?
+  createdAt      DateTime     @default(now())
+
+  @@index([organizationId, deliveryOn])
+  @@map("laundry_deliveries")
+}
+
+// Mangel am Inventar oder Verbrauchsmaterial zum Nachkaufen — von der Reinigung beim
+// „Erledigt“ gemeldet oder von Hand erfasst. Hängt am Aufenthalt davor (Verursacher-
+// Zuordnung, Meldefristen der Portale: Airbnb 14 Tage nach Abreise).
+model Issue {
+  id                String       @id @default(cuid())
+  organizationId    String
+  organization      Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  apartmentId       String
+  /// "DAMAGE" (Schaden/Mangel) | "SUPPLY" (Verbrauchsmaterial nachkaufen)
+  kind              String
+  text              String
+  /// Reinigungsauftrag, bei dem gemeldet wurde (Reinigung vor der Anreise von bookingId)
+  assignmentId      String?
+  /// Aufenthalt davor = möglicher Verursacher
+  previousBookingId String?
+  photo             Bytes?
+  photoType         String?
+  reportedById      String?
+  reportedByName    String?
+  createdAt         DateTime     @default(now())
+  doneAt            DateTime?
+  doneNote          String?
+
+  @@index([organizationId, doneAt])
+  @@map("issues")
+}
+
+// ─── Hinweis-Vorschläge aus dem Gästechat ─────────────────────────────────────
+// Entscheidung Mathias 31.10.2026: Sonderwünsche (Kinderbett, Hochstuhl, Zustellbett …) werden
+// in den Gästechats (Smoobu) erkannt und als Vorschlag abgelegt. Erst nach „Übernehmen“ werden sie
+// an CleaningAssignment.notes angehängt. Jede Nachricht wird nur einmal verwertet.
+
+model NoteSuggestion {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  bookingId      String
+  booking        Booking      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  // Smoobu-Nachrichten-ID — je Nachricht höchstens ein Vorschlag
+  messageId      String
+  // Vorgeschlagener Hinweistext, z.B. "Kinderbett, Hochstuhl"
+  proposedText   String
+  // Auszug aus der Gästenachricht (≤ 200 Zeichen) zum Gegenprüfen
+  excerpt        String
+  // Vorgeschlagene Zusatzbetten (aus „Zustellbett“, „Sofa als Bett“ …)
+  extraBeds      Int          @default(0)
+  // PENDING | ACCEPTED | REJECTED
+  status         String       @default("PENDING")
+  createdAt      DateTime     @default(now())
+  decidedAt      DateTime?
+  decidedById    String?
+
+  @@unique([organizationId, messageId])
+  @@index([organizationId, status])
+  @@map("note_suggestions")
+}
+
+/// Wann eine Gästenachricht zum ersten Mal gesehen wurde (Smoobu liefert keinen Zeitpunkt je Nachricht).
+/// initial = beim ersten Abruf des Chats schon vorhanden → Zeitpunkt unbekannt (älter).
+model GuestMessageSeen {
+  id             String   @id @default(cuid())
+  organizationId String
+  bookingId      String
+  messageId      String
+  firstSeenAt    DateTime @default(now())
+  initial        Boolean  @default(false)
+
+  @@unique([organizationId, bookingId, messageId])
+  @@index([bookingId])
+}
+
+// ─── Stammgast-Liste ──────────────────────────────────────────────────────────
+// Entscheidung Mathias 31.10.2026: Gäste tragen sich über den QR-Code in der
+// Gästemappe (vils17.at/stammgast/) freiwillig ein. Rechtsgrundlage ist die
+// Einwilligung (Art. 6 Abs. 1 lit. a DSGVO, § 174 TKG 2021) — je Kanal getrennt,
+// mit Zeitpunkt und dem genau angezeigten Text. Abmelden setzt unsubscribedAt.
+
+model RegularGuest {
+  id               String       @id @default(cuid())
+  organizationId   String
+  organization     Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name             String
+  email            String // klein geschrieben gespeichert
+  phone            String?
+  // "penthouse" | "lodge" | null
+  apartment        String?
+  consentEmail     Boolean      @default(false)
+  consentWhatsapp  Boolean      @default(false)
+  // Genau der Einwilligungstext, den der Gast angehakt hat
+  consentText      String
+  consentAt        DateTime
+  unsubscribeToken String       @unique
+  unsubscribedAt   DateTime?
+  // Herkunft, z.B. "gaestemappe"
+  source           String       @default("gaestemappe")
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  @@unique([organizationId, email])
+  @@index([organizationId, unsubscribedAt])
+  @@map("regular_guests")
 }

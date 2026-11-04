@@ -165,13 +165,13 @@ describe("umsatz", () => {
 });
 
 describe("ortstaxe", () => {
-  it("Nächte × Personen × 3,50 € je Monat", async () => {
+  it("Nächte × Personen × 3,00 € je Monat", async () => {
     const r = await call("ortstaxe", { von_monat: "2026-10", bis_monat: "2026-11" });
     expect(r.result.monate).toEqual([
-      { monat: "2026-10", buchungen: 3, naechte: 7, personen_naechte: 18, betrag: money(63) },
-      { monat: "2026-11", buchungen: 3, naechte: 7, personen_naechte: 28, betrag: money(98) },
+      { monat: "2026-10", buchungen: 3, naechte: 7, personen_naechte: 18, betrag: money(54) },
+      { monat: "2026-11", buchungen: 3, naechte: 7, personen_naechte: 28, betrag: money(84) },
     ]);
-    expect(r.result.gesamt.betrag).toEqual(money(161));
+    expect(r.result.gesamt.betrag).toEqual(money(138));
     expect(r.result.hinweis).toMatch(/Kinder/);
   });
   it("zählt ohne Kinder nur Erwachsene aus der Portal-Mail", async () => {
@@ -179,7 +179,7 @@ describe("ortstaxe", () => {
       data: { organizationId: world.org.id, messageId: "m1", status: "APPLIED", bookingId: world.bookings.b5.id, parsedAdults: 2, parsedChildren: 3 },
     });
     const r = await call("ortstaxe", { von_monat: "2026-11", bis_monat: "2026-11", kinder_zaehlen: false });
-    expect(r.result.monate[0]).toMatchObject({ personen_naechte: 19, betrag: money(66.5), buchungen_ohne_aufteilung: 2 });
+    expect(r.result.monate[0]).toMatchObject({ personen_naechte: 19, betrag: money(57), buchungen_ohne_aufteilung: 2 });
   });
 });
 
@@ -191,8 +191,10 @@ describe("reinigungen", () => {
     const bernd = r.result.eintraege.find((e: any) => e.reinigungstag === "2026-10-30");
     expect(bernd).toMatchObject({
       status: "ASSIGNED", reinigungskraft: "Kerstin", naechste_gaeste: 4, haustiere: 1,
-      waesche: { status: "offen", bettsets: 2, handtuecher: 8, kuechentuecher: 1 },
+      waesche: { bettsets: 2, handtuecher: 8, kuechentuecher: 1 },
     });
+    // Kein Wäschestatus pro Buchung mehr (Wäsche nach Bestand, 31.10.2026)
+    expect(bernd.waesche.status).toBeUndefined();
   });
   it("filtert Absagen mit Grund", async () => {
     const r = await call("reinigungen", { ...range, nur_absagen: true });

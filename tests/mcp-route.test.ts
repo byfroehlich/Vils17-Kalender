@@ -48,8 +48,8 @@ describe("/api/mcp", () => {
     const list = await call("tools/list");
     const names = list.body.result.tools.map((t: any) => t.name).sort();
     expect(names).toEqual([
-      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "ortstaxe",
-      "reinigungen", "sync_status", "umsatz", "wohnungen_list",
+      "anreisen_abreisen", "auszahlungen_reinigung", "belegung", "buchungen_list", "gaestezahl_offen", "hunde_uebersicht", "maengel", "ortstaxe", "push_protokoll", "push_status",
+      "reinigungen", "sync_status", "umsatz", "waesche_bedarf", "wochenplan", "wohnungen_list",
     ]);
     // Jedes Tool hat Beschreibung und JSON-Schema
     for (const t of list.body.result.tools) {
@@ -83,11 +83,20 @@ describe("/api/mcp", () => {
     const writeToken = await createToken(org.id, ["cleaning:write"], "Schreiben");
     const list = await call("tools/list", {}, writeToken);
     const tools = list.body.result.tools;
-    expect(tools.map((t: any) => t.name).sort()).toEqual(["buchung_notiz", "gaestezahl_korrigieren", "reinigung_zuweisen", "sync_ausloesen"]);
+    expect(tools.map((t: any) => t.name).sort()).toEqual(["buchung_notiz", "gaestezahl_korrigieren", "hinweis_uebernehmen", "hunde_eintragen", "hundegebuehr_status", "mangel_erfassen", "push_test", "reinigung_push", "reinigung_status", "reinigung_zuweisen", "sync_ausloesen", "waesche_bestand_erfassen", "waesche_betten", "waesche_lieferung_angekommen", "waesche_lieferung_erfassen", "waesche_reserve", "waesche_status"]);
     for (const t of tools) {
       expect(t.annotations.readOnlyHint).toBe(false);
       expect(Object.keys(t.inputSchema.properties)).toContain("bestaetigt");
     }
+  });
+
+  it("Lese-Tools mit messages:read (inkl. stammgaeste)", async () => {
+    const org = await (await import("@/lib/prisma")).prisma.organization.findFirstOrThrow();
+    const msgToken = await createToken(org.id, ["messages:read"], "Nachrichten lesen");
+    const list = await call("tools/list", {}, msgToken);
+    const tools = list.body.result.tools;
+    expect(tools.map((t: any) => t.name).sort()).toEqual(["gaeste_nachrichten", "hinweis_vorschlaege", "hunde_pruefen", "mail_lesen", "offene_gaestenachrichten", "postfach", "stammgaeste"]);
+    expect(tools.find((t: any) => t.name === "stammgaeste").annotations.readOnlyHint).toBe(true);
   });
 
   it("liefert Tool-Fehler als {error} mit isError", async () => {

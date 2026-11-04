@@ -14,6 +14,8 @@ export interface NormalizedReservation {
   guestEmail: string | null;
   guestPhone: string | null;
   guestCount: number;
+  /** true = Portal/Channel Manager liefert keine Gästezahl; guestCount ist nur ein Notwert */
+  guestCountUnknown?: boolean;
   checkIn: Date;
   checkOut: Date;
   arrivalTime: string | null;

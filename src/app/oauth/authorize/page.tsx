@@ -31,9 +31,9 @@ function Frame({ children }: { children: React.ReactNode }) {
       <div aria-hidden style={{
         position: "fixed", inset: 0, zIndex: 0,
         background: [
-          "radial-gradient(ellipse 100% 70% at 10% 0%,  rgba(20,184,166,0.60) 0%, transparent 55%)",
-          "radial-gradient(ellipse  85% 65% at 45% 90%, rgba(13,148,136,0.40) 0%, transparent 55%)",
-          "linear-gradient(160deg, #0c3d38 0%, #1a6e63 40%, #104e48 100%)",
+          "radial-gradient(65% 40% at 12% 6%, rgba(13,148,136,0.55) 0%, transparent 70%)",
+          "radial-gradient(70% 40% at 50% 108%, rgba(15,118,110,0.40) 0%, transparent 70%)",
+          "#04100F",
         ].join(", "),
       }} />
       <div style={{ width: "100%", maxWidth: 420, position: "relative", zIndex: 1 }}>{children}</div>
@@ -118,7 +118,7 @@ export default async function AuthorizePage({ searchParams }: { searchParams: Re
               <span>
                 {SCOPE_LABELS[s]}
                 <span style={{ display: "block", fontSize: 11, color: "rgba(255,255,255,0.5)" }}>
-                  {s}{s === "cleaning:write" ? " · ändert nur nach ausdrücklicher Bestätigung" : ""}
+                  {s}{s.endsWith(":write") ? " · ändert nur nach ausdrücklicher Bestätigung" : ""}
                 </span>
               </span>
             </label>

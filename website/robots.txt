@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://vils17.at/sitemap.xml
