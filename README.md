@@ -88,6 +88,7 @@ Claude Code geht auch ohne Token: `claude mcp add --transport http vils17 https:
 | `offene_gaestenachrichten` | messages:read | Aktuelle/kommende Buchungen, bei denen der Gast auf Antwort wartet |
 | `gast_antworten` | messages:write | Nachricht an den Gast über Smoobu — nur nach Freigabe des Texts |
 | `stammgaeste` | messages:read | Stammgast-Liste (Eintragung über vils17.at/stammgast/) mit Einwilligung je Kanal; abgemeldete nur auf Wunsch |
+| `website_statistik` | bookings:read | Besucher von vils17.at (cookielos): Herkunft, Seiten, Geräte, Abschnitte, Buchungsklicks je Wohnung, Trichter, Verlauf pro Tag |
 
 **Schreib-Tools ändern nur mit `"bestaetigt": true`.** Ohne liefern sie eine Vorschau
 („Das würde passieren: …“). Es gibt bewusst kein Löschen und keine Preis- oder
