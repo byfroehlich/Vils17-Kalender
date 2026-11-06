@@ -614,6 +614,36 @@ Rechtsgrundlage ist die Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; Werbung per E-
   `https://vils17-kalender.onrender.com/api/public/stammgast`; Datenschutzerklärung Abschnitt „Stammgast-Liste“ (`#stammgast`).
 - Tests: `tests/stammgast.test.ts`.
 
+### Website-Besuchermessung (`src/lib/website-analytics.ts`, `src/lib/website-stats.ts`, Seite `/website`)
+Entscheidung Mathias 06.11.2026: auf vils17.at messen, woher Besucher kommen, wie lange sie bleiben, was sie ansehen
+und ob sie buchen wollen — **ohne Cookie-Banner** (DSGVO + § 165 Abs. 3 TKG 2021), Rechtsgrundlage Art. 6 Abs. 1 lit. f.
+```
+website/assets/m.js                  Messskript (< 3 KB, defer, in allen Seiten), sendet per sendBeacon (text/plain)
+src/app/api/public/besuch/route.ts   POST/OPTIONS, CORS nur vils17.at + www, 4 KB, Rate-Limit je IP, immer ohne Rumpf
+src/lib/website-analytics.ts         Zod-Schema, Bots, DNT/GPC, Tagessalz + Hash, Speichern, Aufräumen
+src/lib/website-stats.ts             Kennzahlen + Trichter (gemeinsam für Seite und MCP)
+src/components/website/WebsiteStatsView.tsx   Seite „Website“ (ADMIN + MANAGER), Zeitraum ?tage=7|30|90
+src/lib/mcp/tools/website.ts         MCP `website_statistik` (bookings:read — keine Geldbeträge, keine Personendaten)
+```
+Regeln:
+- **Nichts auf dem Gerät:** keine Cookies, kein localStorage/sessionStorage, kein Fingerprinting, keine Drittanbieter.
+  Seitenaufruf-ID (`pid`) nur im Arbeitsspeicher des Skripts.
+- **Besucher-Kennung** = sha256(Tagessalz | Organisation | IP | User-Agent), gekürzt. Salz zufällig je Kalendertag (Wien) in
+  `WebsiteSalt`, ältere Salze werden gelöscht. **IP und User-Agent nie speichern, nie loggen** (auch nicht im Audit).
+  Ein „Besuch“ = Kennung + Tag; wer an zwei Tagen kommt, zählt zweimal.
+- DNT/GPC: das Skript sendet nichts; der Server verwirft zusätzlich bei `DNT: 1` / `Sec-GPC: 1`. Bots (UA-Muster, leerer UA) → 204 ohne Speichern.
+- Gespeichert je Seitenaufruf (`WebsiteVisit`): Pfad, Herkunft nur als Domain (`referrerSource`, „intern“ bei vils17.at,
+  null = direkt), utm_source/medium/campaign, Hauptsprache, Gerätetyp, Land nur aus Proxy-Header (Render liefert keinen),
+  aktive Zeit bei sichtbarem Tab und maximale Scrolltiefe (größter Wert gilt).
+- Ereignisse (`WebsiteEvent`): `buchen_klick` (Smoobu-Link, apartmentId 2943886 = Penthouse, 3443356 = Lodge),
+  `buchungsmaske` (Tipp ins Smoobu-iframe, erkannt über window blur), `abschnitt` (Elemente mit `data-m="…"` kreuzen die
+  Bildschirmmitte), `kontakt` (tel/mailto/WhatsApp), `stammgast` (`window.v17m("stammgast")` nach erfolgreicher Eintragung).
+  Einmal-Ereignisse je Seitenaufruf über `dedupeKey`. Neue Abschnitte: `data-m` setzen und Bezeichnung in `ABSCHNITT_LABEL`.
+- Trichter: Besuch → Wohnungsseite → Buchungsmaske gesehen → „Jetzt buchen“ geklickt/Maske benutzt; jede Stufe setzt die vorige voraus.
+- Aufbewahrung **13 Monate**: `cleanupWebsiteData` im App-Takt (höchstens einmal pro Stunde, idempotent).
+- Datenschutzerklärung `website/datenschutz/#reichweite` bei Änderungen mitziehen.
+- Tests: `tests/website-besuch.test.ts`.
+
 ### Wäsche-Adapter (`src/lib/laundry.ts`)
 ```typescript
 interface LaundryAdapter {
@@ -648,6 +678,7 @@ interface LaundryAdapter {
 | `/bookings` | ✅ | ✅ | ❌ |
 | `/cleaners` | ✅ | ✅ | ❌ |
 | `/settings` | ✅ | ❌ | ❌ |
+| `/website` | ✅ | ✅ | ❌ |
 | `/my-jobs` | ✅ | ✅ | ✅ |
 | `/billing` | ✅ | ✅ | ✅ (nur eigene Jobs) |
 | `/api/bookings/sync` | ✅ | ✅ | ❌ |
