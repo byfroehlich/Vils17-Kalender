@@ -10,6 +10,7 @@ import { maengel, mangelErfassen } from "./tools/issues";
 import { hinweisVorschlaege, hinweisUebernehmen } from "./tools/hints";
 import { pushStatus, pushTest, reinigungNachricht, pushProtokoll } from "./tools/push";
 import { stammgaeste } from "./tools/regular-guests";
+import { websiteStatistik } from "./tools/website";
 import { waescheBedarf, waescheBestandErfassen, waescheLieferungErfassen, waescheLieferungAngekommen, waescheReserve, waescheBetten } from "./tools/laundry";
 
 /** Alle Tools der Schnittstelle. tools/list zeigt nur die, deren Scope das Token hat. */
@@ -37,6 +38,7 @@ export const TOOLS: ToolDef[] = [
   pushStatus,
   pushProtokoll,
   stammgaeste,
+  websiteStatistik,
   // Stufe 2 — schreiben (nur mit "bestaetigt": true)
   reinigungZuweisen,
   pushTest,

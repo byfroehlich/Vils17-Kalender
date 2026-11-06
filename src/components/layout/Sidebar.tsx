@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote, MoreHorizontal, X, MessageCircle, WashingMachine, Mail, Wrench } from "lucide-react";
+import { LayoutDashboard, Calendar, BookOpen, Users, LogOut, Settings, TrendingUp, List, Banknote, MoreHorizontal, X, MessageCircle, WashingMachine, Mail, Wrench, Globe } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useState, useEffect } from "react";
 
@@ -29,6 +29,7 @@ const adminManagerItems: NavItem[] = [
   { href: "/issues",     label: "Mängel",        icon: Wrench,          noClean: true, mobileOrder: 5 },
   { href: "/laundry",    label: "Wäsche",        icon: WashingMachine,  noClean: true, mobileOrder: 6, mobileMore: true },
   { href: "/statistics", label: "Statistiken",   icon: TrendingUp,      noClean: true, mobileOrder: 7, mobileMore: true },
+  { href: "/website",    label: "Website",       icon: Globe,           noClean: true, mobileOrder: 7, mobileMore: true },
   { href: "/billing",    label: "Abrechnung",    icon: Banknote,        noClean: true, mobileOrder: 8, mobileMore: true },
   { href: "/settings",   label: "Einstellungen", icon: Settings,        adminOnly: true, mobileOrder: 9, mobileMore: true },
 ];
