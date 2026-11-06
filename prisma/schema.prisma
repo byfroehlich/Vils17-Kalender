@@ -69,6 +69,9 @@ model Organization {
   issues            Issue[]
   noteSuggestions   NoteSuggestion[]
   regularGuests     RegularGuest[]
+  websiteVisits     WebsiteVisit[]
+  websiteEvents     WebsiteEvent[]
+  websiteSalts      WebsiteSalt[]
 
   @@map("organizations")
 }
@@ -615,4 +618,84 @@ model RegularGuest {
   @@unique([organizationId, email])
   @@index([organizationId, unsubscribedAt])
   @@map("regular_guests")
+}
+
+// ─── Website-Besuchermessung (vils17.at) ──────────────────────────────────────
+// Ohne Cookies, ohne Speicherung auf dem Gerät. Besucher-Kennung wie bei
+// Plausible: sha256(Tagessalz + IP + User-Agent), das Salz gilt nur einen Tag.
+// IP und vollständiger User-Agent werden nie gespeichert. Rohdaten 13 Monate.
+
+/// Ein Seitenaufruf auf der Website
+model WebsiteVisit {
+  id             String         @id @default(cuid())
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Zufällige ID des Seitenaufrufs (nur im Arbeitsspeicher des Browsers)
+  pageId         String
+  /// Tages-Kennung des Besuchers (Hash, wechselt jeden Tag)
+  visitorHash    String
+  /// Kalendertag in Wien als UTC-Mitternacht
+  day            DateTime
+  path           String
+  /// Domain des Referrers, normalisiert ("google", "airbnb", "intern"); null = direkt
+  referrer       String?
+  utmSource      String?
+  utmMedium      String?
+  utmCampaign    String?
+  /// Hauptsprache des Browsers ("de", "en")
+  language       String?
+  /// "mobil" | "tablet" | "desktop"
+  device         String
+  /// ISO-Ländercode aus einem Proxy-Header, sonst null
+  country        String?
+  /// Aktive Zeit bei sichtbarem Tab
+  durationMs     Int            @default(0)
+  /// Maximale Scrolltiefe in Prozent
+  scrollDepth    Int            @default(0)
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  events         WebsiteEvent[]
+
+  @@unique([organizationId, pageId])
+  @@index([organizationId, day])
+  @@index([createdAt])
+  @@map("website_visits")
+}
+
+/// Ereignis auf einer Seite (Buchungsklick, Abschnitt gesehen, Kontakt …)
+model WebsiteEvent {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  visitId        String
+  visit          WebsiteVisit @relation(fields: [visitId], references: [id], onDelete: Cascade)
+  visitorHash    String
+  day            DateTime
+  /// buchen_klick | buchungsmaske | abschnitt | kontakt | stammgast
+  type           String
+  /// Wohnung, Abschnitt oder Kontaktweg
+  target         String?
+  /// Gegen Doppelzählung bei Ereignissen, die je Seitenaufruf nur einmal zählen
+  dedupeKey      String?
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, dedupeKey])
+  @@index([organizationId, day])
+  @@index([visitId])
+  @@index([createdAt])
+  @@map("website_events")
+}
+
+/// Zufälliges Salz für die Besucher-Kennung — gilt nur für einen Tag, danach gelöscht
+model WebsiteSalt {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  /// Kalendertag in Wien, "2026-11-06"
+  day            String
+  salt           String
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, day])
+  @@map("website_salts")
 }
