@@ -135,6 +135,15 @@ run("Weitergeleitet · HTML · Portal nur im Text", () => {
   check("checkIn", mail.checkIn, new Date(Date.UTC(2026, 9, 1)));
 });
 
+// ─── Gast-Nachricht über Booking.com liefert keine Gästezahl (Vorfall 06.11.2026) ─
+run("Booking.com · Gast-Nachricht · keine Gästezahl", () => {
+  const text = `Booking.com\nBuchungsnummer: 5400400685\nSie haben eine neue Nachricht von einem Gast\nNachricht von Tim Sultanov:\nBesondere Anfrage\nBabybett für 1 Jahr altes Kind\n26 Kinder\n17. Dez. | 23. Dez.\nName des Gastes: Tim Sultanov\nCheck-in: Donnerstag, 17. Dezember 2026`;
+  const mail = parsePortalMail({ from: "x@guest.booking.com", subject: "Wir haben diese Nachricht von Tim Sultanov erhalten", text })!;
+  check("guestCount", mail.guestCount, null);
+  check("children", mail.children, null);
+  check("reference", mail.reference, "5400400685");
+});
+
 // ─── Fremde Mail wird ignoriert ───────────────────────────────────────────────
 run("Nicht-Portal-Mail", () => {
   const mail = parsePortalMail({

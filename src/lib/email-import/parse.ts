@@ -174,7 +174,24 @@ function cleanName(raw: string | undefined | null): string | null {
 
 // ─── Booking.com ──────────────────────────────────────────────────────────────
 
+/**
+ * Gast-Nachrichten von Booking.com („Sie haben eine neue Nachricht von einem Gast“,
+ * „Besondere Anfrage“) enthalten keine Belegung, aber freien Text und Layout-Zahlen.
+ * Daraus wurden Gästezahlen wie 26 oder 27 gelesen (Vorfall 06.11.2026) — Zahlen aus
+ * solchen Mails werden deshalb nie übernommen, nur Hinweise (z. B. Kinderbett).
+ */
+export function isBookingGuestMessage(text: string): boolean {
+  return /neue Nachricht von einem Gast|new message from (?:a|your) guest|Wir haben diese Nachricht von|We received this message from/i.test(text);
+}
+
 export function parseBookingCom(text: string): ParsedPortalMail {
+  if (isBookingGuestMessage(text)) {
+    return { ...parseBookingComCounts(text), adults: null, children: null, guestCount: null };
+  }
+  return parseBookingComCounts(text);
+}
+
+function parseBookingComCounts(text: string): ParsedPortalMail {
   const adults = firstNumber(text, [
     /(\d+)\s*Erwachsene[rn]?\b/i,
     /(\d+)\s*adults?\b/i,

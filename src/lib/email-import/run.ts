@@ -2,6 +2,7 @@ import { prisma } from "../prisma";
 import { logAudit } from "../audit";
 import { fetchNewMails, isImapConfigured } from "./imap";
 import { parsePortalMail } from "./parse";
+import { parseLaundryBeds } from "../laundry-quantity";
 import { findBooking, type MatchCandidate } from "./match";
 import { addDays, subDays } from "date-fns";
 
@@ -104,6 +105,7 @@ export async function runEmailImport(organizationId: string): Promise<EmailImpor
         select: {
           id: true, guestName: true, guestCount: true, guestCountManual: true,
           guestCountSource: true, petCount: true, channelNotice: true,
+          apartment: { select: { laundryBeds: true } },
         },
       });
       if (!booking) throw new Error("Buchung verschwunden");
@@ -113,7 +115,12 @@ export async function runEmailImport(organizationId: string): Promise<EmailImpor
 
       // Gästezahl — Handeingabe hat Vorrang und bleibt unangetastet
       const manualByHand = booking.guestCountManual && booking.guestCountSource !== "email";
-      if (parsed.guestCount !== null && parsed.guestCount > 0) {
+      // Plausibilität: mehr Gäste als Schlafplätze kann nicht stimmen (Vorfall 06.11.2026: 4 → 26)
+      const beds = parseLaundryBeds(booking.apartment.laundryBeds);
+      const maxGuests = beds ? beds.reduce((s, b) => s + b.persons, 0) + 3 : 12; // + Zusatz-/Kinderbetten
+      if (parsed.guestCount !== null && parsed.guestCount > maxGuests) {
+        changes.push(`Gästezahl ${parsed.guestCount} unplausibel (höchstens ${maxGuests}) – nicht übernommen`);
+      } else if (parsed.guestCount !== null && parsed.guestCount > 0) {
         if (manualByHand) {
           changes.push(`Gästezahl ${parsed.guestCount} nicht übernommen (Handeingabe ${booking.guestCount} hat Vorrang)`);
         } else if (parsed.guestCount !== booking.guestCount) {
