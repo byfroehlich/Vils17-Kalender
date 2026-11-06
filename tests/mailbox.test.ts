@@ -17,7 +17,7 @@ const smtp = vi.hoisted(() => ({ sent: [] as { envelope: { from: string; to: str
 function rawMail(p: { from: string; to: string; subject: string; text: string; id: string; date?: string }) {
   return [
     `From: ${p.from}`, `To: ${p.to}`, `Subject: ${p.subject}`, `Message-ID: ${p.id}`,
-    `Date: ${p.date ?? "Fri, 30 Oct 2026 10:00:00 +0100"}`, "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "", p.text, "",
+    `Date: ${p.date ?? new Date(Date.now() - 86_400_000).toUTCString()}` /* gestern: der Portal-Import liest nur die letzten 7 Tage */, "MIME-Version: 1.0", "Content-Type: text/plain; charset=utf-8", "", p.text, "",
   ].join("\r\n");
 }
 
