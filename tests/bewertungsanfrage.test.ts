@@ -63,10 +63,10 @@ function inbox(subject: string, date = "Thu, 29 Oct 2026 12:00:00 +0100", from =
   imap.folders[folder]!.push({ uid: n, flags: new Set(), raw: rawMail({ from, subject, date, uid: n }) });
 }
 
-async function booking(o: { guest: string; ci: string; co: string; smoobuId: number; ch?: string; notice?: string; status?: string }) {
+async function booking(o: { guest: string; ci: string; co: string; smoobuId: number; ch?: string; notice?: string; status?: string; lodge?: boolean }) {
   return prisma.booking.create({
     data: {
-      organizationId: world.org.id, apartmentId: world.penthouse.id, guestName: o.guest, guestCount: 2,
+      organizationId: world.org.id, apartmentId: o.lodge ? world.lodge.id : world.penthouse.id, guestName: o.guest, guestCount: 2,
       checkIn: d(o.ci), checkOut: d(o.co), channelName: o.ch ?? "Airbnb", status: o.status ?? "confirmed", smoobuId: o.smoobuId,
       channelNotice: o.notice ?? null,
     },
@@ -173,6 +173,21 @@ describe("Bewertungsanfrage", () => {
     expect(posts).toHaveLength(0);
     expect((await reload(b.id)).reviewRequestSentAt).toBeNull();
     expect((await reload(d2.id)).reviewRequestSentAt).toBeNull();
+  });
+
+  it("Booking.com in Wohnung mit reviewRequestBooking (Lodge): genau einmal gefragt (Entscheidung 07.11.2026)", async () => {
+    await prisma.apartment.update({ where: { id: world.lodge.id }, data: { reviewRequestBooking: true } });
+    const lodge = await booking({ guest: "Lea Lodge", ci: "2026-10-26", co: "2026-10-29", smoobuId: 811, ch: "Booking.com", lodge: true });
+    const pent = await booking({ guest: "Paul Penthouse", ci: "2026-10-26", co: "2026-10-29", smoobuId: 812, ch: "Booking.com" });
+    const direkt = await booking({ guest: "Dora Direkt", ci: "2026-10-26", co: "2026-10-29", smoobuId: 813, ch: "Direct booking", lodge: true });
+    expect((await runReviewRequests(world.org.id)).sent).toBe(1);
+    expect(posts).toHaveLength(1);
+    expect(posts[0]!.url).toContain("/reservations/811/");
+    expect(posts[0]!.body.messageBody).toContain("eine kurze Bewertung auf Booking.com freuen.");
+    expect((await reload(lodge.id)).reviewRequestSentAt).not.toBeNull();
+    expect((await reload(pent.id)).reviewRequestSentAt).toBeNull();
+    expect((await reload(direkt.id)).reviewRequestSentAt).toBeNull();
+    expect((await runReviewRequests(world.org.id)).sent).toBe(0);
   });
 
   it("Airbnb ohne Bewertung: genau einmal gesendet, englisch, Audit ohne Text/Namen", async () => {

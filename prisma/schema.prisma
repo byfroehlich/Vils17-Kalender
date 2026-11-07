@@ -249,6 +249,8 @@ model Apartment {
   dreameEnabled       Boolean @default(false)
   // Bei genau 2 Gästen automatisch fragen: ein Schlafzimmer oder getrennt? (Penthouse, Entscheidung Mathias 31.10.2026)
   askSeparateBedrooms Boolean @default(false)
+  // Bewertungsanfrage auch an Booking.com-Gäste (Lodge, Entscheidung Mathias 07.11.2026)
+  reviewRequestBooking Boolean @default(false)
 
   // Feste Reinigungskraft-Zuweisung
   preferredCleanerId String?
