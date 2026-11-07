@@ -13,6 +13,8 @@ import { isMailboxConfigured, listFolders, listMessages, type MailSummary } from
 //   Treffer → keine Anfrage (reviewRequestSkippedAt). Postfach nicht erreichbar → in diesem Lauf nichts senden.
 // - Booking.com / Direkt: keine Anfrage (Entscheidung Mathias 31.10.2026). Booking.com lädt selbst zur Bewertung ein,
 //   ein Signal „schon bewertet“ gibt es nicht – doppelt fragen ist schlechter als gar nicht.
+//   Ausnahme (Entscheidung Mathias 07.11.2026): Wohnungen mit Apartment.reviewRequestBooking (Lodge) fragen auch
+//   Booking.com-Gäste — die Lodge hat dort erst drei Bewertungen.
 // - Erst aktiv mit REVIEW_REQUEST_ENABLED=true (Smoobu-Vorlage 6 muss dann abgeschaltet sein,
 //   sonst bekommen Gäste zwei Nachrichten).
 // Texte wörtlich wie von Mathias freigegeben — nicht ändern. Nachrichtentext und Namen nie ins Audit-Log.
@@ -154,11 +156,18 @@ export async function runReviewRequests(organizationId: string, now = new Date()
       checkOut: { gte: fromCheckOut && fromCheckOut > earliestCheckOut ? fromCheckOut : earliestCheckOut, lte: addDays(today, -REVIEW_REQUEST_DAYS_AFTER) },
     },
     orderBy: { checkOut: "asc" },
-    select: { id: true, smoobuId: true, guestName: true, channelName: true, channelNotice: true, checkIn: true },
+    select: {
+      id: true, smoobuId: true, guestName: true, channelName: true, channelNotice: true, checkIn: true,
+      apartment: { select: { reviewRequestBooking: true } },
+    },
   });
-  const due = candidates.filter(
-    (b) => b.smoobuId && !BLOCK_CHANNEL.test(b.channelName ?? "") && channelGroup(b.channelName) === "Airbnb",
-  );
+  const due = candidates.filter((b) => {
+    if (!b.smoobuId || BLOCK_CHANNEL.test(b.channelName ?? "")) return false;
+    const channel = channelGroup(b.channelName);
+    // Nur echte Booking.com-Buchungen — channelGroup zählt auch „Direct booking“ zu Booking.com
+    const isBookingCom = /booking\.com/i.test(b.channelName ?? "");
+    return channel === "Airbnb" || (channel === "Booking.com" && isBookingCom && b.apartment.reviewRequestBooking);
+  });
   if (!due.length) return result;
 
   // Postfach nur abfragen, wenn eine Airbnb-Buchung fällig ist — und nur einmal je Lauf
