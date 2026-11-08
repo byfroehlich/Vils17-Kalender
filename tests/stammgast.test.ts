@@ -168,7 +168,7 @@ describe("Abmelden", () => {
     const res = await ABMELDEN(new NextRequest(`http://localhost/api/public/stammgast/abmelden?token=${g.unsubscribeToken}`));
     expect(res.status).toBe(200);
     expect(res.headers.get("content-type")).toContain("text/html");
-    expect(await res.text()).toContain("Sie sind abgemeldet");
+    expect(await res.text()).toContain("Du bist abgemeldet");
     const after = await prisma.regularGuest.findUniqueOrThrow({ where: { id: g.id } });
     expect(after.unsubscribedAt).not.toBeNull();
   });

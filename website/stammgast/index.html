@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Stammgast werden – No. 17 Vils</title>
-<meta name="description" content="Tragen Sie sich in die Stammgast-Liste von Penthouse No. 17 und Lodge No. 17 in Vils ein.">
+<meta name="description" content="Trag dich in die Stammgast-Liste von Penthouse No. 17 und Lodge No. 17 in Vils ein.">
 <meta name="robots" content="noindex, nofollow">
 <meta name="theme-color" content="#1E302A">
 <link rel="icon" href="/assets/favicon.svg">
@@ -60,18 +60,18 @@ footer nav{display:flex;gap:20px}
   <section class="intro">
     <span class="kick">Für unsere Gäste</span>
     <h1>Stammgast werden</h1>
-    <p>Schön, dass Sie bei uns in Vils sind. Wenn es Ihnen gefällt und Sie gern wiederkommen möchten, tragen Sie sich hier in unsere kleine Stammgast-Liste ein.</p>
-    <p>Dann erfahren Sie als Erste von freien Terminen und kleinen Aktionen – direkt von uns, ohne Umweg über ein Portal.</p>
+    <p>Schön, dass du bei uns in Vils bist. Wenn es dir gefällt und du gern wiederkommen möchtest, trag dich hier in unsere kleine Stammgast-Liste ein.</p>
+    <p>Dann erfährst du als Erste von freien Terminen und kleinen Aktionen – direkt von uns, ohne Umweg über ein Portal.</p>
     <ul>
       <li>Nur ab und zu eine Nachricht, wenn es wirklich etwas gibt</li>
-      <li>Sie entscheiden, ob per E-Mail, WhatsApp oder beides</li>
+      <li>Du entscheidest, ob per E-Mail, WhatsApp oder beides</li>
       <li>Abmelden jederzeit mit einem Klick</li>
     </ul>
   </section>
 
   <section class="card" aria-live="polite">
     <form id="f" novalidate>
-      <h2>Ihre Angaben</h2>
+      <h2>Deine Angaben</h2>
       <label class="f" for="name">Name</label>
       <input type="text" id="name" name="name" autocomplete="name" required minlength="2" maxlength="80">
 
@@ -81,7 +81,7 @@ footer nav{display:flex;gap:20px}
       <label class="f" for="phone">Telefon / WhatsApp <small>(optional)</small></label>
       <input type="tel" id="phone" name="phone" autocomplete="tel" maxlength="40" placeholder="+43 …">
 
-      <label class="f" for="apartment">In welcher Wohnung waren Sie? <small>(optional)</small></label>
+      <label class="f" for="apartment">In welcher Wohnung warst du? <small>(optional)</small></label>
       <select id="apartment" name="apartment">
         <option value="">Bitte wählen</option>
         <option value="penthouse">Penthouse No. 17</option>
@@ -98,15 +98,15 @@ footer nav{display:flex;gap:20px}
         <label class="consent"><input type="checkbox" id="cWa"><span id="cWaText">Ich möchte Angebote per WhatsApp erhalten.</span></label>
       </div>
 
-      <p class="note">Abmelden jederzeit mit einem Klick oder einer kurzen Nachricht an <a href="mailto:info@vils17.at">info@vils17.at</a>. Was mit Ihren Angaben passiert, steht in unserer <a href="/datenschutz/#stammgast">Datenschutzerklärung</a>.</p>
+      <p class="note">Abmelden jederzeit mit einem Klick oder einer kurzen Nachricht an <a href="mailto:info@vils17.at">info@vils17.at</a>. Was mit deinen Angaben passiert, steht in unserer <a href="/datenschutz/#stammgast">Datenschutzerklärung</a>.</p>
 
       <div class="err" id="err" role="alert"></div>
       <button class="btn" type="submit" id="send">Eintragen</button>
     </form>
 
     <div class="done" id="done">
-      <h2>Danke, Sie stehen auf der Liste!</h2>
-      <p>Wir melden uns, sobald es freie Termine oder ein schönes Angebot gibt. Bis dahin wünschen wir Ihnen eine gute Zeit in Vils.</p>
+      <h2>Danke, du stehst auf der Liste!</h2>
+      <p>Wir melden uns, sobald es freie Termine oder ein schönes Angebot gibt. Bis dahin wünschen wir dir eine gute Zeit in Vils.</p>
     </div>
   </section>
 </main>
@@ -124,10 +124,10 @@ footer nav{display:flex;gap:20px}
     var name = $("name").value.trim(), email = $("email").value.trim(), phone = $("phone").value.trim();
     var cEmail = $("cEmail").checked, cWa = $("cWa").checked;
 
-    if (name.length < 2) return fail("Bitte geben Sie Ihren Namen an.");
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Bitte prüfen Sie Ihre E-Mail-Adresse.");
-    if (!cEmail && !cWa) return fail("Bitte kreuzen Sie an, wie wir Sie erreichen dürfen: per E-Mail, per WhatsApp oder beides.");
-    if (cWa && !phone) return fail("Für WhatsApp brauchen wir noch Ihre Telefonnummer.");
+    if (name.length < 2) return fail("Bitte gib deinen Namen an.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return fail("Bitte prüf deine E-Mail-Adresse.");
+    if (!cEmail && !cWa) return fail("Bitte kreuz an, wie wir dich erreichen dürfen: per E-Mail, per WhatsApp oder beides.");
+    if (cWa && !phone) return fail("Für WhatsApp brauchen wir noch deine Telefonnummer.");
 
     // Einwilligungstext = genau der sichtbare Text der angehakten Kästchen
     var consentText = [cEmail && $("cEmailText").textContent, cWa && $("cWaText").textContent].filter(Boolean).join(" ");
@@ -149,11 +149,11 @@ footer nav{display:flex;gap:20px}
           $("done").className = "done on";
           return;
         }
-        if (res.status === 429) return fail("Das waren gerade sehr viele Versuche. Bitte probieren Sie es in ein paar Minuten noch einmal.");
-        fail(data.error || "Das hat leider nicht geklappt. Bitte versuchen Sie es noch einmal oder schreiben Sie uns an info@vils17.at.");
+        if (res.status === 429) return fail("Das waren gerade sehr viele Versuche. Bitte probier es in ein paar Minuten noch einmal.");
+        fail(data.error || "Das hat leider nicht geklappt. Bitte versuch es noch einmal oder schreib uns an info@vils17.at.");
       });
     }).catch(function(){
-      fail("Keine Verbindung. Bitte prüfen Sie Ihr Internet und versuchen Sie es noch einmal, oder schreiben Sie uns an info@vils17.at.");
+      fail("Keine Verbindung. Bitte prüf dein Internet und versuch es noch einmal, oder schreib uns an info@vils17.at.");
     }).then(function(){
       btn.disabled = false; btn.textContent = "Eintragen";
     });

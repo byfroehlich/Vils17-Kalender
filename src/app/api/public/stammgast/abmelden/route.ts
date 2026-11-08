@@ -24,13 +24,13 @@ export async function GET(req: NextRequest) {
   if (!ok) {
     return page(
       "Link nicht gefunden",
-      `<p>Dieser Abmelde-Link ist leider ungültig. Schreiben Sie uns einfach eine kurze Nachricht an <a href="mailto:info@vils17.at">info@vils17.at</a>, dann tragen wir Sie von Hand aus.</p>`,
+      `<p>Dieser Abmelde-Link ist leider ungültig. Schreib uns einfach eine kurze Nachricht an <a href="mailto:info@vils17.at">info@vils17.at</a>, dann tragen wir dich von Hand aus.</p>`,
       404
     );
   }
   return page(
-    "Sie sind abgemeldet",
-    `<p>Sie bekommen von uns keine Angebote mehr. Danke, dass Sie bei uns zu Gast waren – Sie sind in Vils jederzeit herzlich willkommen.</p>`,
+    "Du bist abgemeldet",
+    `<p>Du bekommst von uns keine Angebote mehr. Danke, dass du bei uns zu Gast warst – du bist in Vils jederzeit herzlich willkommen.</p>`,
     200
   );
 }
