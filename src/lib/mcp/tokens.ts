@@ -7,7 +7,7 @@ import { sameResource } from "../oauth/resource";
 
 export const TOKEN_PREFIX = "v17_";
 
-export const SCOPES = ["bookings:read", "cleaning:read", "cleaning:write", "finance:read", "messages:read", "messages:write"] as const;
+export const SCOPES = ["bookings:read", "cleaning:read", "cleaning:write", "finance:read", "messages:read", "messages:write", "gast:read"] as const;
 export type Scope = (typeof SCOPES)[number];
 
 export const SCOPE_LABELS: Record<Scope, string> = {
@@ -17,6 +17,7 @@ export const SCOPE_LABELS: Record<Scope, string> = {
   "finance:read": "Umsatz, Ortstaxe, Auszahlungen Reinigung lesen",
   "messages:read": "Gästenachrichten (Smoobu) und Postfach lesen",
   "messages:write": "Gästen antworten und Mails senden (nur nach Bestätigung)",
+  "gast:read": "Feriengast-Assistent: frei/belegt ohne Namen und die eigene Buchung eines Gastes",
 };
 
 export function isScope(s: string): s is Scope {

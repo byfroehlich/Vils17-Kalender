@@ -614,6 +614,16 @@ Rechtsgrundlage ist die Einwilligung (Art. 6 Abs. 1 lit. a DSGVO; Werbung per E-
   `https://vils17-kalender.onrender.com/api/public/stammgast`; Datenschutzerklärung Abschnitt „Stammgast-Liste“ (`#stammgast`).
 - Tests: `tests/stammgast.test.ts`.
 
+### Feriengast-Assistent Theo (`src/lib/mcp/tools/gast.ts`, Scope `gast:read`)
+Entscheidung Mathias 09.11.2026: Gäste schreiben Theo per WhatsApp direkt an. Der Theo-Dienst (Mac) nutzt ein eigenes
+Token nur mit `gast:read` (Migration `20261109233000_theo_feriengast_token`, nur Hash im Repo; widerrufbar unter
+Einstellungen → Schnittstelle).
+- `gast_verfuegbarkeit`: frei/belegt je Wohnung, ohne Namen und Preise (höchstens 400 Tage).
+- `gast_buchung`: eigene Buchung über Telefonnummer (letzte 9 Ziffern) oder Name + Anreise + (Smoobu-Nummer oder
+  E-Mail); Name + Anreise allein reicht nicht. Nur bestätigte Buchungen bis 14 Tage nach Abreise. Ohne Preis/Kontaktdaten.
+- Die Telefonnummer setzt der Dienst aus dem WhatsApp-Absender, nie aus dem Text des Gastes.
+- Audit: `telefon`, `name`, `email`, `buchungsnummer` werden als „[Text]“ protokolliert. Tests: `tests/gast.test.ts`.
+
 ### Website-Besuchermessung (`src/lib/website-analytics.ts`, `src/lib/website-stats.ts`, Seite `/website`)
 Entscheidung Mathias 06.11.2026: auf vils17.at messen, woher Besucher kommen, wie lange sie bleiben, was sie ansehen
 und ob sie buchen wollen — **ohne Cookie-Banner** (DSGVO + § 165 Abs. 3 TKG 2021), Rechtsgrundlage Art. 6 Abs. 1 lit. f.
