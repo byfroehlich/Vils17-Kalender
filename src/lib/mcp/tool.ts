@@ -55,10 +55,13 @@ export const bestaetigtSchema = z
  * IDs, Datumsangaben und Aufzählungswerte bleiben; alles andere (Namen,
  * Notizen) wird durch "[Text]" ersetzt.
  */
+const PERSONAL_KEYS = new Set(["telefon", "name", "email", "buchungsnummer"]);
+
 export function sanitizeForAudit(args: Record<string, unknown>): Record<string, unknown> {
   const out: Record<string, unknown> = {};
   for (const [k, v] of Object.entries(args ?? {})) {
-    if (v === null || v === undefined || typeof v === "boolean" || typeof v === "number") out[k] = v;
+    if (PERSONAL_KEYS.has(k) && v != null) out[k] = "[Text]"; // Telefon, Name, E-Mail von Gästen nie ins Protokoll
+    else if (v === null || v === undefined || typeof v === "boolean" || typeof v === "number") out[k] = v;
     else if (typeof v === "string") out[k] = /^[\w.:+-]{1,64}$/.test(v) ? v : "[Text]"; // keine Mailadressen
     else out[k] = "[Wert]";
   }
