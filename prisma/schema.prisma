@@ -57,6 +57,7 @@ model Organization {
   laundryAlertKey   String?
   // Letzter Lauf der Sonderwunsch-Erkennung in den Gästechats (gedrosselt, siehe note-suggestions.ts)
   noteScanAt        DateTime?
+  petScanAt         DateTime? // letzte automatische Hundeprüfung (dog-care-message.ts)
   createdAt         DateTime         @default(now())
   updatedAt         DateTime         @updatedAt
 
@@ -301,6 +302,7 @@ model Booking {
   guestCountReminderSentAt DateTime?
   // Schlafzimmer-Frage an den Gast verschickt (einmal je Buchung, src/lib/bedroom-question.ts)
   bedroomQuestionSentAt    DateTime?
+  dogCareMessageSentAt     DateTime? // Hinweis Fröhliche Pfoten an Gäste mit Hund (Mathias 11.11.2026)
   // Bewertungsanfrage nach der Abreise verschickt (einmal je Buchung, src/lib/review-request.ts)
   reviewRequestSentAt      DateTime?
   // Bewertungsanfrage bewusst nicht verschickt (z.B. Airbnb-Bewertung liegt schon vor) + Grund

@@ -549,6 +549,16 @@ ein Schlafzimmer oder getrennt in beiden? Texte DE/EN **wörtlich** wie freigege
 - Antworten („lieber getrennt“, „separate bedrooms“) erkennt die Sonderwunsch-Erkennung als Hinweis-Vorschlag.
 - Tests: `tests/schlafzimmer-frage.test.ts`.
 
+### Hundebetreuung Fröhliche Pfoten (`src/lib/dog-care-message.ts`)
+Entscheidung Mathias 11.11.2026: Gäste mit Hund bekommen 14 Tage vor Anreise EINMAL einen Hinweis auf Fröhliche Pfoten
+(Hundebetreuung, www.froehliche-pfoten-allgaeu.de). Smoobu kann nicht nach Hund filtern, deshalb schickt die App
+(`sendGuestMessage`, 9–21 Uhr Wien, `Booking.dogCareMessageSentAt` atomar, Smoobu-Ablehnung → zurückgesetzt).
+- Regelmäßige Hundeprüfung: `scanUpcomingForDogs` prüft alle 2 h (`Organization.petScanAt`) Portalnotiz + Gästechat der
+  bestätigten Buchungen der nächsten 60 Tage ohne Hund (höchstens 25 je Lauf) über `scanBookingForDogs`; Hand-Eingaben bleiben.
+- Text DE wörtlich wie freigegeben (Winter Nov–März, Sommer Apr–Okt nach Anreisemonat). Englische Fassung und
+  Kurzfrist-Fassung (unter 12 Tage, „in zwei Wochen“ stimmt nicht) warten auf Freigabe (`DOG_CARE_*_FREIGEGEBEN`).
+- Läuft in `runAutoSync`. Audit `guest.message.sent` mit `zweck: "hundebetreuung"`, nie der Text. Tests: `tests/hundebetreuung.test.ts`.
+
 ### Bewertungsanfrage (`src/lib/review-request.ts`)
 Entscheidung Mathias 31.10.2026: Gäste, die schon bewertet haben, bekommen keine Bewertungsanfrage mehr. Statt
 Smoobu-Vorlage 6 (Abreise + 2 Tage, 8:00, an alle) schickt die App die Anfrage selbst über `sendGuestMessage`.
