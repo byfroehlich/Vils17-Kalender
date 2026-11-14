@@ -14,6 +14,7 @@ import { de } from "date-fns/locale";
 import { JobCard, OpenAssignment, Assignment } from "./MyJobsList";
 
 import { ScrollLock } from "@/components/ui/ScrollLock";
+import { ZoomArea } from "@/components/ui/ZoomArea";
 import { NoteBadge } from "@/components/ui/NoteBadge";
 import type { DepartureMarker } from "@/lib/departure-format";
 import { PreviousDepartureLine } from "@/components/ui/PreviousDepartureLine";
@@ -407,6 +408,8 @@ function MonthView({
         </button>
       </div>
 
+      {/* Vergrößerbar: zwei Finger auseinanderziehen oder −/+ (Wunsch Kerstin 14.11.2026) */}
+      <ZoomArea storageKey="v17.kalender.zoom">
       {/* Wochentag-Header */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", padding: "0 8px", marginBottom: 4 }}>
         {DAYS.map((d) => (
@@ -562,6 +565,7 @@ function MonthView({
           );
         })}
       </div>
+      </ZoomArea>
 
       {/* Legende */}
       <div style={{ display: "flex", gap: 14, marginTop: 14, flexWrap: "wrap" as const, padding: "0 16px" }}>

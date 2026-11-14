@@ -533,6 +533,9 @@ am Vortag gereinigt werden kann.
   „Vorgäste reisen ab: Mi 04.11. (gleicher Tag)“ / „(Vortag frei)“ / „(3 Tage vorher frei)“, ohne Vorgäste
   „Keine Vorgäste davor – Wohnung frei“.
 - Tests: `tests/abreisen.test.ts`.
+- **Kalender vergrößern** (Wunsch Kerstin 14.11.2026, `src/components/ui/ZoomArea.tsx`): Monatsansicht mit zwei Fingern
+  auseinanderziehen oder −/+ (100–250 %), breiter als der Bildschirm → seitlich wischen. Die Seite selbst zoomt weiterhin
+  nicht (Viewport gesperrt, siehe App-Rahmen). Gewählte Größe merkt sich das Gerät (`localStorage`, darf fehlen).
 
 ### Schlafzimmer-Frage bei 2 Gästen (`src/lib/bedroom-question.ts`)
 Entscheidung Mathias 31.10.2026: In Wohnungen mit `Apartment.askSeparateBedrooms = true` (per Migration nur das
