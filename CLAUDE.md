@@ -880,7 +880,7 @@ Entscheidung Mathias 31.10.2026: Start **um 10:00 Uhr am Abreisetag** (Check-out
 die Gäste tatsächlich gehen. Roboter steht nur im **Penthouse** (`Apartment.dreameEnabled`, Schalter
 in Einstellungen → Unterkunft).
 - `runDreame` ist idempotent: ab 10:00 einmal starten (`dreameStartedAt`), danach Status prüfen →
-  fertig (`dreameDoneAt`) bzw. Warnung bei Startfehler, Störung (Status 4), > 3 h Laufzeit oder fehlenden
+  fertig (`dreameDoneAt`, Zustand siid 2/piid 1 = 2/6/13) bzw. Warnung bei Startfehler, Störung (Fehlercode siid 2/piid 2 > 0), > 3 h Laufzeit oder fehlenden
   Zugangsdaten — je Auftrag nur einmal (`dreameWarnedAt`). Push an Admin/Verwaltung + Audit.
 - Auslöser: **App-Takt** (`src/lib/app-takt.ts`, gestartet in `src/instrumentation.ts`): der dauerhaft laufende
   Render-Dienst stößt sich alle 5 Min selbst an (runAutoSync + Saugroboter) — keine extra Cron-Dienste nötig
@@ -889,6 +889,9 @@ in Einstellungen → Unterkunft).
   `/api/cron/dreame-start` und `-status` leiten dorthin weiter.
 - ENV: `DREAME_EMAIL`, `DREAME_PASSWORD`, optional `DREAME_DEVICE_ID`. Dreame-Cloud ist inoffiziell
   (nachgebaut) — kann sich ohne Vorwarnung ändern; dann kommt eine Warnung, nichts geht kaputt.
+  Format abgeglichen mit TA2k/ioBroker.dreame am 15.11.2026 (Fix 401): Passwort-MD5 klein, `authorization` immer Basic,
+  Token in `dreame-auth: bearer …`, Geräteliste per POST (`data.page.records`), Befehle als `{did,id,data:{method,params}}`,
+  Antwort nur mit `code: 0` gültig.
 - Tests: `tests/dreame.test.ts`.
 
 ### Reinigungsstatistik

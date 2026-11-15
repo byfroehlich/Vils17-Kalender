@@ -14,11 +14,15 @@ let world: Awaited<ReturnType<typeof seedWorld>>;
 // Penthouse-Abreise b4: 12.10.2026 (Sommerzeit, 10:00 Wien = 08:00 UTC)
 const at = (hhmm: string) => new Date(`2026-10-12T${hhmm}:00+02:00`);
 
-function fakeClient(states: number[] = [], failStart = false) {
+function fakeClient(states: Array<number | { state: number; error: number }> = [], failStart = false) {
   const calls = { start: 0, status: 0 };
   const client: DreameClient = {
     async start() { calls.start++; if (failStart) throw new Error("offline"); },
-    async status() { calls.status++; return states.shift() ?? 1; },
+    async status() {
+      calls.status++;
+      const s = states.shift() ?? 1;
+      return typeof s === "number" ? { state: s, error: 0 } : s;
+    },
   };
   return { client, calls };
 }
@@ -73,7 +77,7 @@ describe("Saugroboter am Abreisetag", () => {
   });
 
   it("Störung und zu lange Laufzeit werden gemeldet", async () => {
-    const f = fakeClient([4]);
+    const f = fakeClient([{ state: 3, error: 7 }]);
     await runDreame({ organizationId: world.org.id, now: at("10:00"), client: f.client });
     await runDreame({ organizationId: world.org.id, now: at("10:30"), client: f.client });
     expect(pushes.at(-1)?.body).toContain("Störung");
@@ -90,5 +94,40 @@ describe("Saugroboter am Abreisetag", () => {
     await prisma.apartment.update({ where: { id: world.penthouse.id }, data: { dreameEnabled: true } });
     const r = await runDreame({ organizationId: world.org.id, now: new Date("2026-10-13T10:00:00+02:00"), client: fakeClient().client });
     expect(r[0]).toMatchObject({ action: "skipped", reason: "keine Abreise heute" });
+  });
+});
+
+describe("Dreame-Cloud: Anfrageformat wie die App", () => {
+  it("Passwort-Hash klein, Token in dreame-auth, Befehl als action", async () => {
+    const { hashPassword, dreameHeaders, dreameStartCleaning } = await import("@/lib/dreame");
+    expect(hashPassword("x")).toMatch(/^[0-9a-f]{32}$/);
+    const h = dreameHeaders("TOK");
+    expect(h.authorization).toMatch(/^Basic /);
+    expect(h["dreame-auth"]).toBe("bearer TOK");
+
+    const calls: Array<{ url: string; body: unknown }> = [];
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async (url: string, init?: RequestInit) => {
+      calls.push({ url, body: JSON.parse(String(init?.body)) });
+      return new Response(JSON.stringify({ code: 0, data: { result: { code: 0 } } }), { status: 200 });
+    }) as typeof fetch;
+    try {
+      await dreameStartCleaning("TOK", "did1");
+    } finally {
+      globalThis.fetch = orig;
+    }
+    expect(calls[0]!.url).toContain("/dreame-iot-com-10000/device/sendCommand");
+    expect(calls[0]!.body).toMatchObject({ did: "did1", data: { method: "action", params: { did: "did1", siid: 2, aiid: 1, in: [] } } });
+  });
+
+  it("Antwort mit code ≠ 0 gilt als Fehler", async () => {
+    const { dreameStartCleaning } = await import("@/lib/dreame");
+    const orig = globalThis.fetch;
+    globalThis.fetch = (async () => new Response(JSON.stringify({ code: 80001, msg: "offline" }), { status: 200 })) as unknown as typeof fetch;
+    try {
+      await expect(dreameStartCleaning("TOK", "did1")).rejects.toThrow("code 80001");
+    } finally {
+      globalThis.fetch = orig;
+    }
   });
 });

@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { dreameLogin, dreameGetDeviceId, dreameStartCleaning, dreameGetStatus, dreameIsDone } from "./dreame";
+import { dreameLogin, dreameGetDeviceId, dreameStartCleaning, dreameGetStatus, dreameIsDone, type DreameStatus } from "./dreame";
 import { sendPushToRole } from "./push";
 import { todayVienna } from "./mcp/format";
 import { logAudit } from "./audit";
@@ -15,8 +15,6 @@ import { logAudit } from "./audit";
 export const DREAME_START_MINUTE = 10 * 60; // 10:00 Wiener Zeit
 /** Nach so vielen Minuten ohne „fertig“ wird gewarnt */
 export const DREAME_MAX_RUN_MINUTES = 180;
-/** Fehlerzustände laut Gerät (siid 2, piid 2) */
-const ERROR_STATES = [4];
 
 export type DreameStep =
   | { apartment: string; action: "skipped"; reason: string }
@@ -30,7 +28,7 @@ function viennaMinutes(now: Date): number {
 
 export interface DreameClient {
   start(): Promise<void>;
-  status(): Promise<number>;
+  status(): Promise<DreameStatus>;
 }
 
 /** Echter Zugriff über die Dreame-Cloud; null = Zugangsdaten fehlen */
@@ -104,23 +102,23 @@ export async function runDreame(params: { organizationId: string; now?: Date; cl
     }
 
     // 2. Überwachen
-    let status: number;
+    let status: DreameStatus;
     try {
       status = await client.status();
     } catch (e) {
       await warn(`Status nicht abrufbar. (${errText(e)})`);
       continue;
     }
-    if (dreameIsDone(status)) {
+    if (status.error > 0) { await warn(`Störung gemeldet (Fehlercode ${status.error}) — bitte in der Dreame-App nachsehen.`); continue; }
+    if (dreameIsDone(status.state)) {
       await prisma.cleaningAssignment.update({ where: { id: a.id }, data: { dreameDoneAt: now } });
       await sendPushToRole(params.organizationId, ["ADMIN", "MANAGER"], { title: "✅ Saugroboter fertig", body: `${apt.name}: Reinigung abgeschlossen`, url: `/bookings/${booking.id}` });
       steps.push({ apartment: apt.name, action: "done" });
       continue;
     }
-    if (ERROR_STATES.includes(status)) { await warn("Störung gemeldet (steckt fest oder Fehler) — bitte in der Dreame-App nachsehen."); continue; }
     const runMinutes = (now.getTime() - a.dreameStartedAt.getTime()) / 60_000;
     if (runMinutes > DREAME_MAX_RUN_MINUTES) { await warn(`läuft seit über ${DREAME_MAX_RUN_MINUTES / 60} Stunden — bitte prüfen.`); continue; }
-    steps.push({ apartment: apt.name, action: "running", detail: `Status ${status}` });
+    steps.push({ apartment: apt.name, action: "running", detail: `Status ${status.state}` });
   }
   return steps;
 }
