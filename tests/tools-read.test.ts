@@ -224,6 +224,28 @@ describe("auszahlungen_reinigung", () => {
     const r = await call("auszahlungen_reinigung", { von_monat: "2026-11", bis_monat: "2026-11" });
     expect(r.result.eintraege[0]).toMatchObject({ reinigungskraft: "Vanessa", gesamt: money(70), davon_mit_vereinbartem_betrag: 1 });
   });
+  it("Monat = Erledigt-Zeitpunkt, nicht Abreise der Gäste (Mathias 15.11.2026)", async () => {
+    // b2: gereinigt für die Anreise 30.10., Gäste reisen am 02.11. ab
+    await prisma.cleaningAssignment.update({ where: { bookingId: world.bookings.b2.id }, data: { status: "COMPLETED" } });
+    let r = await call("auszahlungen_reinigung", { von_monat: "2026-10", bis_monat: "2026-11" });
+    expect(r.result.eintraege.find((e: any) => e.reinigungskraft === "Kerstin" && e.monat === "2026-10").reinigungen).toBe(2);
+    expect(r.result.eintraege.find((e: any) => e.reinigungskraft === "Kerstin" && e.monat === "2026-11")).toBeUndefined();
+    // als erledigt markiert am 01.11. (Wiener Zeit) → November
+    await prisma.cleaningAssignment.update({ where: { bookingId: world.bookings.b2.id }, data: { completedAt: new Date("2026-10-31T23:30:00Z") } });
+    r = await call("auszahlungen_reinigung", { von_monat: "2026-10", bis_monat: "2026-11" });
+    expect(r.result.eintraege.find((e: any) => e.reinigungskraft === "Kerstin" && e.monat === "2026-11").reinigungen).toBe(1);
+  });
+  it("Erledigen setzt den Zeitpunkt, Zurücknehmen löscht ihn", async () => {
+    const { setCleaningStatus } = await import("@/lib/booking-actions");
+    const base = { organizationId: world.org.id, bookingId: world.bookings.b2.id, actor: { userId: null as unknown as string }, actorName: "Test" };
+    await setCleaningStatus({ ...base, status: "COMPLETED" });
+    const first = (await prisma.cleaningAssignment.findUniqueOrThrow({ where: { bookingId: world.bookings.b2.id } })).completedAt;
+    expect(first).not.toBeNull();
+    await setCleaningStatus({ ...base, status: "COMPLETED" });
+    expect((await prisma.cleaningAssignment.findUniqueOrThrow({ where: { bookingId: world.bookings.b2.id } })).completedAt).toEqual(first);
+    await setCleaningStatus({ ...base, status: "ASSIGNED" });
+    expect((await prisma.cleaningAssignment.findUniqueOrThrow({ where: { bookingId: world.bookings.b2.id } })).completedAt).toBeNull();
+  });
 });
 
 describe("sync_status", () => {

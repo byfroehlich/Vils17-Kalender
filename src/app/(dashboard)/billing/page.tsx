@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { BillingView } from "@/components/billing/BillingView";
 import { CleanerBillingView } from "@/components/billing/CleanerBillingView";
 import { effectiveRate, isPremiumFor } from "@/lib/rates";
+import { billingDay } from "@/lib/billing-month";
 
 export default async function BillingPage() {
   const session = await getServerSession(authOptions);
@@ -24,6 +25,7 @@ export default async function BillingPage() {
         booking: {
           select: {
             checkOut: true,
+            checkIn: true,
             premiumRate: true,
             premiumRateCleanerId: true,
             apartment: { select: { name: true, color: true } },
@@ -38,6 +40,7 @@ export default async function BillingPage() {
       ...a,
       rate: effectiveRate(a),
       isPremium: isPremiumFor(a.booking, a.cleanerId),
+      billingDay: billingDay(a),
     }));
     return <CleanerBillingView assignments={assignments} cleanerName={session.user.name ?? ""} />;
   }
@@ -55,6 +58,7 @@ export default async function BillingPage() {
       booking: {
         select: {
           checkOut: true,
+          checkIn: true,
           guestName: true,
           premiumRate: true,
           premiumRateCleanerId: true,
@@ -69,6 +73,7 @@ export default async function BillingPage() {
     ...a,
     rate: effectiveRate(a),
     isPremium: isPremiumFor(a.booking, a.cleanerId),
+    billingDay: billingDay(a),
   }));
 
   return <BillingView assignments={assignments} />;

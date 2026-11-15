@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { billingMonth } from "@/lib/billing-month";
 
 const schema = z.object({
   cleanerId: z.string(),
@@ -25,18 +26,17 @@ export async function POST(req: NextRequest) {
   const { cleanerId, year, month } = parsed.data;
   const orgId = session.user.organizationId;
 
-  const start = new Date(year, month - 1, 1);
-  const end = new Date(year, month, 1);
+  // Abrechnungsmonat = Monat des Erledigens (lib/billing-month.ts), nicht mehr Abreisemonat
+  const key = `${year}-${String(month).padStart(2, "0")}`;
+  const open = await prisma.cleaningAssignment.findMany({
+    where: { organizationId: orgId, cleanerId, status: "COMPLETED", paidOut: false },
+    select: { id: true, completedAt: true, booking: { select: { checkIn: true } } },
+  });
+  const ids = open.filter((x) => billingMonth(x) === key).map((x) => x.id);
 
   const now = new Date();
   const result = await prisma.cleaningAssignment.updateMany({
-    where: {
-      organizationId: orgId,
-      cleanerId,
-      status: "COMPLETED",
-      paidOut: false,
-      booking: { checkOut: { gte: start, lt: end } },
-    },
+    where: { organizationId: orgId, id: { in: ids }, paidOut: false },
     data: { paidOut: true, paidOutAt: now },
   });
 

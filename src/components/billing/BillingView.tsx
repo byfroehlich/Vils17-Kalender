@@ -15,6 +15,8 @@ type Assignment = {
   rate: number;
   /** Sondersatz, z.B. 70 € Penthouse */
   isPremium: boolean;
+  /** Abrechnungstag JJJJ-MM-TT = Tag des Erledigens (serverseitig, lib/billing-month.ts) */
+  billingDay: string;
 };
 
 type MonthGroup = {
@@ -31,9 +33,8 @@ function groupByMonthAndCleaner(assignments: Assignment[]): MonthGroup[] {
 
   for (const a of assignments) {
     if (!a.cleaner) continue;
-    const d = new Date(a.booking.checkOut);
-    const year = d.getFullYear();
-    const month = d.getMonth() + 1;
+    const year = Number(a.billingDay.slice(0, 4));
+    const month = Number(a.billingDay.slice(5, 7));
     const key = `${a.cleaner.id}-${year}-${month}`;
 
     if (!map.has(key)) {
@@ -256,7 +257,7 @@ export function BillingView({ assignments }: { assignments: Assignment[] }) {
                     </div>
                     <div className="flex items-center gap-2">
                       <span style={{ fontSize: 12, color: "rgba(255,255,255,0.35)" }}>
-                        Abreise {new Date(job.booking.checkOut).toLocaleDateString("de-AT", { day: "numeric", month: "numeric" })}
+                        erledigt {new Date(`${job.billingDay}T00:00:00Z`).toLocaleDateString("de-AT", { day: "numeric", month: "numeric", timeZone: "UTC" })}
                       </span>
                       <span style={{ fontSize: 13, fontWeight: 600, color: job.paidOut ? "rgba(255,255,255,0.35)" : "rgba(255,255,255,0.8)" }}>
                         {job.rate.toFixed(0)} €

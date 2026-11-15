@@ -307,6 +307,8 @@ export async function setCleaningStatus(params: {
         // schon erledigt → festgeschriebenen Satz behalten, nicht neu rechnen
         ? effectiveRate({ ...assignment, rate: assignment.status === "COMPLETED" ? assignment.rate : null })
         : null,
+      // Abrechnungsmonat = Monat des Erledigens; bleibt beim erneuten Speichern erhalten
+      completedAt: newStatus === "COMPLETED" ? (assignment.status === "COMPLETED" ? assignment.completedAt ?? new Date() : new Date()) : null,
       // Zuweisung aufheben wenn auf offen/selbstreinigung zurückgesetzt
       ...(newStatus === "UNASSIGNED" || newStatus === "SELF_CLEAN"
         ? { cleanerId: null, assignedAt: null, cleanerUnavailable: false, cleanerUnavailableNote: null, declinedById: null }

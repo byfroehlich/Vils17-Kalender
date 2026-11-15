@@ -285,6 +285,11 @@ die vereinbarte Person reinigt → sonst normaler Satz der Reinigungskraft.
 - Alle Ansichten bekommen `rate`/`isPremium` fertig vom Server — nie im Client
   aus `cleaner.cleanerRate` rechnen, sonst stimmen Sondersatz und Historie nicht.
 - Markierung: `RateBadge` („70 €"); durchgestrichen, wenn eine Vertretung reinigt.
+- **Abrechnungsmonat = Monat des „Erledigt“-Klicks** (Entscheidung Mathias 15.11.2026, `src/lib/billing-month.ts`):
+  `CleaningAssignment.completedAt` wird beim Erledigen gesetzt (bleibt beim erneuten Speichern, Zurücknehmen löscht ihn).
+  Vorher zählte der Abreisemonat der Gäste, für die gereinigt wurde — Reinigung 26.10. landete so im November.
+  Altbestand per Migration: Zeitpunkt aus dem Audit-Log, sonst Reinigungstag. Abrechnung, „als ausgezahlt markieren“
+  (`/api/billing/payout`) und MCP `auszahlungen_reinigung` nutzen alle `billingMonth`. „Ausgezahlt“ hängt am Auftrag.
 - Prüfen: `npm run test:rates`
 
 ### MCP-Schnittstelle (`/api/mcp`, `src/lib/mcp/`)

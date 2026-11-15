@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatDateLong, getCleaningStatusColor } from "@/lib/utils";
+import { formatDateLong } from "@/lib/utils";
 import { Users, Calendar, Globe, Phone, Mail, ArrowLeft, Sparkles, WashingMachine, CheckCircle, Clock } from "lucide-react";
 import Link from "next/link";
 
@@ -607,10 +607,21 @@ function QuantityChip({ emoji, value, label }: { emoji: string; value: number; l
   );
 }
 
+// Farben für den dunklen Stil: heller Text auf getöntem Glas (vorher helle Badges, im Dark Mode kaum lesbar)
+const CLEANING_BADGE: Record<string, { bg: string; border: string; color: string }> = {
+  UNASSIGNED: { bg: "rgba(249,115,22,0.16)", border: "rgba(249,115,22,0.45)", color: "#fdba74" },
+  SELF_CLEAN: { bg: "rgba(59,130,246,0.16)", border: "rgba(59,130,246,0.45)", color: "#93c5fd" },
+  ASSIGNED:   { bg: "rgba(59,130,246,0.16)", border: "rgba(59,130,246,0.45)", color: "#93c5fd" },
+  COMPLETED:  { bg: "rgba(34,197,94,0.16)",  border: "rgba(34,197,94,0.45)",  color: "#86efac" },
+};
+
 function StatusBadge({ status, label }: { type: "cleaning"; status: string; label: string }) {
-  const color = getCleaningStatusColor(status);
+  const c = CLEANING_BADGE[status] ?? { bg: "rgba(255,255,255,0.08)", border: "rgba(255,255,255,0.2)", color: "rgba(255,255,255,0.85)" };
   return (
-    <span className={`px-3 py-1 rounded-full text-xs font-semibold border ${color}`}>
+    <span
+      className="px-3 py-1 rounded-full text-xs font-semibold"
+      style={{ background: c.bg, border: `1px solid ${c.border}`, color: c.color, whiteSpace: "nowrap" }}
+    >
       {label}
     </span>
   );

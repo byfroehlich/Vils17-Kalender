@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "../../prisma";
 import { defineTool, ToolError } from "../tool";
+import { billingMonth } from "@/lib/billing-month";
 import { money, day, addDays, nightsBetween, channelGroup, monthKey, parseDay, viennaIso } from "../format";
 import { datum, wohnungFilter, monthPeriodFields, resolveApartmentId, resolveMonths, nightsPerMonth } from "../shared";
 import { effectiveRate, isPremiumFor } from "../../rates";
@@ -278,7 +279,7 @@ export const auszahlungenReinigung = defineTool({
   description:
     "Beträge je Reinigungskraft und Monat für erledigte Reinigungen: gesamt, bereits ausgezahlt, noch offen. " +
     "Gleiche Rechnung wie die Abrechnung in der App (festgeschriebener Satz, sonst vereinbarter Betrag, sonst Standardsatz). " +
-    "Monat = Abreisemonat, wie beim „als ausgezahlt markieren“.",
+    "Monat = Monat, in dem die Reinigung als erledigt markiert wurde (Altbestand: Reinigungstag), wie beim „als ausgezahlt markieren“.",
   scope: "finance:read",
   input: {
     ...monthPeriodFields,
@@ -286,7 +287,9 @@ export const auszahlungenReinigung = defineTool({
     nur_offen: z.boolean().optional().describe("Nur Monate mit offenem Betrag"),
   },
   async handler(args, ctx) {
-    const { start, end } = resolveMonths(args);
+    const { start, end, months } = resolveMonths(args);
+    const monthSet = new Set(months);
+    const DAY = 86_400_000;
 
     let cleanerId: string | undefined;
     if (args.reinigungskraft) {
@@ -306,22 +309,28 @@ export const auszahlungenReinigung = defineTool({
         organizationId: ctx.organizationId,
         status: "COMPLETED",
         cleanerId: cleanerId ?? { not: null },
-        booking: { checkOut: { gte: start, lt: end } },
+        // Abrechnungsmonat = Erledigt-Zeitpunkt (Wien), Altbestand ohne Zeitpunkt: Reinigungstag
+        OR: [
+          { completedAt: { gte: new Date(start.getTime() - DAY), lt: new Date(end.getTime() + DAY) } },
+          { completedAt: null, booking: { checkIn: { gte: start, lt: end } } },
+        ],
       },
       select: {
         rate: true,
+        completedAt: true,
         cleanerId: true,
         paidOut: true,
         paidOutAt: true,
         cleaner: { select: { name: true, cleanerRate: true } },
-        booking: { select: { checkOut: true, premiumRate: true, premiumRateCleanerId: true } },
+        booking: { select: { checkIn: true, premiumRate: true, premiumRateCleanerId: true } },
       },
     });
 
     type G = { name: string; monat: string; anzahl: number; eigene: number; gesamt: number; bezahlt: number; bezahltAm: Date | null };
     const groups = new Map<string, G>();
     for (const a of rows) {
-      const m = monthKey(a.booking.checkOut);
+      const m = billingMonth(a);
+      if (!monthSet.has(m)) continue;
       const key = `${a.cleanerId}|${m}`;
       const g = groups.get(key) ?? { name: a.cleaner?.name ?? "?", monat: m, anzahl: 0, eigene: 0, gesamt: 0, bezahlt: 0, bezahltAm: null };
       const r = effectiveRate(a);

@@ -397,6 +397,9 @@ model CleaningAssignment {
   // Satzänderungen alte Abrechnungen nicht rückwirkend verändern
   rate Float?
 
+  // Zeitpunkt „erledigt“ – bestimmt den Abrechnungsmonat (src/lib/billing-month.ts)
+  completedAt DateTime?
+
   // Auszahlung
   paidOut   Boolean   @default(false)
   paidOutAt DateTime?
