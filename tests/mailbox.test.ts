@@ -9,6 +9,7 @@ type FakeMsg = { uid: number; flags: Set<string>; raw: string };
 const imap = vi.hoisted(() => ({
   folders: {} as Record<string, FakeMsg[]>,
   appended: [] as { path: string; raw: string; flags: string[] }[],
+  deleted: [] as string[],
   current: "",
   connects: 0,
 }));
@@ -72,10 +73,19 @@ vi.mock("imapflow", async () => {
     }
     async messageMove(uid: string, target: string) {
       const list = imap.folders[imap.current]!;
-      const i = list.findIndex((x) => x.uid === Number(uid));
-      const [m] = list.splice(i, 1);
-      imap.folders[target]!.push(m!);
+      for (const u of uid.split(",").map(Number)) {
+        const i = list.findIndex((x) => x.uid === u);
+        if (i < 0) continue;
+        const [m] = list.splice(i, 1);
+        imap.folders[target]!.push(m!);
+      }
       return { path: target };
+    }
+    async messageDelete(uid: string) {
+      imap.deleted.push(imap.current);
+      const drop = uid.split(",").map(Number);
+      imap.folders[imap.current] = imap.folders[imap.current]!.filter((x) => !drop.includes(x.uid));
+      return true;
     }
     async append(path: string, raw: Buffer, flags: string[]) {
       imap.appended.push({ path, raw: raw.toString("utf8"), flags });
@@ -123,6 +133,7 @@ beforeEach(async () => {
     Trash: [],
   };
   imap.appended = [];
+  imap.deleted = [];
   smtp.sent = [];
 });
 
@@ -234,6 +245,50 @@ describe("Verschieben und Markieren", () => {
   it("ungelesen markieren", async () => {
     await updateMessage("INBOX", 12, { seen: false });
     expect(imap.folders.INBOX![1]!.flags.has("\\Seen")).toBe(false);
+  });
+});
+
+describe("Aufräumen über MCP", () => {
+  it("mail_papierkorb: ohne bestaetigt nur Vorschau mit Absender und Betreff", async () => {
+    const r = await call("mail_papierkorb", { uids: [11, 99] });
+    expect(r.ok).toBe(true);
+    expect(r.result.vorschau).toBe(true);
+    expect(r.result.mails).toEqual([expect.objectContaining({ uid: 11, betreff: "Anreise mit Hund" })]);
+    expect(r.result.nicht_gefunden).toEqual([99]);
+    expect(imap.folders.INBOX!.map((m) => m.uid)).toEqual([11, 12]);
+  });
+
+  it("mail_papierkorb verschiebt mit bestaetigt, Audit nur Anzahl", async () => {
+    const r = await call("mail_papierkorb", { uids: [11, 12], bestaetigt: true });
+    expect(r.result).toMatchObject({ ausgefuehrt: true, verschoben: 2, nach: "Trash" });
+    expect(imap.folders.INBOX).toEqual([]);
+    expect(imap.folders.Trash!.map((m) => m.uid).sort()).toEqual([11, 12]);
+    const log = await prisma.auditLog.findFirst({ where: { action: "mail.trashed" } });
+    expect(JSON.stringify(log)).not.toContain("Anreise mit Hund");
+  });
+
+  it("mail_endgueltig_loeschen wirkt nur im Papierkorb", async () => {
+    // Mail liegt im Posteingang → wird nicht gefunden, nichts gelöscht
+    const r0 = await call("mail_endgueltig_loeschen", { uids: [11], bestaetigt: true });
+    expect(r0.ok).toBe(false);
+    expect(imap.deleted).toEqual([]);
+
+    await call("mail_papierkorb", { uids: [11], bestaetigt: true });
+    const v = await call("mail_endgueltig_loeschen", { uids: [11] });
+    expect(v.result.vorschau).toBe(true);
+    expect(imap.folders.Trash!.map((m) => m.uid)).toEqual([11]);
+
+    const r = await call("mail_endgueltig_loeschen", { uids: [11], bestaetigt: true });
+    expect(r.result).toMatchObject({ ausgefuehrt: true, endgueltig_geloescht: 1 });
+    expect(imap.deleted).toEqual(["Trash"]);
+    expect(imap.folders.Trash).toEqual([]);
+    expect(imap.folders.INBOX!.map((m) => m.uid)).toEqual([12]);
+  });
+
+  it("Papierkorb in den Papierkorb → verständlicher Fehler", async () => {
+    await call("mail_papierkorb", { uids: [11], bestaetigt: true });
+    const r = await call("mail_papierkorb", { uids: [11], ordner: "Trash", bestaetigt: true });
+    expect(r.ok).toBe(false);
   });
 });
 

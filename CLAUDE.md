@@ -472,7 +472,7 @@ src/lib/mailbox/config.ts   Zugang aus ENV; smtpTransport() auch für Reinigungs
 src/lib/mailbox/index.ts    listFolders, listMessages, getMessage, getAttachment, updateMessage, sendMail
 src/app/api/mail/*          folders, messages, messages/[uid] (GET/PATCH), …/attachments/[i], send (multipart)
 src/components/mail/MailApp.tsx   Liste → Mail → Antworten/Weiterleiten/Neu, Anhänge, Suche, Ordner
-src/lib/mcp/tools/mail.ts   postfach, mail_lesen (messages:read), mail_senden (messages:write, bestaetigt)
+src/lib/mcp/tools/mail.ts   postfach, mail_lesen (messages:read), mail_senden, mail_papierkorb, mail_endgueltig_loeschen (messages:write, bestaetigt)
 ```
 
 ENV (Render): `IMAP_HOST=imap.strato.de`, `IMAP_USER=info@vils17.at`, `IMAP_PASS`,
@@ -489,7 +489,9 @@ Regeln:
   `sanitizeForAudit` lässt keine Strings mit `@` durch.
 - **Kein IMAP-SEARCH:** liefert bei Strato keine Treffer. Liste über Sequenznummern, Suche/Filter
   clientseitig über die neuesten 1000 Mails (Absender, Empfänger, Betreff — nicht im Text).
-- Kein Löschen über MCP; in der App nur „Papierkorb“ (verschieben, wiederherstellbar).
+- Aufräumen über MCP (Entscheidung Mathias 21.11.2026): `mail_papierkorb` verschiebt in den Papierkorb (wiederherstellbar),
+  `mail_endgueltig_loeschen` löscht **nur aus dem Papierkorb** — beide `messages:write`, Vorschau mit Absender/Betreff,
+  dann `bestaetigt`. Audit `mail.trashed` / `mail.deleted` nur mit Anzahl. In der App nur „Papierkorb“.
 - Tests: `tests/mailbox.test.ts` (gefälschter IMAP-Server, abgefangener SMTP).
 
 ### Mängel & Einkauf (`src/lib/issues.ts`, Seite `/issues` „Mängel“)

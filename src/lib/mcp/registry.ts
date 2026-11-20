@@ -5,7 +5,7 @@ import { reinigungen, syncStatus, wochenplan } from "./tools/cleaning";
 import { reinigungZuweisen, buchungNotiz, gaestezahlKorrigieren, syncAusloesen, reinigungStatus, waescheStatus } from "./tools/write";
 import { gaesteNachrichten, offeneGaestenachrichten, gastAntworten, gaestechatErledigt } from "./tools/guests";
 import { hundeUebersicht, hundePruefen, hundeEintragen, hundegebuehrAnfordern, hundegebuehrStatus } from "./tools/pets";
-import { postfach, mailLesen, mailSenden } from "./tools/mail";
+import { postfach, mailLesen, mailSenden, mailPapierkorb, mailEndgueltigLoeschen } from "./tools/mail";
 import { maengel, mangelErfassen } from "./tools/issues";
 import { hinweisVorschlaege, hinweisUebernehmen } from "./tools/hints";
 import { pushStatus, pushTest, reinigungNachricht, pushProtokoll } from "./tools/push";
@@ -63,6 +63,8 @@ export const TOOLS: ToolDef[] = [
   waescheReserve,
   waescheBetten,
   mailSenden,
+  mailPapierkorb,
+  mailEndgueltigLoeschen,
   mangelErfassen,
   hinweisUebernehmen,
 ] as unknown as ToolDef[];

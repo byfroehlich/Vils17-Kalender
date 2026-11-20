@@ -267,6 +267,63 @@ export async function updateMessage(folder: string, uid: number, change: { seen?
   }));
 }
 
+// ─── Aufräumen (Papierkorb / endgültig löschen) ──────────────────────────────
+// Entscheidung Mathias 21.11.2026: Über die Schnittstelle darf aufgeräumt werden —
+// verschieben in den Papierkorb (wiederherstellbar) und endgültig löschen NUR aus
+// dem Papierkorb. Beides mit Vorschau und Bestätigung (MCP-Tools in tools/mail.ts).
+
+const summaryQuery = { uid: true, envelope: true, flags: true, bodyStructure: true, size: true } as const;
+
+/** Kopfdaten der angegebenen Mails eines Ordners (nicht vorhandene UIDs fehlen einfach). */
+export async function summarizeMessages(folder: string, uids: number[]): Promise<MailSummary[]> {
+  if (uids.length === 0) return [];
+  return withImap((client) => withFolder(client, folder, async () => {
+    const out: MailSummary[] = [];
+    for await (const m of client.fetch(uids, summaryQuery, { uid: true })) {
+      out.push({
+        uid: m.uid, folder,
+        from: addr(m.envelope?.from), to: addr(m.envelope?.to),
+        subject: m.envelope?.subject ?? "",
+        date: m.envelope?.date ? new Date(m.envelope.date).toISOString() : null,
+        seen: m.flags?.has("\\Seen") ?? false,
+        answered: m.flags?.has("\\Answered") ?? false,
+        flagged: m.flags?.has("\\Flagged") ?? false,
+        hasAttachments: hasAttachment(m.bodyStructure),
+        size: m.size ?? null,
+      });
+    }
+    return out.sort((a, b) => b.uid - a.uid);
+  }));
+}
+
+/** Pfad des Papierkorbs (Special-Use \Trash). */
+export async function trashFolder(): Promise<string> {
+  const path = await withImap((client) => findSpecial(client, "\\Trash"));
+  if (!path) throw new MailboxError("Kein Papierkorb im Postfach gefunden.");
+  return path;
+}
+
+/** Verschiebt Mails in den Papierkorb (wiederherstellbar). */
+export async function trashMessages(folder: string, uids: number[]): Promise<{ movedTo: string; count: number }> {
+  const target = await trashFolder();
+  if (folder === target) throw new MailboxError("Die Mails liegen schon im Papierkorb.");
+  if (uids.length === 0) return { movedTo: target, count: 0 };
+  return withImap((client) => withFolder(client, folder, async () => {
+    await client.messageMove(uids.join(","), target, { uid: true });
+    return { movedTo: target, count: uids.length };
+  }));
+}
+
+/** Löscht Mails endgültig — ausschließlich aus dem Papierkorb. */
+export async function deleteFromTrash(uids: number[]): Promise<{ folder: string; count: number }> {
+  const folder = await trashFolder();
+  if (uids.length === 0) return { folder, count: 0 };
+  return withImap((client) => withFolder(client, folder, async () => {
+    await client.messageDelete(uids.join(","), { uid: true });
+    return { folder, count: uids.length };
+  }));
+}
+
 // ─── Senden ───────────────────────────────────────────────────────────────────
 
 export interface OutgoingMail {
