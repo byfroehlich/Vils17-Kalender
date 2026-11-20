@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { defineTool, preview, bestaetigtSchema, ToolError } from "../tool";
-import { listMessages, getMessage, sendMail, validateRecipients, replySubject, MailboxError } from "../../mailbox";
+import { listMessages, getMessage, sendMail, validateRecipients, replySubject, MailboxError, summarizeMessages, trashMessages, deleteFromTrash, trashFolder } from "../../mailbox";
 import { mailboxConfig } from "../../mailbox/config";
 import { viennaIso } from "../format";
 import { logAudit } from "../../audit";
@@ -127,5 +127,73 @@ export const mailSenden = defineTool({
       details: { via: `mcp:${ctx.tokenName}`, empfaenger: to.length + cc.length, zeichen: args.text.length, antwort: Boolean(args.antwort_auf_uid) },
     });
     return { ausgefuehrt: true, gesendet: true, an: to, betreff: subject, in_gesendet_abgelegt: r.savedToSent };
+  },
+});
+
+// ─── Aufräumen ────────────────────────────────────────────────────────────────
+// Entscheidung Mathias 21.11.2026: Claude darf info@vils17.at aufräumen.
+// mail_papierkorb verschiebt (wiederherstellbar), mail_endgueltig_loeschen löscht
+// NUR aus dem Papierkorb. Beides erst als Vorschau, dann mit bestaetigt: true.
+// Audit nur mit Anzahl — keine Adressen, keine Betreffzeilen.
+
+const uids = z.array(z.number().int().positive()).min(1).max(100).describe("uids aus postfach (höchstens 100 je Aufruf)");
+
+function vorschauListe(list: Awaited<ReturnType<typeof summarizeMessages>>) {
+  return list.map((m) => ({ uid: m.uid, von: who(m.from), betreff: m.subject, datum: when(m.date) }));
+}
+
+export const mailPapierkorb = defineTool({
+  name: "mail_papierkorb",
+  title: "Mails in den Papierkorb",
+  description:
+    "Verschiebt Mails aus info@vils17.at in den Papierkorb (wiederherstellbar, z. B. Werbung, Spam). " +
+    "Erst OHNE bestaetigt aufrufen — die Vorschau zeigt Absender und Betreff jeder Mail; dann mit bestaetigt: true ausführen.",
+  scope: "messages:write",
+  write: true,
+  input: { uids, ordner, bestaetigt: bestaetigtSchema },
+  async handler(args, ctx) {
+    const folder = args.ordner ?? "INBOX";
+    const gefunden = await mailbox(() => summarizeMessages(folder, args.uids));
+    const fehlend = args.uids.filter((u) => !gefunden.some((m) => m.uid === u));
+    if (gefunden.length === 0) throw new ToolError("Keine der Mails gefunden.");
+    if (!args.bestaetigt) {
+      return preview(`${gefunden.length} Mail(s) aus ${folder} in den Papierkorb verschieben (wiederherstellbar).`, {
+        mails: vorschauListe(gefunden), ...(fehlend.length ? { nicht_gefunden: fehlend } : {}),
+      });
+    }
+    const r = await mailbox(() => trashMessages(folder, gefunden.map((m) => m.uid)));
+    await logAudit({
+      organizationId: ctx.organizationId, action: "mail.trashed", entityType: "Mail",
+      details: { via: `mcp:${ctx.tokenName}`, anzahl: r.count },
+    });
+    return { ausgefuehrt: true, verschoben: r.count, nach: r.movedTo, ...(fehlend.length ? { nicht_gefunden: fehlend } : {}) };
+  },
+});
+
+export const mailEndgueltigLoeschen = defineTool({
+  name: "mail_endgueltig_loeschen",
+  title: "Mails endgültig löschen",
+  description:
+    "Löscht Mails endgültig — ausschließlich aus dem Papierkorb von info@vils17.at (uids aus postfach mit ordner = Papierkorb). " +
+    "Nicht rückgängig zu machen. Erst OHNE bestaetigt aufrufen und Mathias die Liste zeigen; erst nach seiner ausdrücklichen Zustimmung mit bestaetigt: true.",
+  scope: "messages:write",
+  write: true,
+  input: { uids, bestaetigt: bestaetigtSchema },
+  async handler(args, ctx) {
+    const folder = await mailbox(() => trashFolder());
+    const gefunden = await mailbox(() => summarizeMessages(folder, args.uids));
+    const fehlend = args.uids.filter((u) => !gefunden.some((m) => m.uid === u));
+    if (gefunden.length === 0) throw new ToolError("Keine der Mails im Papierkorb gefunden.");
+    if (!args.bestaetigt) {
+      return preview(`${gefunden.length} Mail(s) im Papierkorb ENDGÜLTIG löschen — nicht rückgängig zu machen.`, {
+        ordner: folder, mails: vorschauListe(gefunden), ...(fehlend.length ? { nicht_im_papierkorb: fehlend } : {}),
+      });
+    }
+    const r = await mailbox(() => deleteFromTrash(gefunden.map((m) => m.uid)));
+    await logAudit({
+      organizationId: ctx.organizationId, action: "mail.deleted", entityType: "Mail",
+      details: { via: `mcp:${ctx.tokenName}`, anzahl: r.count },
+    });
+    return { ausgefuehrt: true, endgueltig_geloescht: r.count, ...(fehlend.length ? { nicht_im_papierkorb: fehlend } : {}) };
   },
 });

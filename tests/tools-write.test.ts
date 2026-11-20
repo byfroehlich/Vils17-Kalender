@@ -174,8 +174,11 @@ describe("ortstaxe mit Kindern", () => {
 describe("Was es NICHT gibt", () => {
   it("keine Lösch- oder Preis-Tools; Gästenachrichten nur über messages:* und mit Bestätigung", async () => {
     const { TOOLS } = await import("@/lib/mcp/registry");
-    const names = TOOLS.map((t) => t.name).join(" ");
+    // Einzige Ausnahme (Entscheidung Mathias 21.11.2026): Mails aus dem Papierkorb von info@vils17.at endgültig löschen
+    const erlaubt = ["mail_endgueltig_loeschen"];
+    const names = TOOLS.map((t) => t.name).filter((n) => !erlaubt.includes(n)).join(" ");
     expect(names).not.toMatch(/loesch|lösch|delete|preis|price|smoobu_/i);
+    expect(TOOLS.find((t) => t.name === "mail_endgueltig_loeschen")).toMatchObject({ write: true, scope: "messages:write" });
     // Entscheidung Mathias 30.10.2026: Gästechat lesen/antworten, Senden nur nach Bestätigung
     for (const t of TOOLS.filter((t) => /nachricht|antworten/.test(t.name))) expect(t.scope).toMatch(/^messages:/);
     expect(TOOLS.find((t) => t.name === "gast_antworten")).toMatchObject({ write: true, scope: "messages:write" });
