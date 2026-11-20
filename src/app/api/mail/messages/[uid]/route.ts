@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getMessage, updateMessage } from "@/lib/mailbox";
+import { getMessage, updateMessage, deleteFromTrash } from "@/lib/mailbox";
+import { logAudit } from "@/lib/audit";
 import { mailSession, unauthorized, mailError, parseUid } from "@/lib/mailbox/route-helpers";
 
 export const dynamic = "force-dynamic";
@@ -32,6 +33,25 @@ export async function PATCH(req: NextRequest, { params }: { params: { uid: strin
   const { folder, ...change } = parsed.data;
   try {
     return NextResponse.json({ success: true, ...(await updateMessage(folder, uid, change)) });
+  } catch (err) {
+    return mailError(err);
+  }
+}
+
+// Endgültig löschen — nur aus dem Papierkorb (Entscheidung Mathias 21.11.2026). deleteFromTrash
+// wirkt ausschließlich im Papierkorb-Ordner; eine uid aus einem anderen Ordner trifft dort nichts.
+export async function DELETE(_req: NextRequest, { params }: { params: { uid: string } }) {
+  const session = await mailSession();
+  if (!session) return unauthorized();
+  const uid = parseUid(params.uid);
+  if (!uid) return NextResponse.json({ error: "Ungültige Mail" }, { status: 400 });
+  try {
+    const r = await deleteFromTrash([uid]);
+    await logAudit({
+      organizationId: session.user.organizationId, userId: session.user.id,
+      action: "mail.deleted", entityType: "Mail", details: { via: "app", anzahl: r.count },
+    });
+    return NextResponse.json({ success: true });
   } catch (err) {
     return mailError(err);
   }
