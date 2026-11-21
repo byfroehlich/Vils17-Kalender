@@ -10,6 +10,7 @@ const imap = vi.hoisted(() => ({
   folders: {} as Record<string, FakeMsg[]>,
   appended: [] as { path: string; raw: string; flags: string[] }[],
   deleted: [] as string[],
+  rejectDelete: false,
   current: "",
   connects: 0,
 }));
@@ -26,6 +27,7 @@ vi.mock("imapflow", async () => {
   const { simpleParser } = await import("mailparser");
   const toAddr = (a: any) => (a ? a.value.map((v: any) => ({ name: v.name, address: v.address })) : []);
   class ImapFlow {
+    capabilities = new Map<string, boolean>([["MOVE", true], ["UIDPLUS", true]]);
     mailbox: { path: string; exists: number } | false = false;
     async connect() { imap.connects++; }
     async logout() {}
@@ -84,6 +86,7 @@ vi.mock("imapflow", async () => {
     async messageDelete(uid: string) {
       imap.deleted.push(imap.current);
       const drop = uid.split(",").map(Number);
+      if (imap.rejectDelete) return false;
       imap.folders[imap.current] = imap.folders[imap.current]!.filter((x) => !drop.includes(x.uid));
       return true;
     }
@@ -134,6 +137,7 @@ beforeEach(async () => {
   };
   imap.appended = [];
   imap.deleted = [];
+  imap.rejectDelete = false;
   smtp.sent = [];
 });
 
@@ -283,6 +287,14 @@ describe("Aufräumen über MCP", () => {
     expect(imap.deleted).toEqual(["Trash"]);
     expect(imap.folders.Trash).toEqual([]);
     expect(imap.folders.INBOX!.map((m) => m.uid)).toEqual([12]);
+  });
+
+  it("lehnt der Server das Löschen ab, meldet das Tool einen Fehler statt Erfolg", async () => {
+    await call("mail_papierkorb", { uids: [11], bestaetigt: true });
+    imap.rejectDelete = true;
+    const r = await call("mail_endgueltig_loeschen", { uids: [11], bestaetigt: true });
+    expect(r.ok).toBe(false);
+    expect(await prisma.auditLog.count({ where: { action: "mail.deleted" } })).toBe(0);
   });
 
   it("Papierkorb in den Papierkorb → verständlicher Fehler", async () => {
