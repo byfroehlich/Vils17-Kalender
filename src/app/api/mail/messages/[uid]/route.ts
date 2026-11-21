@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { getMessage, updateMessage, deleteFromTrash } from "@/lib/mailbox";
+import { getMessage, updateMessage, deleteFromTrash, summarizeMessages, trashFolder } from "@/lib/mailbox";
 import { logAudit } from "@/lib/audit";
 import { mailSession, unauthorized, mailError, parseUid } from "@/lib/mailbox/route-helpers";
 
@@ -46,6 +46,9 @@ export async function DELETE(_req: NextRequest, { params }: { params: { uid: str
   const uid = parseUid(params.uid);
   if (!uid) return NextResponse.json({ error: "Ungültige Mail" }, { status: 400 });
   try {
+    // Nur löschen, was wirklich im Papierkorb liegt (UIDs gelten je Ordner)
+    const da = await summarizeMessages(await trashFolder(), [uid]);
+    if (da.length === 0) return NextResponse.json({ error: "Mail nicht im Papierkorb" }, { status: 404 });
     const r = await deleteFromTrash([uid]);
     await logAudit({
       organizationId: session.user.organizationId, userId: session.user.id,
