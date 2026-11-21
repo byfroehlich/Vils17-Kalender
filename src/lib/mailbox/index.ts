@@ -309,7 +309,10 @@ export async function trashMessages(folder: string, uids: number[]): Promise<{ m
   if (folder === target) throw new MailboxError("Die Mails liegen schon im Papierkorb.");
   if (uids.length === 0) return { movedTo: target, count: 0 };
   return withImap((client) => withFolder(client, folder, async () => {
-    await client.messageMove(uids.join(","), target, { uid: true });
+    // Ohne MOVE würde imapflow mit COPY + EXPUNGE nachbauen (ohne UIDPLUS: löscht alles Markierte) → lieber abbrechen
+    if (!client.capabilities.has("MOVE")) throw new MailboxError("Der Mailserver unterstützt kein Verschieben (MOVE).");
+    const ok = await client.messageMove(uids.join(","), target, { uid: true });
+    if (!ok) throw new MailboxError("Der Mailserver hat das Verschieben abgelehnt.");
     return { movedTo: target, count: uids.length };
   }));
 }
@@ -319,7 +322,10 @@ export async function deleteFromTrash(uids: number[]): Promise<{ folder: string;
   const folder = await trashFolder();
   if (uids.length === 0) return { folder, count: 0 };
   return withImap((client) => withFolder(client, folder, async () => {
-    await client.messageDelete(uids.join(","), { uid: true });
+    // Ohne UIDPLUS gäbe es nur ein allgemeines EXPUNGE, das jede markierte Mail löscht → abbrechen
+    if (!client.capabilities.has("UIDPLUS")) throw new MailboxError("Der Mailserver unterstützt kein gezieltes Löschen (UIDPLUS).");
+    const ok = await client.messageDelete(uids.join(","), { uid: true });
+    if (!ok) throw new MailboxError("Der Mailserver hat das Löschen abgelehnt.");
     return { folder, count: uids.length };
   }));
 }
