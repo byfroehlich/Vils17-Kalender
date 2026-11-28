@@ -169,6 +169,11 @@ Pflichtfelder erzeugen einen Warning-Log statt einen Crash.
 - **Webhook**: `POST /api/smoobu/webhook?token=<SMOOBU_WEBHOOK_SECRET>` — stößt
   einen vollständigen Sync an. In Smoobu genau diese URL inkl. `token` eintragen
   (Smoobu signiert Webhooks nicht; ohne Token wird jeder Aufruf abgelehnt).
+  Ausnahme `newMessage` (Mathias 28.11.2026, `src/lib/guest-message-webhook.ts`): kein Sync, sondern sofort
+  Push „💬 Neue Gästenachricht“ (Wohnung + Anreisetag, ohne Name/Text) an Admin/Verwaltung und Eingangszeit in
+  `GuestMessageSeen` (≈ minutengenau). Eigene Antworten und unbekannte Buchungen melden nichts; derselbe Webhook
+  zweimal → eine Meldung. Smoobu schickt alle Ereignisse an dieselbe URL (keine Auswahl je Ereignis).
+  Tests: `tests/gaestenachricht-webhook.test.ts`.
 - **Selbstaktualisierung**: Jede geöffnete App ruft `POST /api/sync/auto` beim
   Öffnen, beim Zurückholen aus dem Hintergrund und alle 3 Min auf
   (`src/components/pwa/AutoRefresh.tsx`). Der Server synchronisiert nur, wenn
@@ -247,6 +252,7 @@ Gerät nicht angemeldet, Anmeldung abgelaufen oder Versand fehlgeschlagen.
 | Reinigung frei (≤ 10 Tage) | Reiniger | `runReminders` |
 | Ohne Reinigungskraft (≤ 7 Tage) | Admin/Verwaltung | `runReminders` |
 | Wäsche reicht nicht (Bestand, 14 Tage) — einmal je Lage, „Kurzfristig“ bei Engpass ≤ 3 Tage | Admin/Verwaltung | `maybeSendLaundryAlert` (in `runReminders`) |
+| Neue Gästenachricht (sofort) | Admin/Verwaltung | Smoobu-Webhook `newMessage` |
 
 Warnungen werden gebündelt (eine Nachricht pro Art) und pro Auftrag nur einmal
 verschickt (`*ReminderSentAt`). Ausnahme Wäsche (31.10.2026): keine Warnung pro Buchung mehr, sondern
@@ -355,8 +361,9 @@ Entscheidung Mathias 30.10.2026: **15 € pro Hund und Nacht**, beide Wohnungen.
   (`POST /api/bookings/[id]/chat-done`, `markChatDone`), MCP `gaestechat_erledigt` (messages:write, `bestaetigt`).
   Gespeichert wird die ID der letzten Gastnachricht (`Booking.chatDoneMessageId`); schreibt der Gast erneut, ist der
   Chat wieder offen. An den Gast geht nichts. Tests: `tests/chat-erledigt.test.ts`.
-- **Zeitpunkt der Gästenachricht** (`src/lib/message-seen.ts`, Entscheidung Mathias 31.10.2026): Smoobu liefert laut Doku
-  keinen Zeitpunkt je Nachricht. Liefert die Antwort doch ein Feld (`createdAt`, `date` …), gilt es (`GuestMessage.zeit`);
+- **Zeitpunkt der Gästenachricht** (`src/lib/message-seen.ts`, Entscheidung Mathias 31.10.2026): Die Nachrichten-Schnittstelle
+  liefert laut Doku keinen Zeitpunkt je Nachricht (nur `GET /api/threads` nennt `latest_message.created_at`). Seit 28.11.2026
+  setzt der Webhook `newMessage` die Eingangszeit fast minutengenau. Liefert die Antwort doch ein Feld (`createdAt`, `date` …), gilt es (`GuestMessage.zeit`);
   sonst merkt sich die App den ersten Abruf (`GuestMessageSeen.firstSeenAt`, Hinweis-Scan alle 30 Min + Seitenaufruf)
   → „eingegangen spätestens …“. Beim allerersten Abruf eines Chats vorhandene Nachrichten: „Zeit unbekannt (älter)“.
   Anzeige auf `/messages`, MCP `offene_gaestenachrichten` (`eingegangen`). Tests: `tests/nachricht-zeit.test.ts`.

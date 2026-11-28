@@ -4,11 +4,14 @@ import { verifySmoobuWebhook } from "@/lib/smoobu";
 import { prisma } from "@/lib/prisma";
 import { logAudit } from "@/lib/audit";
 import { runSync } from "@/lib/sync-runner";
+import { handleNewMessage, parseNewMessage } from "@/lib/guest-message-webhook";
 
 export const maxDuration = 60;
 
 /**
  * Smoobu-Webhook → stößt einen vollständigen Sync an.
+ * Ausnahme `newMessage` (Mathias 28.11.2026): kein Sync, sondern sofortige Meldung der Gästenachricht
+ * (`src/lib/guest-message-webhook.ts`).
  *
  * Authentifizierung (eines von beiden):
  *  - `?token=<SMOOBU_WEBHOOK_SECRET>` in der Webhook-URL — so in Smoobu eintragen:
@@ -40,8 +43,10 @@ export async function POST(req: NextRequest) {
 
   // Organization über die Smoobu-Wohnung bestimmen (Multi-Tenant-fähig)
   let organizationId: string | null = null;
+  let newMessage: ReturnType<typeof parseNewMessage> = null;
   try {
     const raw = JSON.parse(payload) as Record<string, unknown>;
+    newMessage = parseNewMessage(raw);
     const res = (raw.object as Record<string, unknown>) ?? (raw.data as Record<string, unknown>) ?? raw;
     const smoobuApartmentId =
       ((res.apartment as { id?: number } | undefined)?.id) ?? (res["apartment-id"] as number | undefined) ?? null;
@@ -63,6 +68,17 @@ export async function POST(req: NextRequest) {
   }
   if (!organizationId) {
     return NextResponse.json({ received: true, skipped: "keine Organization" });
+  }
+
+  if (newMessage) {
+    try {
+      const r = await handleNewMessage({ organizationId, ...newMessage });
+      return NextResponse.json({ received: true, ...r });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Unbekannter Fehler";
+      console.error("[webhook] Gästenachricht fehlgeschlagen:", msg);
+      return NextResponse.json({ error: msg }, { status: 500 });
+    }
   }
 
   try {
